@@ -1,0 +1,3 @@
+-- MANDAP BILLING SYSTEM
+-- Data is now initialized via DataInitializer.java
+-- This file is kept for reference only

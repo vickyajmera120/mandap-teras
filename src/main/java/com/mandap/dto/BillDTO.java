@@ -1,0 +1,33 @@
+package com.mandap.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class BillDTO {
+    private Long id;
+    private String billNumber;
+    private Long customerId;
+    private String customerName;
+    private String customerMobile;
+    private Long eventId;
+    private String eventName;
+    private String palNumbers;
+    private String billType; // ESTIMATE or INVOICE
+    private String paymentStatus; // DUE, PAID, PARTIAL
+    private BigDecimal totalAmount;
+    private BigDecimal deposit;
+    private BigDecimal netPayable;
+    private LocalDate billDate;
+    private String remarks;
+    private List<BillItemDTO> items;
+}

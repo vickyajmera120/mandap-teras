@@ -1,0 +1,29 @@
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.restore
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# IDEs
+.idea/
+*.iml
+*.iws
+.settings/
+.classpath
+.project
+.factorypath
+
+# UI
+mandap-ui/node_modules/
+mandap-ui/dist/
+mandap-ui/.angular/
+
+# OS
+Thumbs.db
+Desktop.ini
