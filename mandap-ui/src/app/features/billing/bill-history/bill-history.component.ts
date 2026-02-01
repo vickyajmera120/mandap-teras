@@ -145,8 +145,8 @@ import { PaymentHistoryModalComponent } from '../payment-history-modal/payment-h
                     <td class="py-3 px-4 text-center">
                       <app-status-badge [value]="bill.paymentStatus"></app-status-badge>
                     </td>
-                    <td class="py-3 px-4 text-right text-slate-300">{{ bill.totalAmount | currencyInr }}</td>
-                    <td class="py-3 px-4 text-right text-teal-400 font-semibold">{{ bill.netPayable | currencyInr }}</td>
+                    <td class="py-3 px-4 text-right text-slate-300 whitespace-nowrap">{{ bill.totalAmount | currencyInr }}</td>
+                    <td class="py-3 px-4 text-right text-teal-400 font-semibold whitespace-nowrap">{{ bill.netPayable | currencyInr }}</td>
                     <td class="py-3 px-4 text-slate-400">{{ bill.billDate | dateFormat }}</td>
                     <td class="py-3 px-4">
                       <div class="flex items-center justify-center gap-1">
