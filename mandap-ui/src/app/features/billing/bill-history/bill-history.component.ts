@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, ViewChild } from '@angular/core';
+import { Component, OnInit, inject, signal, ViewChild, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -20,35 +20,7 @@ import { CurrencyInrPipe, DateFormatPipe, StatusBadgeComponent, LoadingSpinnerCo
         </div>
       </div>
       
-      <!-- Filters -->
-      <div class="flex flex-wrap items-end gap-4">
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Year</label>
-          <select 
-            [(ngModel)]="filterYear"
-            (ngModelChange)="applyFilters()"
-              class="px-4 py-2.5 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-xl text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500/50"
-          >
-            <option value="">All Years</option>
-            @for (year of years(); track year) {
-              <option [value]="year">{{ year }}</option>
-            }
-          </select>
-        </div>
-        <div class="flex-1">
-          <label class="block text-sm font-medium text-slate-400 mb-1">Search</label>
-          <div class="relative">
-            <input 
-              type="text"
-              [(ngModel)]="searchQuery"
-              (input)="applyFilters()"
-              placeholder="Search by customer or bill no..."
-              class="w-full md:w-80 px-4 py-2.5 pl-10 bg-slate-800/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-teal-500/50"
-            >
-            <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-          </div>
-        </div>
-      </div>
+      <!-- Filters replaced by column filters -->
       
       @if (isLoading()) {
         <app-loading-spinner></app-loading-spinner>
@@ -59,16 +31,96 @@ import { CurrencyInrPipe, DateFormatPipe, StatusBadgeComponent, LoadingSpinnerCo
             <table class="w-full">
               <thead class="bg-[var(--color-bg-hover)]/30">
                 <tr>
-                  <th class="text-left py-4 px-4 text-[var(--color-text-secondary)] font-semibold">Bill No</th>
-                  <th class="text-left py-4 px-4 text-slate-300 font-semibold">Customer</th>
-                  <th class="text-left py-4 px-4 text-slate-300 font-semibold">Mobile</th>
-                  <th class="text-center py-4 px-4 text-slate-300 font-semibold">Pal No(s)</th>
-                  <th class="text-center py-4 px-4 text-slate-300 font-semibold">Type</th>
-                  <th class="text-center py-4 px-4 text-slate-300 font-semibold">Status</th>
-                  <th class="text-right py-4 px-4 text-slate-300 font-semibold">Total</th>
-                  <th class="text-right py-4 px-4 text-slate-300 font-semibold">Net</th>
-                  <th class="text-left py-4 px-4 text-slate-300 font-semibold">Date</th>
-                  <th class="text-center py-4 px-4 text-slate-300 font-semibold">Actions</th>
+                  <th class="py-3 px-4 text-left align-top min-w-[120px]">
+                    <div class="flex items-center gap-2 mb-2 cursor-pointer group" (click)="onSort('billNumber')">
+                      <div class="text-[var(--color-text-secondary)] font-medium text-sm group-hover:text-[var(--color-text-primary)] transition-colors">Bill No</div>
+                      @if (sortColumn() === 'billNumber') {
+                        <i [class]="sortDirection() === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="text-xs text-teal-500"></i>
+                      } @else {
+                        <i class="fas fa-sort text-xs text-[var(--color-text-muted)] opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                      }
+                    </div>
+                    <input type="text" [ngModel]="billNoFilter()" (ngModelChange)="billNoFilter.set($event)" placeholder="Search..." class="w-full px-2 py-1 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500">
+                  </th>
+                  <th class="py-3 px-4 text-left align-top min-w-[150px]">
+                    <div class="flex items-center gap-2 mb-2 cursor-pointer group" (click)="onSort('customerName')">
+                      <div class="text-[var(--color-text-secondary)] font-medium text-sm group-hover:text-[var(--color-text-primary)] transition-colors">Customer</div>
+                      @if (sortColumn() === 'customerName') {
+                        <i [class]="sortDirection() === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="text-xs text-teal-500"></i>
+                      } @else {
+                        <i class="fas fa-sort text-xs text-[var(--color-text-muted)] opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                      }
+                    </div>
+                    <input type="text" [ngModel]="customerFilter()" (ngModelChange)="customerFilter.set($event)" placeholder="Name..." class="w-full px-2 py-1 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500">
+                  </th>
+                  <th class="py-3 px-4 text-left align-top min-w-[120px]">
+                    <div class="text-[var(--color-text-secondary)] font-medium text-sm mb-2">Mobile</div>
+                    <input type="text" [ngModel]="mobileFilter()" (ngModelChange)="mobileFilter.set($event)" placeholder="Mobile..." class="w-full px-2 py-1 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500">
+                  </th>
+                  <th class="py-3 px-4 text-left align-top min-w-[120px]">
+                    <div class="flex items-center gap-2 mb-2 cursor-pointer group" (click)="onSort('palNumbers')">
+                      <div class="text-[var(--color-text-secondary)] font-medium text-sm group-hover:text-[var(--color-text-primary)] transition-colors">Pal No(s)</div>
+                      @if (sortColumn() === 'palNumbers') {
+                        <i [class]="sortDirection() === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="text-xs text-teal-500"></i>
+                      } @else {
+                        <i class="fas fa-sort text-xs text-[var(--color-text-muted)] opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                      }
+                    </div>
+                    <input type="text" [ngModel]="palFilter()" (ngModelChange)="palFilter.set($event)" placeholder="Pal #..." class="w-full px-2 py-1 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500">
+                  </th>
+                  <th class="py-3 px-4 text-center align-top min-w-[100px]">
+                    <div class="flex items-center justify-center gap-2 mb-2 cursor-pointer group" (click)="onSort('billType')">
+                      <div class="text-[var(--color-text-secondary)] font-medium text-sm group-hover:text-[var(--color-text-primary)] transition-colors">Type</div>
+                       @if (sortColumn() === 'billType') {
+                        <i [class]="sortDirection() === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="text-xs text-teal-500"></i>
+                      } @else {
+                        <i class="fas fa-sort text-xs text-[var(--color-text-muted)] opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                      }
+                    </div>
+                    <select [ngModel]="typeFilter()" (ngModelChange)="typeFilter.set($event)" class="w-full px-1 py-1 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500">
+                      <option value="">All</option>
+                      <option value="ESTIMATE">ESTIMATE</option>
+                      <option value="INVOICE">INVOICE</option>
+                    </select>
+                  </th>
+                  <th class="py-3 px-4 text-center align-top min-w-[100px]">
+                    <div class="flex items-center justify-center gap-2 mb-2 cursor-pointer group" (click)="onSort('paymentStatus')">
+                      <div class="text-[var(--color-text-secondary)] font-medium text-sm group-hover:text-[var(--color-text-primary)] transition-colors">Status</div>
+                       @if (sortColumn() === 'paymentStatus') {
+                        <i [class]="sortDirection() === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="text-xs text-teal-500"></i>
+                      } @else {
+                        <i class="fas fa-sort text-xs text-[var(--color-text-muted)] opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                      }
+                    </div>
+                    <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)" class="w-full px-1 py-1 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500">
+                      <option value="">All</option>
+                      <option value="DUE">DUE</option>
+                      <option value="PAID">PAID</option>
+                      <option value="PARTIAL">PARTIAL</option>
+                    </select>
+                  </th>
+                  <th class="py-3 px-4 text-right align-top cursor-pointer group" (click)="onSort('totalAmount')">
+                    <div class="flex items-center justify-end gap-2 mb-8">
+                       <div class="text-[var(--color-text-secondary)] font-semibold text-sm group-hover:text-[var(--color-text-primary)] transition-colors">Total</div>
+                       @if (sortColumn() === 'totalAmount') {
+                        <i [class]="sortDirection() === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="text-xs text-teal-500"></i>
+                      } @else {
+                        <i class="fas fa-sort text-xs text-[var(--color-text-muted)] opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                      }
+                    </div>
+                  </th>
+                  <th class="py-3 px-4 text-right align-top cursor-pointer group" (click)="onSort('netPayable')">
+                    <div class="flex items-center justify-end gap-2 mb-8">
+                       <div class="text-[var(--color-text-secondary)] font-semibold text-sm group-hover:text-[var(--color-text-primary)] transition-colors">Net Payable</div>
+                       @if (sortColumn() === 'netPayable') {
+                        <i [class]="sortDirection() === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="text-xs text-teal-500"></i>
+                      } @else {
+                        <i class="fas fa-sort text-xs text-[var(--color-text-muted)] opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                      }
+                    </div>
+                  </th>
+                  <th class="py-3 px-4 text-left align-top text-[var(--color-text-secondary)] font-semibold">Date</th>
+                  <th class="py-3 px-4 text-center align-top text-[var(--color-text-secondary)] font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -77,7 +129,17 @@ import { CurrencyInrPipe, DateFormatPipe, StatusBadgeComponent, LoadingSpinnerCo
                     <td class="py-3 px-4 text-teal-400 font-medium">{{ bill.billNumber }}</td>
                     <td class="py-3 px-4 text-[var(--color-text-primary)]">{{ bill.customerName }}</td>
                     <td class="py-3 px-4 text-slate-400">{{ bill.customerMobile }}</td>
-                    <td class="py-3 px-4 text-center text-[var(--color-text-secondary)]">{{ bill.palNumbers }}</td>
+                    <td class="py-3 px-4">
+                      @if (bill.palNumbers) {
+                         <div class="flex flex-wrap gap-1">
+                           @for (pal of bill.palNumbers.split(','); track pal) {
+                             <span class="px-2 py-0.5 bg-slate-700 rounded text-xs text-slate-300">{{ pal.trim() }}</span>
+                           }
+                         </div>
+                       } @else {
+                         <span class="text-[var(--color-text-muted)]">-</span>
+                       }
+                    </td>
                     <td class="py-3 px-4 text-center">
                       <app-status-badge [value]="bill.billType"></app-status-badge>
                     </td>
@@ -242,18 +304,83 @@ export class BillHistoryComponent implements OnInit {
   private router = inject(Router);
 
   bills = signal<Bill[]>([]);
-  filteredBills = signal<Bill[]>([]);
-  years = signal<number[]>([]);
   selectedBill = signal<Bill | null>(null);
-
   isLoading = signal(true);
   isSaving = signal(false);
 
   // Filters
-  filterYear = '';
-  searchQuery = '';
+  billNoFilter = signal('');
+  customerFilter = signal('');
+  mobileFilter = signal('');
+  palFilter = signal('');
+  typeFilter = signal('');
+  statusFilter = signal('');
 
-  // Filters
+  // Sorting
+  sortColumn = signal<string | null>(null);
+  sortDirection = signal<'asc' | 'desc'>('asc');
+
+  filteredBills = computed(() => {
+    let result = this.bills();
+
+    // Filters
+    const bFilter = this.billNoFilter().toLowerCase();
+    if (bFilter) result = result.filter(b => b.billNumber.toLowerCase().includes(bFilter));
+
+    const cFilter = this.customerFilter().toLowerCase();
+    if (cFilter) result = result.filter(b => b.customerName?.toLowerCase().includes(cFilter));
+
+    const mFilter = this.mobileFilter().toLowerCase();
+    if (mFilter) result = result.filter(b => b.customerMobile?.toLowerCase().includes(mFilter));
+
+    const pFilter = this.palFilter().toLowerCase();
+    if (pFilter) result = result.filter(b => b.palNumbers?.toLowerCase().includes(pFilter));
+
+    const tFilter = this.typeFilter();
+    if (tFilter) result = result.filter(b => b.billType === tFilter);
+
+    const sFilter = this.statusFilter();
+    if (sFilter) result = result.filter(b => b.paymentStatus === sFilter);
+
+    // Sorting
+    const col = this.sortColumn();
+    const dir = this.sortDirection();
+
+    if (col) {
+      result = [...result].sort((a, b) => {
+        let valA: any = '';
+        let valB: any = '';
+
+        switch (col) {
+          case 'billNumber': valA = a.billNumber; valB = b.billNumber; break;
+          case 'customerName': valA = a.customerName; valB = b.customerName; break;
+          case 'palNumbers': valA = a.palNumbers; valB = b.palNumbers; break;
+          case 'billType': valA = a.billType; valB = b.billType; break;
+          case 'paymentStatus': valA = a.paymentStatus; valB = b.paymentStatus; break;
+          case 'totalAmount': valA = a.totalAmount; valB = b.totalAmount; break;
+          case 'netPayable': valA = a.netPayable; valB = b.netPayable; break;
+        }
+
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+
+        if (valA < valB) return dir === 'asc' ? -1 : 1;
+        if (valA > valB) return dir === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return result;
+  });
+
+  onSort(column: string) {
+    if (this.sortColumn() === column) {
+      this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortColumn.set(column);
+      this.sortDirection.set('asc');
+    }
+  }
 
 
   ngOnInit(): void {
@@ -264,11 +391,7 @@ export class BillHistoryComponent implements OnInit {
     this.billService.getAll().subscribe({
       next: (bills) => {
         this.bills.set(bills);
-        this.filteredBills.set(bills);
-
-        // Extract unique years
-        const uniqueYears = [...new Set(bills.map(b => new Date(b.billDate).getFullYear()))];
-        this.years.set(uniqueYears.sort((a, b) => b - a));
+        // this.filteredBills.set(bills); // computed handles this
 
         this.isLoading.set(false);
       },
@@ -278,27 +401,7 @@ export class BillHistoryComponent implements OnInit {
     });
   }
 
-  applyFilters(): void {
-    let filtered = this.bills();
 
-    if (this.filterYear) {
-      const year = parseInt(this.filterYear);
-      filtered = filtered.filter(b => new Date(b.billDate).getFullYear() === year);
-    }
-
-
-
-    if (this.searchQuery) {
-      const query = this.searchQuery.toLowerCase();
-      filtered = filtered.filter(b =>
-        b.billNumber.toLowerCase().includes(query) ||
-        b.customerName?.toLowerCase().includes(query) ||
-        b.customerMobile?.includes(query)
-      );
-    }
-
-    this.filteredBills.set(filtered);
-  }
 
   viewBill(bill: Bill): void {
     this.selectedBill.set(bill);

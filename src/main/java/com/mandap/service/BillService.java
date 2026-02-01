@@ -199,7 +199,9 @@ public class BillService {
                 .customerId(bill.getCustomer().getId())
                 .customerName(bill.getCustomer().getName())
                 .customerMobile(bill.getCustomer().getMobile())
-                .palNumbers(bill.getPalNumbers())
+                .palNumbers(bill.getCustomer().getPalNumbers() != null
+                        ? String.join(", ", bill.getCustomer().getPalNumbers())
+                        : "")
                 .billType(bill.getBillType() != null ? bill.getBillType().name() : "INVOICE")
                 .paymentStatus(bill.getPaymentStatus() != null ? bill.getPaymentStatus().name() : "DUE")
                 .totalAmount(bill.getTotalAmount())
