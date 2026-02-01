@@ -6,10 +6,10 @@ import { Payment } from '@core/models';
 import { CurrencyInrPipe, DateFormatPipe, LoadingSpinnerComponent } from '@shared';
 
 @Component({
-    selector: 'app-payment-history-modal',
-    standalone: true,
-    imports: [CommonModule, FormsModule, CurrencyInrPipe, DateFormatPipe, LoadingSpinnerComponent],
-    template: `
+  selector: 'app-payment-history-modal',
+  standalone: true,
+  imports: [CommonModule, FormsModule, CurrencyInrPipe, DateFormatPipe, LoadingSpinnerComponent],
+  template: `
     <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" (click)="close.emit()">
       <div class="bg-[var(--color-bg-card)] border border-[var(--color-border)] rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl" (click)="$event.stopPropagation()">
         
@@ -148,140 +148,151 @@ import { CurrencyInrPipe, DateFormatPipe, LoadingSpinnerComponent } from '@share
   `
 })
 export class PaymentHistoryModalComponent implements OnInit {
-    @Input() billId!: number;
-    @Input() billNumber!: string;
-    @Input() totalAmount: number = 0;
-    @Output() close = new EventEmitter<void>();
-    @Output() paymentChanged = new EventEmitter<void>();
+  @Input() billId!: number;
+  @Input() billNumber!: string;
+  @Input() totalAmount: number = 0;
+  @Output() close = new EventEmitter<void>();
+  @Output() paymentChanged = new EventEmitter<void>();
 
-    private paymentService = inject(PaymentService);
-    private toast = inject(ToastService);
+  private paymentService = inject(PaymentService);
+  private toast = inject(ToastService);
 
-    payments = signal<Payment[]>([]);
-    isLoading = signal(true);
-    isSaving = signal(false);
+  payments = signal<Payment[]>([]);
+  isLoading = signal(true);
+  isSaving = signal(false);
 
-    // Form
-    editingPayment = signal<Payment | null>(null);
-    formAmount: number = 0;
-    formDate: string = new Date().toISOString().split('T')[0];
-    formMethod: 'CASH' | 'CHEQUE' | 'ONLINE' = 'CASH';
-    formChequeNo: string = '';
-    formRemarks: string = '';
+  // Form
+  editingPayment = signal<Payment | null>(null);
+  formAmount: number = 0;
+  formDate: string = new Date().toISOString().split('T')[0];
+  formMethod: 'CASH' | 'CHEQUE' | 'ONLINE' = 'CASH';
+  formChequeNo: string = '';
+  formRemarks: string = '';
 
-    totalPaid = computed(() => this.payments().reduce((sum, p) => sum + p.amount, 0));
-    balanceDue = computed(() => this.totalAmount - this.totalPaid());
+  totalPaid = computed(() => this.payments().reduce((sum, p) => sum + p.amount, 0));
+  balanceDue = computed(() => this.totalAmount - this.totalPaid());
 
-    ngOnInit() {
-        this.loadPayments();
+  ngOnInit() {
+    this.loadPayments();
+  }
+
+  loadPayments() {
+    this.isLoading.set(true);
+    this.paymentService.getPaymentsByBillId(this.billId).subscribe({
+      next: (data) => {
+        this.payments.set(data);
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Error loading payments', err);
+        this.toast.error('Failed to load payments');
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  savePayment() {
+    if (!this.isValidForm()) return;
+
+    // Validation: Check if amount exceeds balance due
+    let maxAllowed = this.balanceDue();
+    if (this.editingPayment()) {
+      maxAllowed += this.editingPayment()!.amount;
     }
 
-    loadPayments() {
-        this.isLoading.set(true);
-        this.paymentService.getPaymentsByBillId(this.billId).subscribe({
-            next: (data) => {
-                this.payments.set(data);
-                this.isLoading.set(false);
-            },
-            error: (err) => {
-                console.error('Error loading payments', err);
-                this.toast.error('Failed to load payments');
-                this.isLoading.set(false);
-            }
-        });
+    if (this.formAmount > maxAllowed) {
+      this.toast.error(`Amount cannot exceed balance due (₹${maxAllowed.toLocaleString('en-IN')})`);
+      return;
     }
 
-    savePayment() {
-        if (!this.isValidForm()) return;
+    this.isSaving.set(true);
+    const paymentData: Payment = {
+      billId: this.billId,
+      amount: this.formAmount,
+      paymentDate: this.formDate,
+      paymentMethod: this.formMethod,
+      chequeNumber: this.formChequeNo,
+      remarks: this.formRemarks
+    };
 
-        this.isSaving.set(true);
-        const paymentData: Payment = {
-            billId: this.billId,
-            amount: this.formAmount,
-            paymentDate: this.formDate,
-            paymentMethod: this.formMethod,
-            chequeNumber: this.formChequeNo,
-            remarks: this.formRemarks
-        };
-
-        if (this.editingPayment()) {
-            // Update
-            this.paymentService.updatePayment(this.editingPayment()!.id!, paymentData).subscribe({
-                next: (updated) => {
-                    this.payments.update(list => list.map(p => p.id === updated.id ? updated : p));
-                    this.resetForm();
-                    this.toast.success('Payment updated');
-                    this.paymentChanged.emit();
-                    this.isSaving.set(false);
-                },
-                error: (err) => {
-                    console.error('Error updating payment', err);
-                    this.toast.error('Failed to update payment');
-                    this.isSaving.set(false);
-                }
-            });
-        } else {
-            // Add
-            this.paymentService.addPayment(paymentData).subscribe({
-                next: (newPayment) => {
-                    this.payments.update(list => [...list, newPayment]);
-                    this.resetForm();
-                    this.toast.success('Payment added');
-                    this.paymentChanged.emit();
-                    this.isSaving.set(false);
-                },
-                error: (err) => {
-                    console.error('Error adding payment', err);
-                    this.toast.error('Failed to add payment');
-                    this.isSaving.set(false);
-                }
-            });
+    if (this.editingPayment()) {
+      // Update
+      this.paymentService.updatePayment(this.editingPayment()!.id!, paymentData).subscribe({
+        next: (updated) => {
+          this.payments.update(list => list.map(p => p.id === updated.id ? updated : p));
+          this.resetForm();
+          this.toast.success('Payment updated');
+          this.paymentChanged.emit();
+          this.isSaving.set(false);
+        },
+        error: (err) => {
+          console.error('Error updating payment', err);
+          this.toast.error('Failed to update payment');
+          this.isSaving.set(false);
         }
+      });
+    } else {
+      // Add
+      this.paymentService.addPayment(paymentData).subscribe({
+        next: (newPayment) => {
+          this.payments.update(list => [...list, newPayment]);
+          this.resetForm();
+          this.toast.success('Payment added');
+          this.paymentChanged.emit();
+          this.isSaving.set(false);
+        },
+        error: (err) => {
+          console.error('Error adding payment', err);
+          this.toast.error('Failed to add payment');
+          this.isSaving.set(false);
+        }
+      });
     }
+  }
 
-    deletePayment(payment: Payment) {
-        if (!confirm('Are you sure you want to delete this payment?')) return;
+  deletePayment(payment: Payment) {
+    if (!confirm('Are you sure you want to delete this payment?')) return;
 
-        this.isLoading.set(true);
-        this.paymentService.deletePayment(payment.id!).subscribe({
-            next: () => {
-                this.payments.update(list => list.filter(p => p.id !== payment.id));
-                this.toast.success('Payment deleted');
-                this.paymentChanged.emit();
-                this.isLoading.set(false);
-            },
-            error: (err) => {
-                console.error('Error deleting payment', err);
-                this.toast.error('Failed to delete payment');
-                this.isLoading.set(false);
-            }
-        });
+    this.isLoading.set(true);
+    this.paymentService.deletePayment(payment.id!).subscribe({
+      next: () => {
+        this.payments.update(list => list.filter(p => p.id !== payment.id));
+        this.toast.success('Payment deleted');
+        this.paymentChanged.emit();
+        this.isLoading.set(false);
+      },
+      error: (err) => {
+        console.error('Error deleting payment', err);
+        this.toast.error('Failed to delete payment');
+        this.isLoading.set(false);
+      }
+    });
 
-    }
+  }
 
-    editPayment(payment: Payment) {
-        this.editingPayment.set(payment);
-        this.formAmount = payment.amount;
-        this.formDate = payment.paymentDate;
-        this.formMethod = payment.paymentMethod;
-        this.formChequeNo = payment.chequeNumber || '';
-        this.formRemarks = payment.remarks || '';
-    }
+  editPayment(payment: Payment) {
+    this.editingPayment.set(payment);
+    this.formAmount = payment.amount;
+    this.formDate = payment.paymentDate;
+    this.formMethod = payment.paymentMethod;
+    this.formChequeNo = payment.chequeNumber || '';
+    this.formRemarks = payment.remarks || '';
+  }
 
-    cancelEdit() {
-        this.resetForm();
-    }
+  cancelEdit() {
+    this.resetForm();
+  }
 
-    resetForm() {
-        this.editingPayment.set(null);
-        this.formAmount = 0;
-        this.formDate = new Date().toISOString().split('T')[0];
-        this.formMethod = 'CASH';
-        this.formChequeNo = '';
-        this.formRemarks = '';
-    }
+  resetForm() {
+    this.editingPayment.set(null);
+    this.formAmount = 0;
+    this.formDate = new Date().toISOString().split('T')[0];
+    this.formMethod = 'CASH';
+    this.formChequeNo = '';
+    this.formRemarks = '';
+  }
 
-    isValidForm(): boolean {
-        return this.formAmount > 0 && !!this.formDate;
-    }
+  isValidForm(): boolean {
+    return this.formAmount > 0 && !!this.formDate;
+  }
 }
