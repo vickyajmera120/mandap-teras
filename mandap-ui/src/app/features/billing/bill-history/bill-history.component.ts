@@ -532,7 +532,7 @@ export class BillHistoryComponent implements OnInit {
                         ${rows}
                     </tbody>
                 </table>
-                <div style="text-align: right; font-weight: bold; margin-top: 5px; font-size: 13px;">
+                <div style="text-align: right; font-weight: bold; margin-top: 5px; font-size: 16px;">
                     Total Payment: ₹${bill.deposit?.toLocaleString('en-IN')}
                 </div>
             </div>
