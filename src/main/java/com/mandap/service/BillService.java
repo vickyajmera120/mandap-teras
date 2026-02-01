@@ -141,7 +141,6 @@ public class BillService {
                                         .createdBy(userId)
                                         .build();
 
-                        payment = paymentRepository.save(payment);
                         bill.addPayment(payment);
                         bill.calculateTotals();
                         bill = billRepository.save(bill);
