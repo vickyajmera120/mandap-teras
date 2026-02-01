@@ -10,3 +10,4 @@ export * from './layout.service';
 
 export * from './theme.service';
 export * from './rental-order.service';
+export * from './payment.service';

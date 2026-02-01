@@ -1,4 +1,5 @@
 // Bill Model
+import { Payment } from './payment.model';
 export type BillType = 'ESTIMATE' | 'INVOICE';
 export type PaymentStatus = 'DUE' | 'PAID' | 'PARTIAL';
 
@@ -27,6 +28,7 @@ export interface Bill {
     billDate: string;
     remarks?: string;
     items: BillItem[];
+    payments?: Payment[];
     createdAt?: string;
     updatedAt?: string;
 }

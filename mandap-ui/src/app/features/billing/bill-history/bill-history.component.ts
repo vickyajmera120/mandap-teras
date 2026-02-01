@@ -5,11 +5,12 @@ import { Router } from '@angular/router';
 import { BillService, ToastService } from '@core/services';
 import { Bill, BillType, PaymentStatus, BillUpdateRequest } from '@core/models';
 import { CurrencyInrPipe, DateFormatPipe, StatusBadgeComponent, LoadingSpinnerComponent, ModalComponent } from '@shared';
+import { PaymentHistoryModalComponent } from '../payment-history-modal/payment-history-modal.component';
 
 @Component({
   selector: 'app-bill-history',
   standalone: true,
-  imports: [CommonModule, FormsModule, CurrencyInrPipe, DateFormatPipe, StatusBadgeComponent, LoadingSpinnerComponent, ModalComponent],
+  imports: [CommonModule, FormsModule, CurrencyInrPipe, DateFormatPipe, StatusBadgeComponent, LoadingSpinnerComponent, ModalComponent, PaymentHistoryModalComponent],
   template: `
     <div class="space-y-6">
       <!-- Header -->
@@ -19,8 +20,6 @@ import { CurrencyInrPipe, DateFormatPipe, StatusBadgeComponent, LoadingSpinnerCo
           <p class="text-[var(--color-text-secondary)] mt-1">View and manage all bills</p>
         </div>
       </div>
-      
-      <!-- Filters replaced by column filters -->
       
       @if (isLoading()) {
         <app-loading-spinner></app-loading-spinner>
@@ -151,6 +150,13 @@ import { CurrencyInrPipe, DateFormatPipe, StatusBadgeComponent, LoadingSpinnerCo
                     <td class="py-3 px-4 text-slate-400">{{ bill.billDate | dateFormat }}</td>
                     <td class="py-3 px-4">
                       <div class="flex items-center justify-center gap-1">
+                        <button 
+                          (click)="openPaymentModal(bill)"
+                          class="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-400 hover:bg-teal-500/30 transition-colors"
+                          title="Payments"
+                        >
+                          <i class="fas fa-wallet text-xs"></i>
+                        </button>
                         <button 
                           (click)="viewBill(bill)"
                           class="w-8 h-8 rounded-lg bg-slate-600/50 text-slate-300 hover:bg-slate-600 transition-colors"
@@ -291,8 +297,17 @@ import { CurrencyInrPipe, DateFormatPipe, StatusBadgeComponent, LoadingSpinnerCo
           </div>
         }
       </app-modal>
-      
 
+      <!-- Payment History Modal -->
+      @if (showPaymentModal() && selectedBillForPayment()) {
+          <app-payment-history-modal 
+            [billId]="selectedBillForPayment()!.id"
+            [billNumber]="selectedBillForPayment()!.billNumber"
+            [totalAmount]="selectedBillForPayment()!.totalAmount"
+            (close)="closePaymentModal()"
+            (paymentChanged)="loadBills()" 
+          ></app-payment-history-modal>
+      }
     </div>
   `
 })
@@ -307,6 +322,8 @@ export class BillHistoryComponent implements OnInit {
   selectedBill = signal<Bill | null>(null);
   isLoading = signal(true);
   isSaving = signal(false);
+  showPaymentModal = signal(false);
+  selectedBillForPayment = signal<Bill | null>(null);
 
   // Filters
   billNoFilter = signal('');
@@ -391,8 +408,6 @@ export class BillHistoryComponent implements OnInit {
     this.billService.getAll().subscribe({
       next: (bills) => {
         this.bills.set(bills);
-        // this.filteredBills.set(bills); // computed handles this
-
         this.isLoading.set(false);
       },
       error: () => {
@@ -401,7 +416,9 @@ export class BillHistoryComponent implements OnInit {
     });
   }
 
-
+  loadBills() {
+    this.loadData();
+  }
 
   viewBill(bill: Bill): void {
     this.selectedBill.set(bill);
@@ -428,7 +445,15 @@ export class BillHistoryComponent implements OnInit {
     }
   }
 
+  openPaymentModal(bill: Bill) {
+    this.selectedBillForPayment.set(bill);
+    this.showPaymentModal.set(true);
+  }
 
+  closePaymentModal() {
+    this.showPaymentModal.set(false);
+    this.selectedBillForPayment.set(null);
+  }
 
   printBill(bill: Bill): void {
     // Create print window with bill details
@@ -443,6 +468,36 @@ export class BillHistoryComponent implements OnInit {
         <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">₹${item.total}</td>
       </tr>
     `).join('') || '';
+
+    let paymentsHtml = '';
+    if (bill.payments && bill.payments.length > 0) {
+      const rows = bill.payments.map(p => `
+            <tr>
+                <td style="padding: 6px; border-bottom: 1px solid #eee; font-size: 12px;">${new Date(p.paymentDate).toLocaleDateString('en-IN')}</td>
+                <td style="padding: 6px; border-bottom: 1px solid #eee; font-size: 12px;">${p.paymentMethod}</td>
+                <td style="padding: 6px; border-bottom: 1px solid #eee; font-size: 12px; font-style: italic;">${p.remarks || ''}</td>
+                <td style="padding: 6px; border-bottom: 1px solid #eee; text-align: right; font-size: 12px;">₹${p.amount}</td>
+            </tr>
+        `).join('');
+      paymentsHtml = `
+            <div style="margin-top: 20px;">
+                <h3 style="font-size: 14px; margin-bottom: 5px; color: #555;">Payment History</h3>
+                <table style="font-size: 12px;">
+                    <thead>
+                        <tr style="background: #f0f0f0;">
+                            <th style="padding: 6px; text-align: left; background: #eee; color: #333;">Date</th>
+                            <th style="padding: 6px; text-align: left; background: #eee; color: #333;">Method</th>
+                            <th style="padding: 6px; text-align: left; background: #eee; color: #333;">Remarks</th>
+                            <th style="padding: 6px; text-align: right; background: #eee; color: #333;">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
 
     printWindow.document.write(`
       <!DOCTYPE html>
@@ -490,6 +545,9 @@ export class BillHistoryComponent implements OnInit {
             ${itemsHtml}
           </tbody>
         </table>
+        
+        ${paymentsHtml}
+
         <div class="total">
           <p>Total Amount: ₹${bill.totalAmount?.toLocaleString('en-IN')}</p>
           <p>Deposit: ₹${bill.deposit?.toLocaleString('en-IN')}</p>
@@ -502,4 +560,3 @@ export class BillHistoryComponent implements OnInit {
     printWindow.document.close();
   }
 }
-

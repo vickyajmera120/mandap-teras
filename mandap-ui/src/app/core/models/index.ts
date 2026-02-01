@@ -4,3 +4,4 @@ export * from './bill.model';
 export * from './inventory.model';
 export * from './user.model';
 export * from './rental-order.model';
+export * from './payment.model';

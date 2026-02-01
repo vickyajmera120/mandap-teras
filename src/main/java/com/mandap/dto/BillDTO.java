@@ -28,4 +28,5 @@ public class BillDTO {
     private LocalDate billDate;
     private String remarks;
     private List<BillItemDTO> items;
+    private List<PaymentDTO> payments;
 }

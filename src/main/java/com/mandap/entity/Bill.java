@@ -75,6 +75,10 @@ public class Bill {
     @Builder.Default
     private List<BillItem> items = new ArrayList<>();
 
+    @OneToMany(mappedBy = "bill", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<Payment> payments = new ArrayList<>();
+
     @Column(name = "created_by")
     private Long createdBy;
 
@@ -105,10 +109,35 @@ public class Bill {
         item.setBill(null);
     }
 
+    public void addPayment(Payment payment) {
+        payments.add(payment);
+        payment.setBill(this);
+    }
+
+    public void removePayment(Payment payment) {
+        payments.remove(payment);
+        payment.setBill(null);
+    }
+
     public void calculateTotals() {
         this.totalAmount = items.stream()
                 .map(BillItem::getTotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        this.netPayable = this.totalAmount.subtract(this.deposit != null ? this.deposit : BigDecimal.ZERO);
+
+        // Calculate deposit from payments
+        this.deposit = payments.stream()
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        this.netPayable = this.totalAmount.subtract(this.deposit);
+
+        // Update Payment Status
+        if (this.netPayable.compareTo(BigDecimal.ZERO) <= 0) {
+            this.paymentStatus = PaymentStatus.PAID;
+        } else if (this.deposit.compareTo(BigDecimal.ZERO) > 0) {
+            this.paymentStatus = PaymentStatus.PARTIAL;
+        } else {
+            this.paymentStatus = PaymentStatus.DUE;
+        }
     }
 }
