@@ -508,7 +508,10 @@ export class BillHistoryComponent implements OnInit {
       const rows = bill.payments.map(p => `
             <tr>
                 <td style="padding: 6px; border-bottom: 1px solid #eee; font-size: 12px;">${new Date(p.paymentDate).toLocaleDateString('en-IN')}</td>
-                <td style="padding: 6px; border-bottom: 1px solid #eee; font-size: 12px;">${p.paymentMethod}</td>
+                <td style="padding: 6px; border-bottom: 1px solid #eee; font-size: 12px;">
+                    ${p.paymentMethod}
+                    ${p.chequeNumber ? '<span style="font-size:11px; color:#555; margin-left: 4px;">(' + p.chequeNumber + ')</span>' : ''}
+                </td>
                 <td style="padding: 6px; border-bottom: 1px solid #eee; font-size: 12px; font-style: italic;">${p.remarks || ''}</td>
                 <td style="padding: 6px; border-bottom: 1px solid #eee; text-align: right; font-size: 12px;">₹${p.amount}</td>
             </tr>
