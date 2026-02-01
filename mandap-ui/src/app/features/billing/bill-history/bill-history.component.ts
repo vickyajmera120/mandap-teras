@@ -263,6 +263,40 @@ import { PaymentHistoryModalComponent } from '../payment-history-modal/payment-h
               </div>
             }
             
+            <!-- Payments -->
+            @if (selectedBill()!.payments?.length) {
+              <div>
+                <p class="text-slate-400 text-sm mb-2">Payments</p>
+                <div class="bg-slate-700/30 rounded-lg overflow-hidden">
+                  <table class="w-full text-sm">
+                    <thead class="bg-slate-700/50">
+                      <tr>
+                        <th class="text-left py-2 px-3 text-slate-300">Date</th>
+                        <th class="text-left py-2 px-3 text-slate-300">Method</th>
+                        <th class="text-left py-2 px-3 text-slate-300">Remarks</th>
+                        <th class="text-right py-2 px-3 text-slate-300">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (payment of selectedBill()!.payments; track payment.id) {
+                        <tr class="border-t border-slate-600/30">
+                          <td class="py-2 px-3 text-white">{{ payment.paymentDate | dateFormat }}</td>
+                          <td class="py-2 px-3 text-slate-300">{{ payment.paymentMethod }}</td>
+                          <td class="py-2 px-3 text-slate-400 italic">
+                            {{ payment.remarks }}
+                            @if (payment.isDeposit) {
+                                <span class="ml-2 text-xs text-yellow-500 border border-yellow-500/50 px-1 rounded">Deposit</span>
+                            }
+                          </td>
+                          <td class="py-2 px-3 text-right text-teal-400">{{ payment.amount | currencyInr }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            }
+            
             <!-- Totals -->
             <div class="bg-slate-700/30 rounded-lg p-4 space-y-2">
               <div class="flex justify-between">

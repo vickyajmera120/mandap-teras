@@ -20,4 +20,5 @@ public class PaymentDTO {
     private String paymentMethod;
     private String chequeNumber;
     private String remarks;
+    private boolean isDeposit;
 }

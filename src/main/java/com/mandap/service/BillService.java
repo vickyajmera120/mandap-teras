@@ -94,7 +94,8 @@ public class BillService {
                                                 ? Bill.PaymentStatus.valueOf(dto.getPaymentStatus())
                                                 : Bill.PaymentStatus.DUE)
                                 .billDate(dto.getBillDate() != null ? dto.getBillDate() : LocalDate.now())
-                                .deposit(dto.getDeposit() != null ? dto.getDeposit() : BigDecimal.ZERO)
+                                // Deposit is handled as a payment now
+                                .deposit(BigDecimal.ZERO)
                                 .remarks(dto.getRemarks())
                                 .createdBy(userId)
                                 .items(new ArrayList<>())
@@ -124,6 +125,24 @@ public class BillService {
 
                 bill.calculateTotals();
                 bill = billRepository.save(bill);
+
+                // Create initial payment if deposit is provided
+                if (dto.getDeposit() != null && dto.getDeposit().compareTo(BigDecimal.ZERO) > 0) {
+                        Payment payment = Payment.builder()
+                                        .bill(bill)
+                                        .amount(dto.getDeposit())
+                                        .paymentDate(bill.getBillDate())
+                                        .paymentMethod(Payment.PaymentMethod.CASH)
+                                        .remarks("Initial Deposit")
+                                        .isDeposit(true)
+                                        .createdBy(userId)
+                                        .build();
+
+                        payment = paymentRepository.save(payment);
+                        bill.addPayment(payment);
+                        bill.calculateTotals();
+                        bill = billRepository.save(bill);
+                }
 
                 return toDTO(bill);
         }
@@ -196,6 +215,7 @@ public class BillService {
                                                 : Payment.PaymentMethod.CASH)
                                 .chequeNumber(dto.getChequeNumber())
                                 .remarks(dto.getRemarks())
+                                .isDeposit(dto.isDeposit())
                                 .createdBy(userId)
                                 .build();
 
@@ -219,6 +239,7 @@ public class BillService {
                                                 : Payment.PaymentMethod.CASH);
                 payment.setChequeNumber(dto.getChequeNumber());
                 payment.setRemarks(dto.getRemarks());
+                payment.setDeposit(dto.isDeposit());
 
                 Bill bill = payment.getBill();
                 bill.calculateTotals();
@@ -256,6 +277,7 @@ public class BillService {
                                 .paymentMethod(payment.getPaymentMethod().name())
                                 .chequeNumber(payment.getChequeNumber())
                                 .remarks(payment.getRemarks())
+                                .isDeposit(payment.isDeposit())
                                 .build();
         }
 

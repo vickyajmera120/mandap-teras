@@ -6,4 +6,5 @@ export interface Payment {
     paymentMethod: 'CASH' | 'CHEQUE' | 'ONLINE';
     chequeNumber?: string;
     remarks?: string;
+    isDeposit?: boolean;
 }

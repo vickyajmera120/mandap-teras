@@ -47,6 +47,10 @@ public class Payment {
     @Column(length = 500)
     private String remarks;
 
+    @Column(name = "is_deposit")
+    @Builder.Default
+    private boolean isDeposit = false;
+
     @Column(name = "created_by")
     private Long createdBy;
 
