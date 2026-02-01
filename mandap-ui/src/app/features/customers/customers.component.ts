@@ -1,4 +1,5 @@
-import { Component, OnInit, inject, signal, ViewChild } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, ViewChild } from '@angular/core';
+
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { CustomerService, ToastService } from '@core/services';
@@ -13,7 +14,7 @@ import { NgSelectModule } from '@ng-select/ng-select';
   template: `
     <div class="space-y-6">
       <!-- Header -->
-      <div class="flex items-center justify-between">
+      <div class="flex items-center justify-between mb-6">
         <div>
           <h1 class="text-3xl font-bold text-[var(--color-text-primary)]">Customers</h1>
           <p class="text-[var(--color-text-secondary)] mt-1">Manage your customer database</p>
@@ -26,17 +27,6 @@ import { NgSelectModule } from '@ng-select/ng-select';
         </button>
       </div>
       
-      <!-- Search -->
-      <div class="relative">
-        <input 
-          type="text"
-          (input)="onSearch($event)"
-          placeholder="Search by name or mobile..."
-          class="w-full md:w-96 px-4 py-3 pl-12 bg-[var(--color-bg-card)] backdrop-blur-xl border border-[var(--color-border)] rounded-xl text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)] focus:outline-none focus:border-teal-500/50 transition-all"
-        >
-        <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]"></i>
-      </div>
-      
       @if (isLoading()) {
         <app-loading-spinner></app-loading-spinner>
       } @else {
@@ -46,12 +36,39 @@ import { NgSelectModule } from '@ng-select/ng-select';
             <table class="w-full">
               <thead class="bg-[var(--color-bg-hover)]">
                 <tr>
-                  <th class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold">Name</th>
+                  <!-- Sortable Name -->
+                  <th (click)="onSort('name')" class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold cursor-pointer group select-none">
+                    Name 
+                    <i class="fas ml-1" [class]="sortConfig().column === 'name' ? (sortConfig().direction === 'asc' ? 'fa-sort-up text-teal-500' : 'fa-sort-down text-teal-500') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
+                  </th>
                   <th class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold">Mobile</th>
-                  <th class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold">Pal No</th>
+                  <!-- Sortable Pal No -->
+                  <th (click)="onSort('palNumbers')" class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold cursor-pointer group select-none">
+                    Pal No
+                    <i class="fas ml-1" [class]="sortConfig().column === 'palNumbers' ? (sortConfig().direction === 'asc' ? 'fa-sort-up text-teal-500' : 'fa-sort-down text-teal-500') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
+                  </th>
                   <th class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold">Address</th>
                   <th class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold">Alt. Contact</th>
                   <th class="text-center py-4 px-6 text-[var(--color-text-secondary)] font-semibold">Actions</th>
+                </tr>
+                <!-- Search Inputs Row -->
+                <tr class="border-b border-[var(--color-border)]/50">
+                    <th class="p-2">
+                        <input type="text" placeholder="Filter Name..." class="w-full px-3 py-2 text-sm bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500" (input)="updateFilter('name', $any($event.target).value)">
+                    </th>
+                    <th class="p-2">
+                        <input type="text" placeholder="Filter Mobile..." class="w-full px-3 py-2 text-sm bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500" (input)="updateFilter('mobile', $any($event.target).value)">
+                    </th>
+                    <th class="p-2">
+                        <input type="text" placeholder="Filter Pal No..." class="w-full px-3 py-2 text-sm bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500" (input)="updateFilter('palNumbers', $any($event.target).value)">
+                    </th>
+                    <th class="p-2">
+                        <input type="text" placeholder="Filter Address..." class="w-full px-3 py-2 text-sm bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500" (input)="updateFilter('address', $any($event.target).value)">
+                    </th>
+                    <th class="p-2">
+                        <input type="text" placeholder="Filter Alt..." class="w-full px-3 py-2 text-sm bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500" (input)="updateFilter('alternateContact', $any($event.target).value)">
+                    </th>
+                    <th class="p-2"></th>
                 </tr>
               </thead>
               <tbody>
@@ -91,7 +108,7 @@ import { NgSelectModule } from '@ng-select/ng-select';
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="5" class="py-16 text-center text-[var(--color-text-muted)]">
+                    <td colspan="6" class="py-16 text-center text-[var(--color-text-muted)]">
                       <i class="fas fa-users text-4xl mb-4 opacity-50"></i>
                       <p>No customers found</p>
                     </td>
@@ -192,11 +209,85 @@ export class CustomersComponent implements OnInit {
   private fb = inject(FormBuilder);
 
   customers = signal<Customer[]>([]);
-  filteredCustomers = signal<Customer[]>([]);
   isLoading = signal(true);
   isSaving = signal(false);
   isEditing = signal(false);
   editingId = signal<number | null>(null);
+
+  // Search & Sort State
+  searchFilters = signal({
+    name: '',
+    mobile: '',
+    palNumbers: '',
+    address: '',
+    alternateContact: ''
+  });
+
+  sortConfig = signal<{ column: string, direction: 'asc' | 'desc' }>({
+    column: 'name',
+    direction: 'asc'
+  });
+
+  filteredCustomers = computed(() => {
+    let result = this.customers();
+    const filters = this.searchFilters();
+    const sort = this.sortConfig();
+
+    // 1. Filter
+    if (filters.name) result = result.filter(c => c.name.toLowerCase().includes(filters.name.toLowerCase()));
+    if (filters.mobile) result = result.filter(c => c.mobile.includes(filters.mobile));
+    if (filters.address) result = result.filter(c => c.address?.toLowerCase().includes(filters.address.toLowerCase()));
+    if (filters.alternateContact) result = result.filter(c => c.alternateContact?.includes(filters.alternateContact));
+    if (filters.palNumbers) {
+      const term = filters.palNumbers.toLowerCase();
+      result = result.filter(c => c.palNumbers?.some(p => p.toLowerCase().includes(term)));
+    }
+
+    // 2. Sort
+    return result.sort((a, b) => {
+      const direction = sort.direction === 'asc' ? 1 : -1;
+      let valA: any = '';
+      let valB: any = '';
+
+      switch (sort.column) {
+        case 'name':
+          valA = a.name.toLowerCase();
+          valB = b.name.toLowerCase();
+          break;
+        case 'palNumbers':
+          // Sort by first pal number
+          valA = a.palNumbers?.[0] || '';
+          valB = b.palNumbers?.[0] || '';
+          // If empty, push to bottom? usually empty string is fine
+          break;
+        default:
+          return 0;
+      }
+
+      if (valA < valB) return -1 * direction;
+      if (valA > valB) return 1 * direction;
+      return 0;
+    });
+  });
+
+  // ... rest of methods like ngOnInit ...
+
+  onSort(column: string) {
+    const current = this.sortConfig();
+    if (current.column === column) {
+      this.sortConfig.set({ column, direction: current.direction === 'asc' ? 'desc' : 'asc' });
+    } else {
+      this.sortConfig.set({ column, direction: 'asc' });
+    }
+  }
+
+  updateFilter(column: string, value: string) {
+    this.searchFilters.update(filters => ({ ...filters, [column]: value }));
+  }
+
+  // Remove old onSearch if it exists or keep blank
+  onSearch(event: any) { }
+
 
   customerForm: FormGroup;
 
@@ -210,6 +301,8 @@ export class CustomersComponent implements OnInit {
     });
   }
 
+  // ... existing constructor ...
+
   ngOnInit(): void {
     this.loadCustomers();
   }
@@ -218,28 +311,12 @@ export class CustomersComponent implements OnInit {
     this.customerService.getAll().subscribe({
       next: (customers) => {
         this.customers.set(customers);
-        this.filteredCustomers.set(customers);
         this.isLoading.set(false);
       },
       error: () => {
         this.isLoading.set(false);
       }
     });
-  }
-
-  onSearch(event: Event): void {
-    const query = (event.target as HTMLInputElement).value.toLowerCase();
-    if (!query) {
-      this.filteredCustomers.set(this.customers());
-      return;
-    }
-
-    this.filteredCustomers.set(
-      this.customers().filter(c =>
-        c.name.toLowerCase().includes(query) ||
-        c.mobile.includes(query)
-      )
-    );
   }
 
   openModal(): void {

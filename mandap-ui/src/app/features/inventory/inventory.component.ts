@@ -80,6 +80,8 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
                     <th class="text-right py-3 px-4 text-slate-300 font-medium text-sm">Rate (₹)</th>
                     <th class="text-center py-3 px-4 text-slate-300 font-medium text-sm">Stock (Total)</th>
                     <th class="text-center py-3 px-4 text-slate-300 font-medium text-sm">Available</th>
+                    <th class="text-center py-3 px-4 text-orange-400 font-medium text-sm" title="Total Booked but not Dispatched">Pending Disp.</th>
+                    <th class="text-center py-3 px-4 text-teal-400 font-medium text-sm" title="Available for New Bookings">Booking Avail.</th>
                     <th class="text-center py-3 px-4 text-slate-300 font-medium text-sm">Actions</th>
                   </tr>
                 </thead>
@@ -99,6 +101,10 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
                       <td class="py-3 px-4 text-right text-teal-400 font-semibold">{{ item.defaultRate | currencyInr }}</td>
                       <td class="py-3 px-4 text-center text-[var(--color-text-secondary)] font-medium">{{ item.totalStock }}</td>
                       <td class="py-3 px-4 text-center font-semibold" [class]="item.availableStock > 0 ? 'text-green-400' : 'text-red-400'">{{ item.availableStock }}</td>
+                      <td class="py-3 px-4 text-center text-orange-500 font-bold">{{ item.pendingDispatchQty || 0 }}</td>
+                      <td class="py-3 px-4 text-center font-bold text-teal-400">
+                        {{ item.availableStock - (item.pendingDispatchQty || 0) }}
+                      </td>
                       <td class="py-3 px-4 text-center">
                         <div class="flex items-center justify-center gap-2">
                             <button 
@@ -216,7 +222,7 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
       </app-modal>
 
       <!-- Usage Modal -->
-      <app-modal #usageModal [title]="'Usage: ' + usageItemName()" size="lg">
+      <app-modal #usageModal [title]="'Usage: ' + usageItemName()" size="xl">
         @if (isLoadingUsage()) {
           <div class="flex justify-center py-8">
             <app-loading-spinner></app-loading-spinner>
@@ -231,7 +237,8 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
                          <th class="py-3 px-4 text-center text-[var(--color-text-secondary)]">Booked</th>
                          <th class="py-3 px-4 text-center text-[var(--color-text-secondary)]">Disp.</th>
                          <th class="py-3 px-4 text-center text-[var(--color-text-secondary)]">Ret.</th>
-                         <th class="py-3 px-4 text-center text-[var(--color-text-secondary)]">Out.</th>
+                         <th class="py-3 px-4 text-center text-orange-400">Pending Disp.</th>
+                         <th class="py-3 px-4 text-center text-red-400">Pending Ret.</th>
                      </tr>
                  </thead>
                  <tbody class="divide-y divide-[var(--color-border)]/50">
@@ -242,11 +249,12 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
                              <td class="py-2 px-4 text-center text-[var(--color-text-secondary)]">{{ usage.bookedQty }}</td>
                              <td class="py-2 px-4 text-center text-[var(--color-text-secondary)]">{{ usage.dispatchedQty }}</td>
                              <td class="py-2 px-4 text-center text-[var(--color-text-secondary)]">{{ usage.returnedQty }}</td>
-                             <td class="py-2 px-4 text-center font-bold" [class]="usage.outstandingQty > 0 ? 'text-red-500' : 'text-green-500'">{{ usage.outstandingQty }}</td>
+                             <td class="py-2 px-4 text-center font-bold text-orange-500">{{ usage.pendingDispatchQty }}</td>
+                             <td class="py-2 px-4 text-center font-bold text-red-500">{{ usage.pendingReturnQty }}</td>
                          </tr>
                      } @empty {
                          <tr>
-                             <td colspan="6" class="py-8 text-center text-[var(--color-text-muted)]">No active usage found</td>
+                             <td colspan="7" class="py-8 text-center text-[var(--color-text-muted)]">No active usage found</td>
                          </tr>
                      }
                  </tbody>
@@ -257,7 +265,8 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
                             <td class="py-3 px-4 text-center text-[var(--color-text-primary)]">{{ usageTotals().booked }}</td>
                             <td class="py-3 px-4 text-center text-[var(--color-text-primary)]">{{ usageTotals().dispatched }}</td>
                             <td class="py-3 px-4 text-center text-[var(--color-text-primary)]">{{ usageTotals().returned }}</td>
-                            <td class="py-3 px-4 text-center" [class]="usageTotals().outstanding > 0 ? 'text-red-500' : 'text-green-500'">{{ usageTotals().outstanding }}</td>
+                            <td class="py-3 px-4 text-center text-orange-500">{{ usageTotals().pendingDispatch }}</td>
+                            <td class="py-3 px-4 text-center text-red-500">{{ usageTotals().pendingReturn }}</td>
                         </tr>
                     </tfoot>
                  }
@@ -501,8 +510,9 @@ export class InventoryComponent implements OnInit {
       booked: acc.booked + (curr.bookedQty || 0),
       dispatched: acc.dispatched + (curr.dispatchedQty || 0),
       returned: acc.returned + (curr.returnedQty || 0),
-      outstanding: acc.outstanding + (curr.outstandingQty || 0)
-    }), { booked: 0, dispatched: 0, returned: 0, outstanding: 0 });
+      pendingDispatch: acc.pendingDispatch + (curr.pendingDispatchQty || 0),
+      pendingReturn: acc.pendingReturn + (curr.pendingReturnQty || 0)
+    }), { booked: 0, dispatched: 0, returned: 0, pendingDispatch: 0, pendingReturn: 0 });
   });
 
   viewUsage(item: InventoryItem): void {

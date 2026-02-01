@@ -51,5 +51,6 @@ export interface ItemUsage {
     bookedQty: number;
     dispatchedQty: number;
     returnedQty: number;
-    outstandingQty: number;
+    pendingDispatchQty: number;
+    pendingReturnQty: number;
 }

@@ -11,6 +11,7 @@ export interface InventoryItem {
     active: boolean;
     totalStock: number;
     availableStock: number;
+    pendingDispatchQty?: number;
 }
 
 export interface InventoryUpdateRequest {

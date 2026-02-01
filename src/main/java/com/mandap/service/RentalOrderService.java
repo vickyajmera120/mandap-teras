@@ -80,9 +80,26 @@ public class RentalOrderService {
                     .orElseThrow(
                             () -> new RuntimeException("Inventory item not found: " + itemDto.getInventoryItemId()));
 
-            if (invItem.getAvailableStock() < itemDto.getBookedQty()) {
+            // ATP Calculation:
+            // Real Available = Total Stock - (Sum of (Booked - Returned) for all active
+            // orders)
+            // Note: We use the repository method we just added for Usage to get all active
+            // items
+            List<RentalOrderItem> activeItems = rentalOrderItemRepository
+                    .findActiveUsageByInventoryItem(invItem.getId());
+
+            int totalCommitted = activeItems.stream()
+                    .mapToInt(i -> i.getBookedQty() - (i.getReturnedQty() != null ? i.getReturnedQty() : 0))
+                    .sum();
+
+            int realAvailable = invItem.getTotalStock() - totalCommitted;
+
+            if (realAvailable < itemDto.getBookedQty()) {
                 throw new RuntimeException("Insufficient stock for item: " + invItem.getNameEnglish() +
-                        ". Available: " + invItem.getAvailableStock() + ", Requested: " + itemDto.getBookedQty());
+                        ". Total Stock: " + invItem.getTotalStock() +
+                        ", Committed: " + totalCommitted +
+                        " (Real Available: " + realAvailable + ")" +
+                        ", Requested: " + itemDto.getBookedQty());
             }
         }
 
@@ -145,6 +162,8 @@ public class RentalOrderService {
                         .findFirst()
                         .orElse(null);
 
+                final Long currentOrderId = order.getId();
+
                 if (existingItem != null) {
                     // Update existing
                     if (itemDto.getBookedQty() < existingItem.getDispatchedQty()) {
@@ -152,16 +171,57 @@ public class RentalOrderService {
                                 + invItem.getNameEnglish());
                     }
 
-                    // Check stock if increasing quantity
-                    int additionalQty = itemDto.getBookedQty() - existingItem.getBookedQty();
-                    if (additionalQty > 0 && invItem.getAvailableStock() < additionalQty) {
-                        throw new RuntimeException("Insufficient stock for item: " + invItem.getNameEnglish());
+                    // ATP Check for update:
+                    // 1. Get all active usage
+                    List<RentalOrderItem> activeItems = rentalOrderItemRepository
+                            .findActiveUsageByInventoryItem(invItem.getId());
+
+                    // 2. Calculate committed quantity by OTHERS
+                    int committedByOthers = activeItems.stream()
+                            .filter(i -> !i.getRentalOrder().getId().equals(currentOrderId))
+                            .mapToInt(i -> i.getBookedQty() - (i.getReturnedQty() != null ? i.getReturnedQty() : 0))
+                            .sum();
+
+                    // 3. Real Available for THIS order = Total Stock - CommittedByOthers + (My
+                    // Returned So Far)
+                    // Wait, logic: TotalStock >= CommittedByOthers + MyNewBooked - MyReturned
+                    // So: AvailableForBooking = TotalStock - CommittedByOthers + MyReturned
+                    // Check if MyNewBooked <= AvailableForBooking
+
+                    int myReturned = existingItem.getReturnedQty() != null ? existingItem.getReturnedQty() : 0;
+                    int maxBookable = invItem.getTotalStock() - committedByOthers + myReturned; // Actually, strictly
+                                                                                                // committedByOthers =
+                                                                                                // booked-returned.
+                    // Let's stick to base formula:
+                    // Committed_New = CommittedByOthers + (NewBooked - MyReturned)
+                    // if Committed_New > TotalStock -> Error.
+
+                    int newCommitted = committedByOthers + (itemDto.getBookedQty() - myReturned);
+
+                    if (newCommitted > invItem.getTotalStock()) {
+                        throw new RuntimeException("Insufficient stock for item: " + invItem.getNameEnglish() +
+                                ". Total: " + invItem.getTotalStock() +
+                                ", Others Committed: " + committedByOthers +
+                                ", You Requested: " + itemDto.getBookedQty() +
+                                " (Max Allocatable: " + (invItem.getTotalStock() - committedByOthers + myReturned)
+                                + ")");
                     }
 
                     existingItem.setBookedQty(itemDto.getBookedQty());
                 } else {
                     // Add new item
-                    if (invItem.getAvailableStock() < itemDto.getBookedQty()) {
+                    // ATP Check
+                    List<RentalOrderItem> activeItems = rentalOrderItemRepository
+                            .findActiveUsageByInventoryItem(invItem.getId());
+                    int committedByOthers = activeItems.stream()
+                            .filter(i -> !i.getRentalOrder().getId().equals(currentOrderId))
+                            .mapToInt(i -> i.getBookedQty() - (i.getReturnedQty() != null ? i.getReturnedQty() : 0))
+                            .sum();
+
+                    // Since it's a new item in this order, MyReturned = 0.
+                    int newCommitted = committedByOthers + itemDto.getBookedQty();
+
+                    if (newCommitted > invItem.getTotalStock()) {
                         throw new RuntimeException("Insufficient stock for item: " + invItem.getNameEnglish());
                     }
 

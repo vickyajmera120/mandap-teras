@@ -18,9 +18,21 @@ public class InventoryService {
     private InventoryItemRepository inventoryItemRepository;
 
     public List<InventoryItemDTO> getAllItems() {
-        return inventoryItemRepository.findAllOrdered().stream()
+        List<InventoryItemDTO> items = inventoryItemRepository.findAllOrdered().stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
+
+        // Populate pending dispatch quantities efficienty
+        java.util.Map<Long, Integer> pendingMap = rentalOrderItemRepository.getPendingDispatchQuantities().stream()
+                .collect(Collectors.toMap(
+                        obj -> (Long) obj[0],
+                        obj -> ((Number) obj[1]).intValue()));
+
+        items.forEach(item -> {
+            item.setPendingDispatchQty(pendingMap.getOrDefault(item.getId(), 0));
+        });
+
+        return items;
     }
 
     public List<InventoryItemDTO> getItemsBySide(String side) {
@@ -142,7 +154,10 @@ public class InventoryService {
                         .bookedQty(item.getBookedQty())
                         .dispatchedQty(item.getDispatchedQty() != null ? item.getDispatchedQty() : 0)
                         .returnedQty(item.getReturnedQty() != null ? item.getReturnedQty() : 0)
-                        .outstandingQty(item.getOutstandingQty() != null ? item.getOutstandingQty() : 0)
+                        .pendingDispatchQty(
+                                item.getBookedQty() - (item.getDispatchedQty() != null ? item.getDispatchedQty() : 0))
+                        .pendingReturnQty((item.getDispatchedQty() != null ? item.getDispatchedQty() : 0)
+                                - (item.getReturnedQty() != null ? item.getReturnedQty() : 0))
                         .build())
                 .collect(Collectors.toList());
     }

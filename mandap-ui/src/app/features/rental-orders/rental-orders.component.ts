@@ -296,7 +296,7 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                   <option [ngValue]="null">Select Item</option>
                   @for (item of inventoryItems(); track item.id) {
                     <option [ngValue]="item.id" [title]="item.nameGujarati + ' (' + item.nameEnglish + ')'">
-                      {{ item.nameGujarati }} ({{ item.nameEnglish }}) - Avail: {{ item.availableStock }}
+                      {{ item.nameGujarati }} ({{ item.nameEnglish }}) - Avail: {{ item.availableStock - (item.pendingDispatchQty || 0) }}
                     </option>
                   }
                 </select>
