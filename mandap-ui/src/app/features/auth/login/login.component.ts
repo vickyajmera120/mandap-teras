@@ -5,10 +5,10 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService, ToastService } from '@core/services';
 
 @Component({
-    selector: 'app-login',
-    standalone: true,
-    imports: [CommonModule, ReactiveFormsModule],
-    template: `
+  selector: 'app-login',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
+  template: `
     <div class="relative w-full max-w-md animate-fade-in">
       <!-- Login Card -->
       <div class="bg-slate-800/50 backdrop-blur-xl rounded-3xl border border-slate-700/50 shadow-2xl p-8">
@@ -85,9 +85,7 @@ import { AuthService, ToastService } from '@core/services';
         </form>
         
         <!-- Footer -->
-        <p class="text-center text-slate-500 text-sm mt-6">
-          (સિદસર, આદપુર, પાલીતાણા)
-        </p>
+
       </div>
       
       <!-- Copyright -->
@@ -98,51 +96,51 @@ import { AuthService, ToastService } from '@core/services';
   `
 })
 export class LoginComponent {
-    private fb = inject(FormBuilder);
-    private router = inject(Router);
-    private route = inject(ActivatedRoute);
-    private authService = inject(AuthService);
-    private toastService = inject(ToastService);
+  private fb = inject(FormBuilder);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private authService = inject(AuthService);
+  private toastService = inject(ToastService);
 
-    loginForm: FormGroup;
-    showPassword = signal(false);
-    isLoading = signal(false);
-    currentYear = new Date().getFullYear();
+  loginForm: FormGroup;
+  showPassword = signal(false);
+  isLoading = signal(false);
+  currentYear = new Date().getFullYear();
 
-    constructor() {
-        this.loginForm = this.fb.group({
-            username: ['', Validators.required],
-            password: ['', Validators.required]
-        });
+  constructor() {
+    this.loginForm = this.fb.group({
+      username: ['', Validators.required],
+      password: ['', Validators.required]
+    });
 
-        // Redirect if already logged in
-        if (this.authService.isAuthenticated()) {
-            this.router.navigate(['/dashboard']);
-        }
+    // Redirect if already logged in
+    if (this.authService.isAuthenticated()) {
+      this.router.navigate(['/dashboard']);
+    }
+  }
+
+  onSubmit(): void {
+    if (this.loginForm.invalid) {
+      this.loginForm.markAllAsTouched();
+      return;
     }
 
-    onSubmit(): void {
-        if (this.loginForm.invalid) {
-            this.loginForm.markAllAsTouched();
-            return;
-        }
+    this.isLoading.set(true);
 
-        this.isLoading.set(true);
-
-        this.authService.login(this.loginForm.value).subscribe({
-            next: (response) => {
-                this.toastService.success(`Welcome back, ${response.fullName}!`);
-                const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
-                this.router.navigateByUrl(returnUrl);
-            },
-            error: (error) => {
-                this.isLoading.set(false);
-                // Error is handled by interceptor
-            },
-            complete: () => {
-                this.isLoading.set(false);
-            }
-        });
-    }
+    this.authService.login(this.loginForm.value).subscribe({
+      next: (response) => {
+        this.toastService.success(`Welcome back, ${response.fullName}!`);
+        const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
+        this.router.navigateByUrl(returnUrl);
+      },
+      error: (error) => {
+        this.isLoading.set(false);
+        // Error is handled by interceptor
+      },
+      complete: () => {
+        this.isLoading.set(false);
+      }
+    });
+  }
 }
 
