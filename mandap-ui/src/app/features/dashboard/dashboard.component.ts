@@ -227,8 +227,11 @@ export class DashboardComponent implements OnInit {
             borderWidth: 2
           },
           label: {
-            show: false,
-            position: 'center'
+            show: true,
+            position: 'inside',
+            formatter: '{c}', // Show count
+            color: '#fff',
+            fontWeight: 'bold'
           },
           emphasis: {
             label: {
