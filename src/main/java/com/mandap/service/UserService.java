@@ -115,6 +115,7 @@ public class UserService {
                 .email(user.getEmail())
                 .active(user.getActive())
                 .roleIds(roleIds)
+                .roles(user.getRoles())
                 .build();
     }
 }

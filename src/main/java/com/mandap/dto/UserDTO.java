@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import com.mandap.entity.Role;
 import java.util.Set;
 
 @Data
@@ -19,4 +20,5 @@ public class UserDTO {
     private String email;
     private Boolean active;
     private Set<Long> roleIds;
+    private Set<Role> roles;
 }

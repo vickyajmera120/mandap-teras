@@ -54,7 +54,7 @@ import { ModalComponent, LoadingSpinnerComponent, StatusBadgeComponent } from '@
                       </div>
                     </td>
                     <td class="py-4 px-6 text-center">
-                      <app-status-badge [value]="user.isActive ? 'ACTIVE' : 'INACTIVE'"></app-status-badge>
+                      <app-status-badge [value]="user.active ? 'ACTIVE' : 'INACTIVE'"></app-status-badge>
                     </td>
                     <td class="py-4 px-6">
                       <div class="flex items-center justify-center gap-2">
@@ -226,12 +226,15 @@ export class UsersComponent implements OnInit {
     this.modal.open();
   }
 
-  editUser(user: User): void {
+  editUser(user: any): void {
     this.isEditing.set(true);
     this.editingId.set(user.id);
     this.userForm.patchValue({
-      ...user,
-      roleIds: user.roles.map(r => r.id)
+      username: user.username,
+      fullName: user.fullName,
+      email: user.email,
+      isActive: user.active,
+      roleIds: user.roles?.map((r: any) => r.id) || []
     });
     this.userForm.get('password')?.clearValidators();
     this.modal.open();
@@ -252,7 +255,11 @@ export class UsersComponent implements OnInit {
     if (this.userForm.invalid) return;
 
     this.isSaving.set(true);
-    const data = this.userForm.value;
+    const formValue = this.userForm.value;
+    const data = {
+      ...formValue,
+      active: formValue.isActive
+    };
 
     const request = this.isEditing()
       ? this.userService.update(this.editingId()!, data)
