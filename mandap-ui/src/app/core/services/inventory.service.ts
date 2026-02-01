@@ -34,4 +34,8 @@ export class InventoryService {
     reorder(itemIds: number[]): Observable<void> {
         return this.http.post<void>(`${this.API_URL}/reorder`, itemIds);
     }
+
+    search(query: string): Observable<InventoryItem[]> {
+        return this.http.get<InventoryItem[]>(`${this.API_URL}/search`, { params: { q: query } });
+    }
 }

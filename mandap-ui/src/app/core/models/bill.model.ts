@@ -18,8 +18,6 @@ export interface Bill {
     customerId: number;
     customerName?: string;
     customerMobile?: string;
-    eventId: number;
-    eventName?: string;
     palNumbers: string;
     billType: BillType;
     paymentStatus: PaymentStatus;
@@ -34,7 +32,6 @@ export interface Bill {
 }
 
 export interface BillRequest {
-    eventId: number;
     customerId: number;
     billDate: string;
     palNumbers?: string;

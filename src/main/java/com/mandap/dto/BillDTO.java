@@ -19,8 +19,6 @@ public class BillDTO {
     private Long customerId;
     private String customerName;
     private String customerMobile;
-    private Long eventId;
-    private String eventName;
     private String palNumbers;
     private String billType; // ESTIMATE or INVOICE
     private String paymentStatus; // DUE, PAID, PARTIAL

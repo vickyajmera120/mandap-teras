@@ -39,10 +39,6 @@ public class Bill {
     @JoinColumn(name = "customer_id", nullable = false)
     private Customer customer;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "event_id", nullable = false)
-    private Event event;
-
     @Column(name = "pal_numbers", length = 50)
     @Builder.Default
     private String palNumbers = "1";

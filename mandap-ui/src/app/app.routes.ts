@@ -33,10 +33,6 @@ export const routes: Routes = [
                 loadComponent: () => import('./features/customers/customers.component').then(m => m.CustomersComponent)
             },
             {
-                path: 'events',
-                loadComponent: () => import('./features/events/events.component').then(m => m.EventsComponent)
-            },
-            {
                 path: 'billing',
                 children: [
                     { path: '', redirectTo: 'new', pathMatch: 'full' },
@@ -57,6 +53,10 @@ export const routes: Routes = [
             {
                 path: 'inventory',
                 loadComponent: () => import('./features/inventory/inventory.component').then(m => m.InventoryComponent)
+            },
+            {
+                path: 'rental-orders',
+                loadComponent: () => import('./features/rental-orders/rental-orders.component').then(m => m.RentalOrdersComponent)
             },
             {
                 path: 'users',

@@ -49,6 +49,12 @@ public class InventoryService {
         if (dto.getActive() != null) {
             item.setActive(dto.getActive());
         }
+        if (dto.getTotalStock() != null) {
+            item.setTotalStock(dto.getTotalStock());
+        }
+        if (dto.getAvailableStock() != null) {
+            item.setAvailableStock(dto.getAvailableStock());
+        }
 
         item = inventoryItemRepository.save(item);
         return toDTO(item);
@@ -61,6 +67,8 @@ public class InventoryService {
                 .defaultRate(dto.getDefaultRate())
                 .active(true) // Default to active
                 .displayOrder(0) // Default order, will be fixed by drag-drop or reorder
+                .totalStock(dto.getTotalStock() != null ? dto.getTotalStock() : 0)
+                .availableStock(dto.getAvailableStock() != null ? dto.getAvailableStock() : 0)
                 .build();
 
         // Handle enums if present, or set defaults
@@ -111,7 +119,15 @@ public class InventoryService {
                 .side(item.getSide() != null ? item.getSide().name() : null)
                 .displayOrder(item.getDisplayOrder())
                 .active(item.getActive())
+                .totalStock(item.getTotalStock())
+                .availableStock(item.getAvailableStock())
                 .build();
+    }
+
+    public List<InventoryItemDTO> searchItems(String query) {
+        return inventoryItemRepository.searchByName(query).stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
     }
 
     public void reorderItems(List<Long> itemIds) {

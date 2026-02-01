@@ -2,8 +2,8 @@ import { Component, OnInit, inject, signal, computed, ViewChild } from '@angular
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CustomerService, EventService, BillService, InventoryService, ToastService } from '@core/services';
-import { Customer, Event, InventoryItem, BillRequest, BillItem, Bill, BillUpdateRequest } from '@core/models';
+import { CustomerService, BillService, InventoryService, ToastService, RentalOrderService } from '@core/services';
+import { Customer, InventoryItem, BillRequest, BillItem, Bill, BillUpdateRequest, RentalOrderItem } from '@core/models';
 import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@shared';
 import { NgSelectModule } from '@ng-select/ng-select';
 
@@ -33,29 +33,7 @@ interface ItemEntry {
       } @else {
         <div class="bg-[var(--color-bg-card)] backdrop-blur-xl rounded-2xl border border-[var(--color-border)] p-6">
           <!-- Bill Header -->
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div>
-              <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Event *</label>
-              <ng-select
-                [items]="events()"
-                bindLabel="name"
-                bindValue="id"
-                [(ngModel)]="selectedEventId"
-                (change)="onEventChange($event)"
-                placeholder="Select Event"
-                class="custom-select"
-              >
-                <ng-template ng-option-tmp let-item="item">
-                  <div class="flex flex-col">
-                    <span class="font-medium text-white">{{ item.name }}</span>
-                    <span class="text-xs text-slate-400">{{ item.year }}</span>
-                  </div>
-                </ng-template>
-                <ng-template ng-label-tmp let-item="item">
-                   <span class="text-white">{{ item.name }} ({{ item.year }})</span>
-                </ng-template>
-              </ng-select>
-            </div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <div>
               <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Customer *</label>
               <ng-select
@@ -63,6 +41,7 @@ interface ItemEntry {
                 bindLabel="name"
                 bindValue="id"
                 [(ngModel)]="selectedCustomerId"
+              (change)="onCustomerChange($event)"
                 placeholder="Select Customer"
                 class="custom-select"
               >
@@ -106,6 +85,35 @@ interface ItemEntry {
               <p class="text-xs text-slate-500 mt-1">Type number and press Enter</p>
             </div>
           </div>
+          
+          <!-- Unreturned Items Warning -->
+          @if (unreturnedItems().length > 0) {
+            <div class="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30">
+              <div class="flex items-center gap-3 mb-3">
+                <i class="fas fa-exclamation-triangle text-red-400 text-xl"></i>
+                <h3 class="text-red-400 font-semibold">Unreturned Items Warning</h3>
+              </div>
+              <p class="text-sm text-red-300/80 mb-3">This customer has unreturned rental items. Please collect or charge for these items:</p>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="text-left text-red-300/60">
+                      <th class="py-2 px-3">Item</th>
+                      <th class="py-2 px-3 text-center">Outstanding Qty</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (item of unreturnedItems(); track item.inventoryItemId) {
+                      <tr class="border-t border-red-500/20">
+                        <td class="py-2 px-3 text-red-200">{{ item.itemNameGujarati }}</td>
+                        <td class="py-2 px-3 text-center text-red-300 font-medium">{{ item.outstandingQty }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          }
           
           <!-- Bill Type and Status -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
@@ -321,10 +329,10 @@ export class NewBillComponent implements OnInit {
   @ViewChild('customerModal') customerModal!: ModalComponent;
   private fb = inject(FormBuilder);
   private customerService = inject(CustomerService);
-  private eventService = inject(EventService);
   private billService = inject(BillService);
   private inventoryService = inject(InventoryService);
   private toastService = inject(ToastService);
+  private rentalOrderService = inject(RentalOrderService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
@@ -332,7 +340,6 @@ export class NewBillComponent implements OnInit {
   existingBill = signal<Bill | null>(null);
 
   customers = signal<Customer[]>([]);
-  events = signal<Event[]>([]);
   inventoryItems = signal<InventoryItem[]>([]);
 
   leftItems = signal<ItemEntry[]>([]);
@@ -341,11 +348,11 @@ export class NewBillComponent implements OnInit {
   isLoading = signal(true);
   isSaving = signal(false);
   isSavingCustomer = signal(false);
+  unreturnedItems = signal<RentalOrderItem[]>([]);
 
   customerForm!: FormGroup;
 
   // Form fields
-  selectedEventId: number | null = null;
   selectedCustomerId: number | null = null;
   billDate = new Date().toISOString().split('T')[0];
   palNumbers: string[] = ['1'];
@@ -381,7 +388,6 @@ export class NewBillComponent implements OnInit {
 
     // Load all data in parallel
     this.customerService.getAll().subscribe(c => this.customers.set(c));
-    this.eventService.getAll().subscribe(e => this.events.set(e.filter(ev => ev.active)));
 
     // Load inventory and potentially bill details
     this.inventoryService.getAll().subscribe(items => {
@@ -408,7 +414,6 @@ export class NewBillComponent implements OnInit {
   }
 
   private patchForm(bill: Bill): void {
-    this.selectedEventId = bill.eventId;
     this.selectedCustomerId = bill.customerId;
     // Format date properly if needed (assuming YYYY-MM-DD from string or array)
     if (Array.isArray(bill.billDate)) {
@@ -452,8 +457,17 @@ export class NewBillComponent implements OnInit {
     this.rightItems.set(rightList.map(mapToEntry));
   }
 
-  onEventChange(event: Event): void {
-    // Could load event-specific data here if needed
+
+
+  onCustomerChange(customer: Customer): void {
+    if (customer?.id) {
+      this.rentalOrderService.getUnreturnedItemsByCustomer(customer.id).subscribe({
+        next: (items) => this.unreturnedItems.set(items),
+        error: () => this.unreturnedItems.set([])
+      });
+    } else {
+      this.unreturnedItems.set([]);
+    }
   }
 
   updateQuantity(entry: ItemEntry, event: globalThis.Event): void {
@@ -473,11 +487,10 @@ export class NewBillComponent implements OnInit {
   }
 
   isFormValid(): boolean {
-    return !!this.selectedEventId && !!this.selectedCustomerId && !!this.billDate;
+    return !!this.selectedCustomerId && !!this.billDate;
   }
 
   resetForm(): void {
-    this.selectedEventId = null;
     this.selectedCustomerId = null;
     this.billDate = new Date().toISOString().split('T')[0];
     this.palNumbers = ['1'];
@@ -507,7 +520,6 @@ export class NewBillComponent implements OnInit {
       }));
 
     const billRequest: BillRequest = {
-      eventId: this.selectedEventId!,
       customerId: this.selectedCustomerId!,
       billDate: this.billDate,
       palNumbers: this.palNumbers.join(','),

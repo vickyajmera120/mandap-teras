@@ -2,8 +2,8 @@ import { Component, OnInit, inject, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { BillService, EventService, ToastService } from '@core/services';
-import { Bill, Event, BillType, PaymentStatus, BillUpdateRequest } from '@core/models';
+import { BillService, ToastService } from '@core/services';
+import { Bill, BillType, PaymentStatus, BillUpdateRequest } from '@core/models';
 import { CurrencyInrPipe, DateFormatPipe, StatusBadgeComponent, LoadingSpinnerComponent, ModalComponent } from '@shared';
 
 @Component({
@@ -35,19 +35,6 @@ import { CurrencyInrPipe, DateFormatPipe, StatusBadgeComponent, LoadingSpinnerCo
             }
           </select>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-slate-400 mb-1">Event</label>
-          <select 
-            [(ngModel)]="filterEvent"
-            (ngModelChange)="applyFilters()"
-              class="px-4 py-2.5 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-xl text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500/50"
-          >
-            <option value="">All Events</option>
-            @for (event of events(); track event.id) {
-              <option [value]="event.id">{{ event.name }}</option>
-            }
-          </select>
-        </div>
         <div class="flex-1">
           <label class="block text-sm font-medium text-slate-400 mb-1">Search</label>
           <div class="relative">
@@ -75,7 +62,6 @@ import { CurrencyInrPipe, DateFormatPipe, StatusBadgeComponent, LoadingSpinnerCo
                   <th class="text-left py-4 px-4 text-[var(--color-text-secondary)] font-semibold">Bill No</th>
                   <th class="text-left py-4 px-4 text-slate-300 font-semibold">Customer</th>
                   <th class="text-left py-4 px-4 text-slate-300 font-semibold">Mobile</th>
-                  <th class="text-left py-4 px-4 text-slate-300 font-semibold">Event</th>
                   <th class="text-center py-4 px-4 text-slate-300 font-semibold">Pal No(s)</th>
                   <th class="text-center py-4 px-4 text-slate-300 font-semibold">Type</th>
                   <th class="text-center py-4 px-4 text-slate-300 font-semibold">Status</th>
@@ -91,7 +77,6 @@ import { CurrencyInrPipe, DateFormatPipe, StatusBadgeComponent, LoadingSpinnerCo
                     <td class="py-3 px-4 text-teal-400 font-medium">{{ bill.billNumber }}</td>
                     <td class="py-3 px-4 text-[var(--color-text-primary)]">{{ bill.customerName }}</td>
                     <td class="py-3 px-4 text-slate-400">{{ bill.customerMobile }}</td>
-                    <td class="py-3 px-4 text-slate-300">{{ bill.eventName }}</td>
                     <td class="py-3 px-4 text-center text-[var(--color-text-secondary)]">{{ bill.palNumbers }}</td>
                     <td class="py-3 px-4 text-center">
                       <app-status-badge [value]="bill.billType"></app-status-badge>
@@ -155,10 +140,6 @@ import { CurrencyInrPipe, DateFormatPipe, StatusBadgeComponent, LoadingSpinnerCo
               <div>
                 <p class="text-slate-400 text-sm">Customer</p>
                 <p class="text-white">{{ selectedBill()!.customerName }}</p>
-              </div>
-              <div>
-                <p class="text-slate-400 text-sm">Event</p>
-                <p class="text-white">{{ selectedBill()!.eventName }}</p>
               </div>
               <div>
                 <p class="text-slate-400 text-sm">Date</p>
@@ -250,13 +231,11 @@ export class BillHistoryComponent implements OnInit {
   @ViewChild('viewModal') viewModal!: ModalComponent;
 
   private billService = inject(BillService);
-  private eventService = inject(EventService);
   private toastService = inject(ToastService);
   private router = inject(Router);
 
   bills = signal<Bill[]>([]);
   filteredBills = signal<Bill[]>([]);
-  events = signal<Event[]>([]);
   years = signal<number[]>([]);
   selectedBill = signal<Bill | null>(null);
 
@@ -265,7 +244,6 @@ export class BillHistoryComponent implements OnInit {
 
   // Filters
   filterYear = '';
-  filterEvent = '';
   searchQuery = '';
 
   // Filters
@@ -276,8 +254,6 @@ export class BillHistoryComponent implements OnInit {
   }
 
   loadData(): void {
-    this.eventService.getAll().subscribe(e => this.events.set(e));
-
     this.billService.getAll().subscribe({
       next: (bills) => {
         this.bills.set(bills);
@@ -303,10 +279,7 @@ export class BillHistoryComponent implements OnInit {
       filtered = filtered.filter(b => new Date(b.billDate).getFullYear() === year);
     }
 
-    if (this.filterEvent) {
-      const eventId = parseInt(this.filterEvent);
-      filtered = filtered.filter(b => b.eventId === eventId);
-    }
+
 
     if (this.searchQuery) {
       const query = this.searchQuery.toLowerCase();
@@ -375,7 +348,6 @@ export class BillHistoryComponent implements OnInit {
           </div>
           <div>
             <p><strong>Date:</strong> ${new Date(bill.billDate).toLocaleDateString('en-IN')}</p>
-            <p><strong>Event:</strong> ${bill.eventName}</p>
             <p><strong>Pal No(s):</strong> ${bill.palNumbers}</p>
           </div>
         </div>

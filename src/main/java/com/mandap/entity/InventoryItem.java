@@ -58,6 +58,14 @@ public class InventoryItem {
     @Builder.Default
     private Boolean active = true;
 
+    @Column(name = "total_stock", nullable = false)
+    @Builder.Default
+    private Integer totalStock = 0;
+
+    @Column(name = "available_stock", nullable = false)
+    @Builder.Default
+    private Integer availableStock = 0;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

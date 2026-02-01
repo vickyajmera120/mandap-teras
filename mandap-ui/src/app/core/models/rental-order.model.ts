@@ -1,0 +1,32 @@
+// Rental Order Models
+
+export type RentalOrderStatus = 'BOOKED' | 'DISPATCHED' | 'PARTIALLY_RETURNED' | 'RETURNED' | 'COMPLETED' | 'CANCELLED';
+
+export interface RentalOrderItem {
+    id?: number;
+    inventoryItemId: number;
+    itemNameGujarati?: string;
+    itemNameEnglish?: string;
+    bookedQty: number;
+    dispatchedQty?: number;
+    returnedQty?: number;
+    outstandingQty?: number;
+    dispatchDate?: string;
+    returnDate?: string;
+}
+
+export interface RentalOrder {
+    id?: number;
+    orderNumber?: string;
+    customerId: number;
+    customerName?: string;
+    customerMobile?: string;
+    orderDate?: string;
+    dispatchDate?: string;
+    expectedReturnDate?: string;
+    actualReturnDate?: string;
+    status?: RentalOrderStatus;
+    billId?: number;
+    remarks?: string;
+    items: RentalOrderItem[];
+}

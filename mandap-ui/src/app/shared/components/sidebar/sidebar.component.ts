@@ -89,10 +89,10 @@ export class SidebarComponent {
   navItems: NavItem[] = [
     { path: '/dashboard', label: 'Dashboard', icon: 'fas fa-home' },
     { path: '/customers', label: 'Customers', icon: 'fas fa-users' },
-    { path: '/events', label: 'Events', icon: 'fas fa-calendar-alt' },
     { path: '/billing/new', label: 'New Bill', icon: 'fas fa-file-invoice-dollar' },
     { path: '/billing/history', label: 'Bill History', icon: 'fas fa-history' },
     { path: '/inventory', label: 'Inventory', icon: 'fas fa-boxes' },
+    { path: '/rental-orders', label: 'Rental Orders', icon: 'fas fa-truck' },
     { path: '/users', label: 'Users', icon: 'fas fa-user-cog', adminOnly: true },
     { path: '/roles', label: 'Roles', icon: 'fas fa-shield-alt', adminOnly: true },
   ];

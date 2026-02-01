@@ -20,4 +20,6 @@ public class InventoryItemDTO {
     private String side;
     private Integer displayOrder;
     private Boolean active;
+    private Integer totalStock;
+    private Integer availableStock;
 }

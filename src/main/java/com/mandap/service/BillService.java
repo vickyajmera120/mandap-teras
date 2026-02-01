@@ -28,9 +28,6 @@ public class BillService {
     private CustomerRepository customerRepository;
 
     @Autowired
-    private EventRepository eventRepository;
-
-    @Autowired
     private InventoryItemRepository inventoryItemRepository;
 
     public List<BillDTO> getAllBills() {
@@ -57,12 +54,6 @@ public class BillService {
                 .collect(Collectors.toList());
     }
 
-    public List<BillDTO> getBillsByEvent(Long eventId) {
-        return billRepository.findByEventId(eventId).stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
-    }
-
     public List<BillDTO> getBillsByYear(Integer year) {
         return billRepository.findByYear(year).stream()
                 .map(this::toDTO)
@@ -79,16 +70,12 @@ public class BillService {
         Customer customer = customerRepository.findById(dto.getCustomerId())
                 .orElseThrow(() -> new RuntimeException("Customer not found: " + dto.getCustomerId()));
 
-        Event event = eventRepository.findById(dto.getEventId())
-                .orElseThrow(() -> new RuntimeException("Event not found: " + dto.getEventId()));
-
         // Generate bill number
-        String billNumber = generateBillNumber(event);
+        String billNumber = generateBillNumber();
 
         Bill bill = Bill.builder()
                 .billNumber(billNumber)
                 .customer(customer)
-                .event(event)
                 .palNumbers(dto.getPalNumbers() != null ? dto.getPalNumbers() : "1")
                 .billType(dto.getBillType() != null ? Bill.BillType.valueOf(dto.getBillType()) : Bill.BillType.INVOICE)
                 .paymentStatus(dto.getPaymentStatus() != null ? Bill.PaymentStatus.valueOf(dto.getPaymentStatus())
@@ -176,13 +163,9 @@ public class BillService {
         billRepository.delete(bill);
     }
 
-    private String generateBillNumber(Event event) {
-        String prefix;
-        if (event.getType() == Event.EventType.FAGUN_SUD_13) {
-            prefix = "FS13-" + event.getYear() + "-";
-        } else {
-            prefix = "NE-" + event.getYear() + "-";
-        }
+    private String generateBillNumber() {
+        int year = LocalDate.now().getYear();
+        String prefix = "FS13-" + year + "-";
 
         Integer maxNumber = billRepository.findMaxBillNumberForPrefix(prefix);
         int nextNumber = (maxNumber != null ? maxNumber : 0) + 1;
@@ -209,8 +192,6 @@ public class BillService {
                 .customerId(bill.getCustomer().getId())
                 .customerName(bill.getCustomer().getName())
                 .customerMobile(bill.getCustomer().getMobile())
-                .eventId(bill.getEvent().getId())
-                .eventName(bill.getEvent().getName())
                 .palNumbers(bill.getPalNumbers())
                 .billType(bill.getBillType() != null ? bill.getBillType().name() : "INVOICE")
                 .paymentStatus(bill.getPaymentStatus() != null ? bill.getPaymentStatus().name() : "DUE")

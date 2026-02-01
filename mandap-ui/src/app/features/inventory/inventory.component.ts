@@ -51,6 +51,20 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
           <i class="fas fa-plus"></i> Add Item
         </button>
       </div>
+
+      <!-- Search Bar -->
+      <div class="flex items-center gap-4">
+        <div class="relative flex-1 max-w-md">
+          <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-text-muted)]"></i>
+          <input 
+            type="text" 
+            [ngModel]="searchQuery()"
+            (ngModelChange)="onSearchChange($event)"
+            placeholder="Search items (English / ગુજરાતી)..."
+            class="w-full pl-10 pr-4 py-2.5 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-xl text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500 placeholder-[var(--color-text-muted)]"
+          >
+        </div>
+      </div>
       
       @if (isLoading()) {
         <app-loading-spinner></app-loading-spinner>
@@ -64,6 +78,8 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
                     <th class="text-left py-3 px-4 text-[var(--color-text-secondary)] font-medium text-sm">Item (Gujarati)</th>
                     <th class="text-left py-3 px-4 text-slate-300 font-medium text-sm">Item (English)</th>
                     <th class="text-right py-3 px-4 text-slate-300 font-medium text-sm">Rate (₹)</th>
+                    <th class="text-center py-3 px-4 text-slate-300 font-medium text-sm">Stock (Total)</th>
+                    <th class="text-center py-3 px-4 text-slate-300 font-medium text-sm">Available</th>
                     <th class="text-center py-3 px-4 text-slate-300 font-medium text-sm">Actions</th>
                   </tr>
                 </thead>
@@ -81,6 +97,8 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
                       </td>
                       <td class="py-3 px-4 text-[var(--color-text-secondary)]">{{ item.nameEnglish }}</td>
                       <td class="py-3 px-4 text-right text-teal-400 font-semibold">{{ item.defaultRate | currencyInr }}</td>
+                      <td class="py-3 px-4 text-center text-[var(--color-text-secondary)] font-medium">{{ item.totalStock }}</td>
+                      <td class="py-3 px-4 text-center font-semibold" [class]="item.availableStock > 0 ? 'text-green-400' : 'text-red-400'">{{ item.availableStock }}</td>
                       <td class="py-3 px-4 text-center">
                         <button 
                           (click)="editItem(item)"
@@ -98,7 +116,7 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
                     </tr>
                   } @empty {
                     <tr>
-                      <td colspan="5" class="py-8 text-center text-slate-400">No items</td>
+                      <td colspan="7" class="py-8 text-center text-slate-400">No items</td>
                     </tr>
                   }
                 </tbody>
@@ -146,6 +164,26 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
               >
               <label for="editIsActive" class="text-[var(--color-text-secondary)]">Active</label>
             </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Total Stock</label>
+                <input 
+                  type="number"
+                  [(ngModel)]="editTotalStock"
+                  min="0"
+                  class="w-full px-4 py-3 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-xl text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
+                >
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Available Stock</label>
+                <input 
+                  type="number"
+                  [(ngModel)]="editAvailableStock"
+                  min="0"
+                  class="w-full px-4 py-3 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-xl text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
+                >
+              </div>
+            </div>
             
             <div class="flex gap-3 mt-6">
               <button 
@@ -178,12 +216,27 @@ export class InventoryComponent implements OnInit {
 
   items = signal<InventoryItem[]>([]);
   filterStatus = signal<'ACTIVE' | 'INACTIVE' | 'ALL'>('ACTIVE');
+  searchQuery = signal('');
 
   filteredItems = computed(() => {
     const status = this.filterStatus();
-    const all = this.items();
-    if (status === 'ALL') return all;
-    return all.filter(i => status === 'ACTIVE' ? i.active : !i.active);
+    const query = this.searchQuery().toLowerCase();
+    let result = this.items();
+
+    // Filter by status
+    if (status !== 'ALL') {
+      result = result.filter(i => status === 'ACTIVE' ? i.active : !i.active);
+    }
+
+    // Filter by search query
+    if (query) {
+      result = result.filter(i =>
+        i.nameEnglish?.toLowerCase().includes(query) ||
+        i.nameGujarati?.includes(this.searchQuery()) // Gujarati is case-sensitive match
+      );
+    }
+
+    return result;
   });
 
   selectedItem = signal<InventoryItem | null>(null);
@@ -196,6 +249,8 @@ export class InventoryComponent implements OnInit {
   editNameEnglish = '';
   editRate = 0;
   editIsActive = true;
+  editTotalStock = 0;
+  editAvailableStock = 0;
 
   ngOnInit(): void {
     this.loadItems();
@@ -216,6 +271,10 @@ export class InventoryComponent implements OnInit {
 
   setFilter(status: 'ACTIVE' | 'INACTIVE' | 'ALL'): void {
     this.filterStatus.set(status);
+  }
+
+  onSearchChange(query: string): void {
+    this.searchQuery.set(query);
   }
 
   drop(event: CdkDragDrop<InventoryItem[]>) {
@@ -311,6 +370,8 @@ export class InventoryComponent implements OnInit {
     this.editNameEnglish = '';
     this.editRate = 0;
     this.editIsActive = true;
+    this.editTotalStock = 0;
+    this.editAvailableStock = 0;
     this.modal.open();
   }
 
@@ -320,6 +381,8 @@ export class InventoryComponent implements OnInit {
     this.editNameEnglish = item.nameEnglish;
     this.editRate = item.defaultRate;
     this.editIsActive = item.active;
+    this.editTotalStock = item.totalStock;
+    this.editAvailableStock = item.availableStock;
     this.modal.open();
   }
 
@@ -330,7 +393,9 @@ export class InventoryComponent implements OnInit {
       nameGujarati: this.editNameGujarati,
       nameEnglish: this.editNameEnglish,
       defaultRate: this.editRate,
-      active: this.editIsActive
+      active: this.editIsActive,
+      totalStock: this.editTotalStock,
+      availableStock: this.editAvailableStock
     };
 
     if (this.selectedItem()) {

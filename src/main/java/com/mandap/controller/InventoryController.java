@@ -46,4 +46,9 @@ public class InventoryController {
         inventoryService.reorderItems(itemIds);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<InventoryItemDTO>> searchItems(@RequestParam("q") String query) {
+        return ResponseEntity.ok(inventoryService.searchItems(query));
+    }
 }

@@ -1,13 +1,12 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { CustomerService, EventService, BillService } from '@core/services';
+import { CustomerService, BillService } from '@core/services';
 import { Bill } from '@core/models';
 import { CurrencyInrPipe, DateFormatPipe, StatusBadgeComponent, LoadingSpinnerComponent } from '@shared';
 
 interface DashboardStats {
   totalCustomers: number;
-  activeEvents: number;
   billsThisYear: number;
   totalRevenue: number;
 }
@@ -36,7 +35,7 @@ interface DashboardStats {
         <app-loading-spinner></app-loading-spinner>
       } @else {
         <!-- Stats Grid -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <!-- Customers -->
           <div class="bg-[var(--color-bg-card)] backdrop-blur-xl rounded-2xl border border-[var(--color-border)] p-6 hover:border-teal-500/50 transition-all group">
             <div class="flex items-center gap-4">
@@ -46,19 +45,6 @@ interface DashboardStats {
               <div>
                 <p class="text-3xl font-bold text-[var(--color-text-primary)]">{{ stats().totalCustomers }}</p>
                 <p class="text-[var(--color-text-secondary)] text-sm">Total Customers</p>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Events -->
-          <div class="bg-[var(--color-bg-card)] backdrop-blur-xl rounded-2xl border border-[var(--color-border)] p-6 hover:border-teal-500/50 transition-all group">
-            <div class="flex items-center gap-4">
-              <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-teal-500 to-green-500 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                <i class="fas fa-calendar-check text-xl text-white"></i>
-              </div>
-              <div>
-                <p class="text-3xl font-bold text-[var(--color-text-primary)]">{{ stats().activeEvents }}</p>
-                <p class="text-[var(--color-text-secondary)] text-sm">Active Events</p>
               </div>
             </div>
           </div>
@@ -116,7 +102,6 @@ interface DashboardStats {
                   <tr class="border-b border-[var(--color-border)]">
                     <th class="text-left py-3 px-4 text-[var(--color-text-secondary)] font-medium text-sm">Bill No</th>
                     <th class="text-left py-3 px-4 text-[var(--color-text-secondary)] font-medium text-sm">Customer</th>
-                    <th class="text-left py-3 px-4 text-[var(--color-text-secondary)] font-medium text-sm">Event</th>
                     <th class="text-left py-3 px-4 text-[var(--color-text-secondary)] font-medium text-sm">Status</th>
                     <th class="text-right py-3 px-4 text-[var(--color-text-secondary)] font-medium text-sm">Amount</th>
                     <th class="text-left py-3 px-4 text-[var(--color-text-secondary)] font-medium text-sm">Date</th>
@@ -127,7 +112,6 @@ interface DashboardStats {
                     <tr class="border-b border-[var(--color-border)] hover:bg-[var(--color-bg-hover)] transition-colors">
                       <td class="py-3 px-4 text-[var(--color-text-primary)] font-medium">{{ bill.billNumber }}</td>
                       <td class="py-3 px-4 text-[var(--color-text-primary)]">{{ bill.customerName }}</td>
-                      <td class="py-3 px-4 text-[var(--color-text-secondary)]">{{ bill.eventName }}</td>
                       <td class="py-3 px-4">
                         <app-status-badge [value]="bill.paymentStatus"></app-status-badge>
                       </td>
@@ -146,13 +130,11 @@ interface DashboardStats {
 })
 export class DashboardComponent implements OnInit {
   private customerService = inject(CustomerService);
-  private eventService = inject(EventService);
   private billService = inject(BillService);
 
   isLoading = signal(true);
   stats = signal<DashboardStats>({
     totalCustomers: 0,
-    activeEvents: 0,
     billsThisYear: 0,
     totalRevenue: 0
   });
@@ -167,14 +149,6 @@ export class DashboardComponent implements OnInit {
     this.customerService.getAll().subscribe({
       next: (customers) => {
         this.stats.update(s => ({ ...s, totalCustomers: customers.length }));
-      }
-    });
-
-    // Load events
-    this.eventService.getAll().subscribe({
-      next: (events) => {
-        const activeEvents = events.filter(e => e.active).length;
-        this.stats.update(s => ({ ...s, activeEvents }));
       }
     });
 
@@ -204,4 +178,3 @@ export class DashboardComponent implements OnInit {
     });
   }
 }
-

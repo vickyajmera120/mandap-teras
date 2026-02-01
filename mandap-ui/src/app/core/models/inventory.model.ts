@@ -9,6 +9,8 @@ export interface InventoryItem {
     defaultRate: number;
     displayOrder: number;
     active: boolean;
+    totalStock: number;
+    availableStock: number;
 }
 
 export interface InventoryUpdateRequest {
@@ -16,4 +18,6 @@ export interface InventoryUpdateRequest {
     nameEnglish?: string;
     defaultRate?: number;
     active?: boolean;
+    totalStock?: number;
+    availableStock?: number;
 }

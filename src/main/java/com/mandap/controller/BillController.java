@@ -43,11 +43,6 @@ public class BillController {
         return ResponseEntity.ok(billService.getBillsByCustomer(customerId));
     }
 
-    @GetMapping("/event/{eventId}")
-    public ResponseEntity<List<BillDTO>> getBillsByEvent(@PathVariable Long eventId) {
-        return ResponseEntity.ok(billService.getBillsByEvent(eventId));
-    }
-
     @GetMapping("/year/{year}")
     public ResponseEntity<List<BillDTO>> getBillsByYear(@PathVariable Integer year) {
         return ResponseEntity.ok(billService.getBillsByYear(year));
