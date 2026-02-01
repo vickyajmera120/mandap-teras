@@ -4,6 +4,8 @@ import { RouterLink } from '@angular/router';
 import { CustomerService, BillService } from '@core/services';
 import { Bill } from '@core/models';
 import { CurrencyInrPipe, DateFormatPipe, StatusBadgeComponent, LoadingSpinnerComponent } from '@shared';
+import { NgxEchartsDirective } from 'ngx-echarts';
+import { EChartsOption } from 'echarts';
 
 interface DashboardStats {
   totalCustomers: number;
@@ -14,7 +16,7 @@ interface DashboardStats {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, CurrencyInrPipe, DateFormatPipe, StatusBadgeComponent, LoadingSpinnerComponent],
+  imports: [CommonModule, RouterLink, CurrencyInrPipe, DateFormatPipe, StatusBadgeComponent, LoadingSpinnerComponent, NgxEchartsDirective],
   template: `
     <div class="space-y-8">
       <!-- Page Header -->
@@ -73,6 +75,21 @@ interface DashboardStats {
                 <p class="text-[var(--color-text-secondary)] text-sm">Total Revenue</p>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Bill Status Chart -->
+          <div class="bg-[var(--color-bg-card)] backdrop-blur-xl rounded-2xl border border-[var(--color-border)] p-6">
+              <h3 class="text-lg font-semibold text-[var(--color-text-primary)] mb-4">Bill Status Distribution</h3>
+              <div echarts [options]="billStatusOptions()" class="h-80 w-full"></div>
+          </div>
+
+          <!-- Financial Overview Chart -->
+          <div class="bg-[var(--color-bg-card)] backdrop-blur-xl rounded-2xl border border-[var(--color-border)] p-6">
+              <h3 class="text-lg font-semibold text-[var(--color-text-primary)] mb-4">Financial Overview</h3>
+              <div echarts [options]="financialOptions()" class="h-80 w-full"></div>
           </div>
         </div>
         
@@ -140,6 +157,9 @@ export class DashboardComponent implements OnInit {
   });
   recentBills = signal<Bill[]>([]);
 
+  billStatusOptions = signal<EChartsOption>({});
+  financialOptions = signal<EChartsOption>({});
+
   ngOnInit(): void {
     this.loadDashboardData();
   }
@@ -165,6 +185,8 @@ export class DashboardComponent implements OnInit {
           totalRevenue
         }));
 
+        this.generateCharts(bills);
+
         // Get 5 most recent bills
         this.recentBills.set(
           bills.sort((a, b) => new Date(b.billDate).getTime() - new Date(a.billDate).getTime()).slice(0, 5)
@@ -175,6 +197,103 @@ export class DashboardComponent implements OnInit {
       error: () => {
         this.isLoading.set(false);
       }
+    });
+  }
+
+  private generateCharts(bills: Bill[]): void {
+    // 1. Bill Status Counts
+    const paid = bills.filter(b => b.paymentStatus === 'PAID').length;
+    const partial = bills.filter(b => b.paymentStatus === 'PARTIAL').length;
+    const due = bills.filter(b => b.paymentStatus === 'DUE').length;
+
+    this.billStatusOptions.set({
+      tooltip: {
+        trigger: 'item'
+      },
+      legend: {
+        top: '5%',
+        left: 'center',
+        textStyle: { color: '#ffffff' }
+      },
+      series: [
+        {
+          name: 'Bill Status',
+          type: 'pie',
+          radius: ['40%', '70%'],
+          avoidLabelOverlap: false,
+          itemStyle: {
+            borderRadius: 10,
+            borderColor: '#1e293b',
+            borderWidth: 2
+          },
+          label: {
+            show: false,
+            position: 'center'
+          },
+          emphasis: {
+            label: {
+              show: true,
+              fontSize: 20,
+              fontWeight: 'bold',
+              color: '#fff'
+            }
+          },
+          labelLine: {
+            show: false
+          },
+          data: [
+            { value: paid, name: 'Paid', itemStyle: { color: '#2dd4bf' } }, // teal-400
+            { value: partial, name: 'Partial', itemStyle: { color: '#fbbf24' } }, // amber-400
+            { value: due, name: 'Due', itemStyle: { color: '#f43f5e' } } // rose-500
+          ]
+        }
+      ]
+    });
+
+    // 2. Financial Overview
+    const totalAmount = bills.reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+    const totalPaid = bills.reduce((sum, b) => {
+      // Calculate paid amount: Total - NetPayable (assuming NetPayable is remaining)
+      const due = b.netPayable || 0;
+      const total = b.totalAmount || 0;
+      return sum + (total - due);
+    }, 0);
+    const totalDue = totalAmount - totalPaid;
+
+    this.financialOptions.set({
+      tooltip: {
+        trigger: 'item',
+        formatter: (params: any) => {
+          return `${params.name}: ₹${params.value.toLocaleString('en-IN')} (${params.percent}%)`;
+        }
+      },
+      legend: {
+        top: '5%',
+        left: 'center',
+        textStyle: { color: '#ffffff' }
+      },
+      series: [
+        {
+          name: 'Financials',
+          type: 'pie',
+          radius: '50%',
+          data: [
+            { value: totalPaid, name: 'Received', itemStyle: { color: '#34d399' } }, // emerald-400
+            { value: totalDue, name: 'Due', itemStyle: { color: '#f87171' } } // red-400
+          ],
+          emphasis: {
+            itemStyle: {
+              shadowBlur: 10,
+              shadowOffsetX: 0,
+              shadowColor: 'rgba(0, 0, 0, 0.5)'
+            }
+          },
+          label: {
+            color: '#fff',
+            formatter: '{b}: {c}'
+          }
+        }
+      ]
     });
   }
 }
