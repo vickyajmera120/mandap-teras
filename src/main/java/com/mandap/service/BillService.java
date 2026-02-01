@@ -194,6 +194,47 @@ public class BillService {
                         }
                 }
 
+                // Handle Deposit Update
+                BigDecimal newDeposit = dto.getDeposit() != null ? dto.getDeposit() : BigDecimal.ZERO;
+                Payment depositPayment = bill.getPayments().stream()
+                                .filter(Payment::isDeposit)
+                                .findFirst()
+                                .orElse(null);
+
+                if (newDeposit.compareTo(BigDecimal.ZERO) > 0) {
+                        if (depositPayment != null) {
+                                // Update existing
+                                depositPayment.setAmount(newDeposit);
+                                if (dto.getDepositMethod() != null) {
+                                        depositPayment.setPaymentMethod(
+                                                        Payment.PaymentMethod.valueOf(dto.getDepositMethod()));
+                                }
+                                depositPayment.setChequeNumber(dto.getDepositChequeNumber());
+                                paymentRepository.save(depositPayment);
+                        } else {
+                                // Create new
+                                Payment newPayment = Payment.builder()
+                                                .bill(bill)
+                                                .amount(newDeposit)
+                                                .paymentDate(bill.getBillDate())
+                                                .paymentMethod(dto.getDepositMethod() != null
+                                                                ? Payment.PaymentMethod.valueOf(dto.getDepositMethod())
+                                                                : Payment.PaymentMethod.CASH)
+                                                .chequeNumber(dto.getDepositChequeNumber())
+                                                .remarks("Initial Deposit")
+                                                .isDeposit(true)
+                                                .createdBy(1L)
+                                                .build();
+
+                                newPayment = paymentRepository.save(newPayment);
+                                bill.addPayment(newPayment);
+                        }
+                } else if (depositPayment != null) {
+                        // Update to zero if removed
+                        depositPayment.setAmount(BigDecimal.ZERO);
+                        paymentRepository.save(depositPayment);
+                }
+
                 bill.calculateTotals();
                 bill = billRepository.save(bill);
 
