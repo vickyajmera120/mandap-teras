@@ -141,7 +141,15 @@ public class BillService {
                                         .createdBy(userId)
                                         .build();
 
-                        bill.addPayment(payment);
+                        payment = paymentRepository.save(payment);
+
+                        // Ensure bidirectional relationship is updated in memory
+                        if (bill.getPayments() == null) {
+                                bill.setPayments(new ArrayList<>());
+                        }
+                        bill.getPayments().add(payment);
+
+                        // Recalculate and save bill
                         bill.calculateTotals();
                         bill = billRepository.save(bill);
                 }
