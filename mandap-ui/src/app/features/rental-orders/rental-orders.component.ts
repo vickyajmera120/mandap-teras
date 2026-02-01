@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal, computed, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule, Router } from '@angular/router';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { RentalOrderService, CustomerService, InventoryService, ToastService } from '@core/services';
 import { RentalOrder, RentalOrderItem, RentalOrderStatus, Customer, InventoryItem } from '@core/models';
 import { LoadingSpinnerComponent, ModalComponent } from '@shared';
@@ -581,6 +581,7 @@ export class RentalOrdersComponent implements OnInit {
   private inventoryService = inject(InventoryService);
   private toastService = inject(ToastService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   orders = signal<RentalOrder[]>([]);
   customers = signal<Customer[]>([]);
@@ -719,6 +720,11 @@ export class RentalOrdersComponent implements OnInit {
   receiveItems: RentalOrderItem[] = [];
 
   ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
+      if (params['customerName']) {
+        this.customerFilter.set(params['customerName']);
+      }
+    });
     this.loadOrders();
     this.loadCustomers();
     this.loadInventory();

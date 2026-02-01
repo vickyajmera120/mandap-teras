@@ -1,4 +1,5 @@
 import { Component, OnInit, inject, signal, computed, ViewChild } from '@angular/core';
+import { Router } from '@angular/router';
 
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
@@ -92,8 +93,23 @@ import { NgSelectModule } from '@ng-select/ng-select';
                     <td class="py-4 px-6">
                       <div class="flex items-center justify-center gap-2">
                         <button 
+                          (click)="navigateToRentalOrders(customer)" 
+                          class="w-9 h-9 rounded-lg bg-teal-500/20 text-teal-400 hover:bg-teal-500/30 transition-colors" 
+                          title="Rental Orders"
+                        >
+                          <i class="fas fa-truck-loading"></i>
+                        </button>
+                        <button 
+                          (click)="navigateToBillHistory(customer)" 
+                          class="w-9 h-9 rounded-lg bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 transition-colors" 
+                          title="Bill History"
+                        >
+                          <i class="fas fa-history"></i>
+                        </button>
+                        <button 
                           (click)="editCustomer(customer)"
                           class="w-9 h-9 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
+                          title="Edit"
                         >
                           <i class="fas fa-edit"></i>
                         </button>
@@ -207,6 +223,7 @@ export class CustomersComponent implements OnInit {
   private customerService = inject(CustomerService);
   private toastService = inject(ToastService);
   private fb = inject(FormBuilder);
+  private router = inject(Router);
 
   customers = signal<Customer[]>([]);
   isLoading = signal(true);
@@ -286,7 +303,13 @@ export class CustomersComponent implements OnInit {
   }
 
   // Remove old onSearch if it exists or keep blank
-  onSearch(event: any) { }
+  navigateToRentalOrders(customer: Customer) {
+    this.router.navigate(['/rental-orders'], { queryParams: { customerName: customer.name } });
+  }
+
+  navigateToBillHistory(customer: Customer) {
+    this.router.navigate(['/billing/history'], { queryParams: { customerName: customer.name } });
+  }
 
 
   customerForm: FormGroup;

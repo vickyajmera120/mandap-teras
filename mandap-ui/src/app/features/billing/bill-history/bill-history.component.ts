@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal, ViewChild, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { BillService, ToastService } from '@core/services';
 import { Bill, BillType, PaymentStatus, BillUpdateRequest } from '@core/models';
 import { CurrencyInrPipe, DateFormatPipe, StatusBadgeComponent, LoadingSpinnerComponent, ModalComponent } from '@shared';
@@ -351,6 +351,7 @@ export class BillHistoryComponent implements OnInit {
   private billService = inject(BillService);
   private toastService = inject(ToastService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
   bills = signal<Bill[]>([]);
   selectedBill = signal<Bill | null>(null);
@@ -435,6 +436,11 @@ export class BillHistoryComponent implements OnInit {
 
 
   ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
+      if (params['customerName']) {
+        this.customerFilter.set(params['customerName']);
+      }
+    });
     this.loadData();
   }
 
