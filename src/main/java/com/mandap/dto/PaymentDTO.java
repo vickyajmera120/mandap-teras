@@ -1,5 +1,6 @@
 package com.mandap.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -20,5 +21,7 @@ public class PaymentDTO {
     private String paymentMethod;
     private String chequeNumber;
     private String remarks;
+
+    @JsonProperty("isDeposit")
     private boolean isDeposit;
 }
