@@ -46,4 +46,8 @@ export class RentalOrderService {
     getUnreturnedOrdersByCustomer(customerId: number): Observable<RentalOrder[]> {
         return this.http.get<RentalOrder[]>(`${this.API_URL}/customer/${customerId}/unreturned-orders`);
     }
+
+    delete(id: number): Observable<void> {
+        return this.http.delete<void>(`${this.API_URL}/${id}`);
+    }
 }

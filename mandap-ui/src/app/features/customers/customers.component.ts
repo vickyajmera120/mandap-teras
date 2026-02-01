@@ -47,6 +47,7 @@ import { ModalComponent, LoadingSpinnerComponent } from '@shared';
                 <tr>
                   <th class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold">Name</th>
                   <th class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold">Mobile</th>
+                  <th class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold">Pal No</th>
                   <th class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold">Address</th>
                   <th class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold">Alt. Contact</th>
                   <th class="text-center py-4 px-6 text-[var(--color-text-secondary)] font-semibold">Actions</th>
@@ -57,6 +58,7 @@ import { ModalComponent, LoadingSpinnerComponent } from '@shared';
                   <tr class="border-t border-[var(--color-border)] hover:bg-[var(--color-bg-hover)] transition-colors">
                     <td class="py-4 px-6 text-[var(--color-text-primary)] font-medium">{{ customer.name }}</td>
                     <td class="py-4 px-6 text-[var(--color-text-secondary)]">{{ customer.mobile }}</td>
+                    <td class="py-4 px-6 text-[var(--color-text-muted)]">{{ customer.palNumber || '-' }}</td>
                     <td class="py-4 px-6 text-[var(--color-text-muted)]">{{ customer.address || '-' }}</td>
                     <td class="py-4 px-6 text-[var(--color-text-muted)]">{{ customer.alternateContact || '-' }}</td>
                     <td class="py-4 px-6">
@@ -110,6 +112,15 @@ import { ModalComponent, LoadingSpinnerComponent } from '@shared';
                 formControlName="mobile"
                 class="input-dark w-full"
                 placeholder="Mobile number"
+              >
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Pal Number</label>
+              <input 
+                type="text"
+                formControlName="palNumber"
+                class="input-dark w-full"
+                placeholder="Pal Number"
               >
             </div>
             <div>
@@ -176,6 +187,7 @@ export class CustomersComponent implements OnInit {
     this.customerForm = this.fb.group({
       name: ['', Validators.required],
       mobile: ['', Validators.required],
+      palNumber: [''],
       address: [''],
       alternateContact: ['']
     });

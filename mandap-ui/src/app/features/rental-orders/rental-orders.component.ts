@@ -127,6 +127,15 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                             <i class="fas fa-file-invoice-dollar text-xs"></i>
                           </button>
                         }
+                        @if (order.status === 'BOOKED' || order.status === 'CANCELLED') {
+                          <button 
+                            (click)="deleteOrder(order)"
+                            class="w-8 h-8 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
+                            title="Delete Order"
+                          >
+                            <i class="fas fa-trash text-xs"></i>
+                          </button>
+                        }
                       </div>
                     </td>
                   </tr>
@@ -225,7 +234,14 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                   @for (item of newOrder.items; track item.inventoryItemId; let i = $index) {
                     <tr class="border-t border-[var(--color-border)]/50">
                       <td class="py-2 px-4 text-[var(--color-text-primary)]">{{ item.itemNameGujarati }}</td>
-                      <td class="py-2 px-4 text-center text-[var(--color-text-primary)]">{{ item.bookedQty }}</td>
+                      <td class="py-2 px-4 text-center">
+                        <input 
+                          type="number" 
+                          [(ngModel)]="item.bookedQty" 
+                          min="1" 
+                          class="w-20 px-2 py-1 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded text-center text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
+                        >
+                      </td>
                       <td class="py-2 px-4 text-center">
                         <button (click)="removeItemFromNewOrder(i)" class="text-red-400 hover:text-red-300">
                           <i class="fas fa-trash text-xs"></i>
@@ -684,6 +700,20 @@ export class RentalOrdersComponent implements OnInit {
       error: (err) => {
         this.toastService.error(err.error?.message || 'Receive failed');
         this.isSaving.set(false);
+      }
+    });
+  }
+
+  deleteOrder(order: RentalOrder): void {
+    if (!confirm(`Are you sure you want to delete order ${order.orderNumber}?`)) return;
+
+    this.rentalOrderService.delete(order.id!).subscribe({
+      next: () => {
+        this.toastService.success('Order deleted successfully');
+        this.loadOrders();
+      },
+      error: (err) => {
+        this.toastService.error(err.error?.message || 'Failed to delete order');
       }
     });
   }

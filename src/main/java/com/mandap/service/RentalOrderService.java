@@ -361,4 +361,20 @@ public class RentalOrderService {
                 .returnDate(item.getReturnDate())
                 .build();
     }
+
+    /**
+     * Delete a rental order.
+     * Only allowed if status is BOOKED or CANCELLED.
+     */
+    public void deleteOrder(Long id) {
+        RentalOrder order = rentalOrderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Rental order not found: " + id));
+
+        if (order.getStatus() != RentalOrder.RentalOrderStatus.BOOKED &&
+                order.getStatus() != RentalOrder.RentalOrderStatus.CANCELLED) {
+            throw new RuntimeException("Cannot delete order with status: " + order.getStatus());
+        }
+
+        rentalOrderRepository.delete(order);
+    }
 }

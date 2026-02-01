@@ -94,4 +94,13 @@ public class RentalOrderController {
             @PathVariable Long customerId) {
         return ResponseEntity.ok(rentalOrderService.getUnreturnedOrdersByCustomer(customerId));
     }
+
+    /**
+     * Delete a rental order.
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteOrder(@PathVariable Long id) {
+        rentalOrderService.deleteOrder(id);
+        return ResponseEntity.ok().build();
+    }
 }

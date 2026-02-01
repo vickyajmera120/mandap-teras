@@ -23,6 +23,9 @@ public class Customer {
     @Column(nullable = false, length = 15)
     private String mobile;
 
+    @Column(name = "pal_number", length = 50)
+    private String palNumber;
+
     @Column(name = "alternate_contact", length = 15)
     private String alternateContact;
 
