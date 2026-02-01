@@ -38,7 +38,14 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
               <thead class="bg-[var(--color-bg-hover)]/30">
                 <tr>
                   <th class="py-3 px-4 text-left align-top min-w-[140px]">
-                    <div class="text-[var(--color-text-secondary)] font-medium text-sm mb-2">Order #</div>
+                    <div class="flex items-center gap-2 mb-2 cursor-pointer group" (click)="onSort('orderNumber')">
+                      <div class="text-[var(--color-text-secondary)] font-medium text-sm group-hover:text-[var(--color-text-primary)] transition-colors">Order #</div>
+                      @if (sortColumn() === 'orderNumber') {
+                        <i [class]="sortDirection() === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="text-xs text-teal-500"></i>
+                      } @else {
+                        <i class="fas fa-sort text-xs text-[var(--color-text-muted)] opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                      }
+                    </div>
                     <input 
                       type="text" 
                       [ngModel]="orderNumberFilter()"
@@ -48,12 +55,36 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                     >
                   </th>
                   <th class="py-3 px-4 text-left align-top min-w-[200px]">
-                    <div class="text-[var(--color-text-secondary)] font-medium text-sm mb-2">Customer</div>
+                    <div class="flex items-center gap-2 mb-2 cursor-pointer group" (click)="onSort('customerName')">
+                      <div class="text-[var(--color-text-secondary)] font-medium text-sm group-hover:text-[var(--color-text-primary)] transition-colors">Customer</div>
+                       @if (sortColumn() === 'customerName') {
+                        <i [class]="sortDirection() === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="text-xs text-teal-500"></i>
+                      } @else {
+                        <i class="fas fa-sort text-xs text-[var(--color-text-muted)] opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                      }
+                    </div>
                     <input 
                       type="text" 
                       [ngModel]="customerFilter()"
                       (ngModelChange)="customerFilter.set($event)"
                       placeholder="Name or Mobile..." 
+                      class="w-full px-2 py-1 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
+                    >
+                  </th>
+                  <th class="py-3 px-4 text-left align-top min-w-[140px]">
+                    <div class="flex items-center gap-2 mb-2 cursor-pointer group" (click)="onSort('palNumber')">
+                      <div class="text-[var(--color-text-secondary)] font-medium text-sm group-hover:text-[var(--color-text-primary)] transition-colors">Pal #</div>
+                       @if (sortColumn() === 'palNumber') {
+                        <i [class]="sortDirection() === 'asc' ? 'fas fa-sort-up' : 'fas fa-sort-down'" class="text-xs text-teal-500"></i>
+                      } @else {
+                        <i class="fas fa-sort text-xs text-[var(--color-text-muted)] opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                      }
+                    </div>
+                    <input 
+                      type="text" 
+                      [ngModel]="palNumberFilter()"
+                      (ngModelChange)="palNumberFilter.set($event)"
+                      placeholder="Search..." 
                       class="w-full px-2 py-1 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
                     >
                   </th>
@@ -83,6 +114,19 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                     <td class="py-3 px-4">
                       <div class="text-[var(--color-text-primary)]">{{ order.customerName }}</div>
                       <div class="text-xs text-[var(--color-text-muted)]">{{ order.customerMobile }}</div>
+                    </td>
+                    <td class="py-3 px-4">
+                      @if (order.customerPalNumbers?.length) {
+                         <div class="flex flex-wrap gap-1">
+                           @for (pal of order.customerPalNumbers; track pal) {
+                             <span class="inline-block px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 text-[10px] font-mono border border-purple-500/20">
+                               {{ pal }}
+                             </span>
+                           }
+                         </div>
+                       } @else {
+                         <span class="text-[var(--color-text-muted)]">-</span>
+                       }
                     </td>
                     <td class="py-3 px-4 text-center text-[var(--color-text-secondary)]">{{ order.orderDate }}</td>
                     <td class="py-3 px-4 text-center text-[var(--color-text-secondary)]">{{ order.items.length || 0 }}</td>
@@ -153,7 +197,7 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="7" class="py-8 text-center text-[var(--color-text-muted)]">No rental orders found</td>
+                    <td colspan="8" class="py-8 text-center text-[var(--color-text-muted)]">No rental orders found</td>
                   </tr>
                 }
               </tbody>
@@ -544,9 +588,7 @@ export class RentalOrdersComponent implements OnInit {
   customers = signal<Customer[]>([]);
   inventoryItems = signal<InventoryItem[]>([]);
 
-  statusFilter = signal<string>('ALL');
-  orderNumberFilter = signal('');
-  customerFilter = signal('');
+
 
   isLoading = signal(true);
   isSaving = signal(false);
@@ -563,6 +605,13 @@ export class RentalOrdersComponent implements OnInit {
     { label: 'Completed', value: 'COMPLETED' },
     { label: 'Cancelled', value: 'CANCELLED' }
   ];
+
+  orderNumberFilter = signal('');
+  customerFilter = signal('');
+  statusFilter = signal<'ALL' | RentalOrderStatus>('ALL');
+  palNumberFilter = signal('');
+  sortColumn = signal<string | null>(null);
+  sortDirection = signal<'asc' | 'desc'>('asc');
 
   filteredOrders = computed(() => {
     let result = this.orders();
@@ -588,6 +637,40 @@ export class RentalOrdersComponent implements OnInit {
       );
     }
 
+    // Pal Number Filter
+    const pFilter = this.palNumberFilter().toLowerCase();
+    if (pFilter) {
+      result = result.filter(o =>
+        o.customerPalNumbers?.some(p => p.toLowerCase().includes(pFilter))
+      );
+    }
+
+    // Sorting
+    const col = this.sortColumn();
+    const dir = this.sortDirection();
+    if (col) {
+      result = [...result].sort((a, b) => {
+        let valA: any = '';
+        let valB: any = '';
+
+        if (col === 'palNumber') {
+          valA = a.customerPalNumbers?.[0] || '';
+          valB = b.customerPalNumbers?.[0] || '';
+        } else if (col === 'orderNumber') {
+          valA = a.orderNumber || '';
+          valB = b.orderNumber || '';
+        } else if (col === 'customerName') {
+          valA = a.customerName || '';
+          valB = b.customerName || '';
+        }
+
+        // Helper for numeric/string compare
+        if (valA < valB) return dir === 'asc' ? -1 : 1;
+        if (valA > valB) return dir === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
     return result;
   });
 
@@ -604,6 +687,15 @@ export class RentalOrdersComponent implements OnInit {
       document.title = originalTitle;
       this.selectedPrintOrder.set(null);
     }, 100);
+  }
+
+  onSort(column: string) {
+    if (this.sortColumn() === column) {
+      this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortColumn.set(column);
+      this.sortDirection.set('asc');
+    }
   }
 
   canDispatch(order: RentalOrder): boolean {

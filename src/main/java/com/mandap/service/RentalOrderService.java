@@ -405,6 +405,7 @@ public class RentalOrderService {
                 .customerId(order.getCustomer().getId())
                 .customerName(order.getCustomer().getName())
                 .customerMobile(order.getCustomer().getMobile())
+                .customerPalNumbers(new java.util.ArrayList<>(order.getCustomer().getPalNumbers()))
                 .orderDate(order.getOrderDate())
                 .dispatchDate(order.getDispatchDate())
                 .expectedReturnDate(order.getExpectedReturnDate())

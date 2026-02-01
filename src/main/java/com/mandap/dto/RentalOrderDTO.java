@@ -18,6 +18,7 @@ public class RentalOrderDTO {
     private Long customerId;
     private String customerName;
     private String customerMobile;
+    private List<String> customerPalNumbers;
     private LocalDate orderDate;
     private LocalDate dispatchDate;
     private LocalDate expectedReturnDate;

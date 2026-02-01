@@ -21,6 +21,7 @@ export interface RentalOrder {
     customerId: number;
     customerName?: string;
     customerMobile?: string;
+    customerPalNumbers?: string[];
     orderDate?: string;
     dispatchDate?: string;
     expectedReturnDate?: string;
