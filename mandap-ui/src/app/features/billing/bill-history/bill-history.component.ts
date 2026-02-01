@@ -584,7 +584,7 @@ export class BillHistoryComponent implements OnInit {
 
         <div class="total">
           <p>Total Amount: ₹${bill.totalAmount?.toLocaleString('en-IN')}</p>
-          <p>Deposit: ₹${bill.deposit?.toLocaleString('en-IN')}</p>
+          <p>Total Payment: ₹${bill.deposit?.toLocaleString('en-IN')}</p>
           <p class="net">Net Payable: ₹${bill.netPayable?.toLocaleString('en-IN')}</p>
         </div>
         <script>window.print();</script>
