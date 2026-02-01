@@ -132,7 +132,10 @@ public class BillService {
                                         .bill(bill)
                                         .amount(dto.getDeposit())
                                         .paymentDate(bill.getBillDate())
-                                        .paymentMethod(Payment.PaymentMethod.CASH)
+                                        .paymentMethod(dto.getDepositMethod() != null
+                                                        ? Payment.PaymentMethod.valueOf(dto.getDepositMethod())
+                                                        : Payment.PaymentMethod.CASH)
+                                        .chequeNumber(dto.getDepositChequeNumber())
                                         .remarks("Initial Deposit")
                                         .isDeposit(true)
                                         .createdBy(userId)

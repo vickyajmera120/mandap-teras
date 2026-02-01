@@ -231,6 +231,34 @@ interface ItemEntry {
                     class="w-32 px-3 py-2 bg-slate-600/50 border border-slate-500 rounded-lg text-white text-right focus:outline-none focus:border-teal-500"
                   >
                 </div>
+                
+                @if (deposit() > 0) {
+                  <div class="flex justify-between items-center gap-4">
+                    <span class="text-slate-400">Method:</span>
+                    <select 
+                      [ngModel]="depositMethod()"
+                      (ngModelChange)="depositMethod.set($event)"
+                      class="w-32 px-3 py-2 bg-slate-600/50 border border-slate-500 rounded-lg text-white text-sm focus:outline-none focus:border-teal-500"
+                    >
+                      <option value="CASH">Cash</option>
+                      <option value="CHEQUE">Cheque</option>
+                      <option value="ONLINE">Online</option>
+                    </select>
+                  </div>
+
+                  @if (depositMethod() !== 'CASH') {
+                    <div class="flex justify-between items-center gap-4">
+                      <span class="text-slate-400 text-sm">Ref No:</span>
+                      <input 
+                        type="text"
+                        [ngModel]="depositChequeNumber()"
+                        (ngModelChange)="depositChequeNumber.set($event)"
+                        placeholder="Cheque/Txn No"
+                        class="w-32 px-3 py-2 bg-slate-600/50 border border-slate-500 rounded-lg text-white text-right text-sm focus:outline-none focus:border-teal-500"
+                      >
+                    </div>
+                  }
+                }
                 <div class="border-t border-slate-600 pt-3 flex justify-between items-center">
                   <span class="text-slate-300 font-medium">Net Payable:</span>
                   <span class="text-2xl font-bold text-teal-400">{{ netPayable() | currencyInr }}</span>
@@ -344,6 +372,8 @@ export class NewBillComponent implements OnInit {
   billType: 'INVOICE' | 'ESTIMATE' = 'INVOICE';
   paymentStatus: 'DUE' | 'PAID' | 'PARTIAL' = 'DUE';
   deposit = signal(0);
+  depositMethod = signal<'CASH' | 'CHEQUE' | 'ONLINE'>('CASH');
+  depositChequeNumber = signal('');
   remarks = '';
 
   // Computed totals
@@ -537,6 +567,8 @@ export class NewBillComponent implements OnInit {
     this.billType = 'INVOICE';
     this.paymentStatus = 'DUE';
     this.deposit.set(0);
+    this.depositMethod.set('CASH');
+    this.depositChequeNumber.set('');
     this.remarks = '';
     this.initializeItems(this.inventoryItems());
   }
@@ -566,6 +598,8 @@ export class NewBillComponent implements OnInit {
       billType: this.billType,
       paymentStatus: this.paymentStatus,
       deposit: this.deposit(),
+      depositMethod: this.depositMethod(),
+      depositChequeNumber: this.depositChequeNumber(),
       remarks: this.remarks,
       items: billItems
     };

@@ -27,6 +27,8 @@ public class BillDTO {
     private BigDecimal netPayable;
     private LocalDate billDate;
     private String remarks;
+    private String depositMethod;
+    private String depositChequeNumber;
     private List<BillItemDTO> items;
     private List<PaymentDTO> payments;
 }

@@ -49,7 +49,16 @@ public class Payment {
 
     @Column(name = "is_deposit")
     @Builder.Default
-    private boolean isDeposit = false;
+    @Getter(AccessLevel.NONE)
+    private Boolean isDeposit = false;
+
+    public boolean isDeposit() {
+        return Boolean.TRUE.equals(this.isDeposit);
+    }
+
+    public void setDeposit(boolean isDeposit) {
+        this.isDeposit = isDeposit;
+    }
 
     @Column(name = "created_by")
     private Long createdBy;

@@ -40,6 +40,8 @@ export interface BillRequest {
     billType?: BillType;
     paymentStatus?: PaymentStatus;
     deposit?: number;
+    depositMethod?: 'CASH' | 'CHEQUE' | 'ONLINE';
+    depositChequeNumber?: string;
     remarks?: string;
     items: BillItem[];
 }
