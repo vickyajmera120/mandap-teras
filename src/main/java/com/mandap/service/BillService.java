@@ -70,6 +70,12 @@ public class BillService {
         Customer customer = customerRepository.findById(dto.getCustomerId())
                 .orElseThrow(() -> new RuntimeException("Customer not found: " + dto.getCustomerId()));
 
+        // Check if customer already has a bill
+        List<Bill> existingBills = billRepository.findByCustomerId(customer.getId());
+        if (!existingBills.isEmpty()) {
+            throw new RuntimeException("Customer already has a bill. Please edit the existing bill.");
+        }
+
         // Generate bill number
         String billNumber = generateBillNumber();
 

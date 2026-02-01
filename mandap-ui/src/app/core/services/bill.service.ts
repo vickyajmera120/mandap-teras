@@ -27,9 +27,7 @@ export class BillService {
         return this.http.get<Bill[]>(`${this.API_URL}/customer/${customerId}`);
     }
 
-    getByEvent(eventId: number): Observable<Bill[]> {
-        return this.http.get<Bill[]>(`${this.API_URL}/event/${eventId}`);
-    }
+
 
     getByYear(year: number): Observable<Bill[]> {
         return this.http.get<Bill[]>(`${this.API_URL}/year/${year}`);

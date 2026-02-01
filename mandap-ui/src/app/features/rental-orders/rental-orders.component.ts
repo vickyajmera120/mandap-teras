@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal, computed, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { RentalOrderService, CustomerService, InventoryService, ToastService } from '@core/services';
 import { RentalOrder, RentalOrderItem, RentalOrderStatus, Customer, InventoryItem } from '@core/models';
 import { LoadingSpinnerComponent, ModalComponent } from '@shared';
@@ -27,17 +27,7 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
       </div>
 
       <!-- Status Filter Tabs -->
-      <div class="flex gap-2 flex-wrap">
-        @for (tab of statusTabs; track tab.value) {
-          <button 
-            (click)="setStatusFilter(tab.value)"
-            [class]="statusFilter() === tab.value ? 'bg-teal-600 text-white shadow-lg shadow-teal-500/20' : 'bg-[var(--color-bg-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-card)]'"
-            class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-          >
-            {{ tab.label }}
-          </button>
-        }
-      </div>
+      <!-- Filters moved to table headers -->
 
       @if (isLoading()) {
         <app-loading-spinner></app-loading-spinner>
@@ -47,12 +37,43 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
             <table class="w-full">
               <thead class="bg-[var(--color-bg-hover)]/30">
                 <tr>
-                  <th class="text-left py-3 px-4 text-[var(--color-text-secondary)] font-medium text-sm">Order #</th>
-                  <th class="text-left py-3 px-4 text-[var(--color-text-secondary)] font-medium text-sm">Customer</th>
-                  <th class="text-center py-3 px-4 text-[var(--color-text-secondary)] font-medium text-sm">Order Date</th>
-                  <th class="text-center py-3 px-4 text-[var(--color-text-secondary)] font-medium text-sm">Items</th>
-                  <th class="text-center py-3 px-4 text-[var(--color-text-secondary)] font-medium text-sm">Status</th>
-                  <th class="text-center py-3 px-4 text-[var(--color-text-secondary)] font-medium text-sm">Actions</th>
+                  <th class="py-3 px-4 text-left align-top min-w-[140px]">
+                    <div class="text-[var(--color-text-secondary)] font-medium text-sm mb-2">Order #</div>
+                    <input 
+                      type="text" 
+                      [ngModel]="orderNumberFilter()"
+                      (ngModelChange)="orderNumberFilter.set($event)"
+                      placeholder="Search..." 
+                      class="w-full px-2 py-1 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
+                    >
+                  </th>
+                  <th class="py-3 px-4 text-left align-top min-w-[200px]">
+                    <div class="text-[var(--color-text-secondary)] font-medium text-sm mb-2">Customer</div>
+                    <input 
+                      type="text" 
+                      [ngModel]="customerFilter()"
+                      (ngModelChange)="customerFilter.set($event)"
+                      placeholder="Name or Mobile..." 
+                      class="w-full px-2 py-1 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
+                    >
+                  </th>
+                  <th class="py-3 px-4 text-center align-top text-[var(--color-text-secondary)] font-medium text-sm">Order Date</th>
+                  <th class="py-3 px-4 text-center align-top text-[var(--color-text-secondary)] font-medium text-sm">Items</th>
+                  <th class="py-3 px-4 text-center align-top min-w-[160px]">
+                    <div class="text-[var(--color-text-secondary)] font-medium text-sm mb-2">Status</div>
+                    <!-- Simple multiselect simulation for now, or just a dropdown -->
+                    <select 
+                      [ngModel]="statusFilter()"
+                      (ngModelChange)="statusFilter.set($event)"
+                      class="w-full px-2 py-1 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
+                    >
+                       <option value="ALL">All Statuses</option>
+                       @for (tab of statusOptions; track tab.value) {
+                         <option [value]="tab.value">{{ tab.label }}</option>
+                       }
+                    </select>
+                  </th>
+                  <th class="py-3 px-4 text-center align-top text-[var(--color-text-secondary)] font-medium text-sm">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -79,7 +100,7 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                         >
                           <i class="fas fa-eye text-xs"></i>
                         </button>
-                        @if (order.status === 'BOOKED') {
+                        @if (canDispatch(order)) {
                           <button 
                             (click)="openDispatchModal(order)"
                             class="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 transition-colors"
@@ -88,13 +109,22 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                             <i class="fas fa-truck text-xs"></i>
                           </button>
                         }
-                        @if (order.status === 'DISPATCHED' || order.status === 'PARTIALLY_RETURNED') {
+                        @if (canReceive(order)) {
                           <button 
                             (click)="openReceiveModal(order)"
                             class="w-8 h-8 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors"
                             title="Receive Items"
                           >
                             <i class="fas fa-hand-holding text-xs"></i>
+                          </button>
+                        }
+                        @if (!order.billId && order.status !== 'CANCELLED') {
+                          <button 
+                            (click)="generateBill(order)"
+                            class="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 transition-colors"
+                            title="Generate Bill"
+                          >
+                            <i class="fas fa-file-invoice-dollar text-xs"></i>
                           </button>
                         }
                       </div>
@@ -112,13 +142,15 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
       }
 
       <!-- New Booking Modal -->
-      <app-modal #newOrderModal title="New Booking" size="lg">
+      <app-modal #newOrderModal [title]="isEditMode() ? 'Edit Booking' : 'New Booking'" size="lg">
         <div class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Customer *</label>
             <select 
-              [(ngModel)]="newOrder.customerId"
-              class="w-full px-4 py-3 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-xl text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
+              [ngModel]="newOrder.customerId"
+              (ngModelChange)="onCustomerChange($event)"
+              [disabled]="isEditMode()"
+              class="w-full px-4 py-3 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-xl text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500 disabled:opacity-50"
             >
               <option [ngValue]="null">Select Customer</option>
               @for (customer of customers(); track customer.id) {
@@ -149,15 +181,19 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
           <div>
             <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Add Items</label>
             <div class="flex gap-2">
-              <select 
-                [(ngModel)]="selectedInventoryItemId"
-                class="flex-1 px-4 py-3 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-xl text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
-              >
-                <option [ngValue]="null">Select Item</option>
-                @for (item of inventoryItems(); track item.id) {
-                  <option [ngValue]="item.id">{{ item.nameGujarati }} ({{ item.nameEnglish }}) - Avail: {{ item.availableStock }}</option>
-                }
-              </select>
+              <div class="flex-1 min-w-0" title="Select Item">
+                <select 
+                  [(ngModel)]="selectedInventoryItemId"
+                  class="w-full px-4 py-3 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-xl text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500 truncate"
+                >
+                  <option [ngValue]="null">Select Item</option>
+                  @for (item of inventoryItems(); track item.id) {
+                    <option [ngValue]="item.id" [title]="item.nameGujarati + ' (' + item.nameEnglish + ')'">
+                      {{ item.nameGujarati }} ({{ item.nameEnglish }}) - Avail: {{ item.availableStock }}
+                    </option>
+                  }
+                </select>
+              </div>
               <input 
                 type="number" 
                 [(ngModel)]="selectedQty"
@@ -210,14 +246,14 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
               Cancel
             </button>
             <button 
-              (click)="createBooking()"
+              (click)="saveBooking()"
               [disabled]="isSaving() || !newOrder.customerId || newOrder.items.length === 0"
               class="flex-1 py-3 rounded-xl bg-gradient-to-r from-teal-500 to-teal-600 text-white font-semibold hover:from-teal-600 hover:to-teal-700 disabled:opacity-50 transition-all"
             >
               @if (isSaving()) {
                 <i class="fas fa-spinner fa-spin mr-2"></i>
               }
-              Create Booking
+              {{ isEditMode() ? 'Update Booking' : 'Create Booking' }}
             </button>
           </div>
         </div>
@@ -364,30 +400,69 @@ export class RentalOrdersComponent implements OnInit {
   private customerService = inject(CustomerService);
   private inventoryService = inject(InventoryService);
   private toastService = inject(ToastService);
+  private router = inject(Router);
 
   orders = signal<RentalOrder[]>([]);
   customers = signal<Customer[]>([]);
   inventoryItems = signal<InventoryItem[]>([]);
 
-  statusFilter = signal<RentalOrderStatus | 'ALL'>('ALL');
+  statusFilter = signal<string>('ALL');
+  orderNumberFilter = signal('');
+  customerFilter = signal('');
+
   isLoading = signal(true);
   isSaving = signal(false);
   selectedOrder = signal<RentalOrder | null>(null);
+  isEditMode = signal(false);
+  existingOrderId = signal<number | null>(null);
 
-  statusTabs = [
-    { label: 'All', value: 'ALL' as const },
-    { label: 'Booked', value: 'BOOKED' as RentalOrderStatus },
-    { label: 'Dispatched', value: 'DISPATCHED' as RentalOrderStatus },
-    { label: 'Partially Returned', value: 'PARTIALLY_RETURNED' as RentalOrderStatus },
-    { label: 'Returned', value: 'RETURNED' as RentalOrderStatus },
-    { label: 'Completed', value: 'COMPLETED' as RentalOrderStatus }
+  statusOptions = [
+    { label: 'Booked', value: 'BOOKED' },
+    { label: 'Dispatched', value: 'DISPATCHED' },
+    { label: 'Partially Returned', value: 'PARTIALLY_RETURNED' },
+    { label: 'Returned', value: 'RETURNED' },
+    { label: 'Completed', value: 'COMPLETED' },
+    { label: 'Cancelled', value: 'CANCELLED' }
   ];
 
   filteredOrders = computed(() => {
-    const filter = this.statusFilter();
-    if (filter === 'ALL') return this.orders();
-    return this.orders().filter(o => o.status === filter);
+    let result = this.orders();
+
+    // Status Filter
+    const sFilter = this.statusFilter();
+    if (sFilter !== 'ALL') {
+      result = result.filter(o => o.status === sFilter);
+    }
+
+    // Order Number Filter
+    const oFilter = this.orderNumberFilter().toLowerCase();
+    if (oFilter) {
+      result = result.filter(o => o.orderNumber?.toLowerCase().includes(oFilter));
+    }
+
+    // Customer Filter
+    const cFilter = this.customerFilter().toLowerCase();
+    if (cFilter) {
+      result = result.filter(o =>
+        o.customerName?.toLowerCase().includes(cFilter) ||
+        o.customerMobile?.toLowerCase().includes(cFilter)
+      );
+    }
+
+    return result;
   });
+
+  canDispatch(order: RentalOrder): boolean {
+    if (order.status === 'COMPLETED' || order.status === 'CANCELLED') return false;
+    // Can dispatch if any item has booked > dispatched
+    return order.items?.some(i => (i.bookedQty || 0) > (i.dispatchedQty || 0)) || false;
+  }
+
+  canReceive(order: RentalOrder): boolean {
+    if (order.status === 'BOOKED' || order.status === 'CANCELLED') return false;
+    // Can receive if any item has dispatched > returned
+    return order.items?.some(i => (i.dispatchedQty || 0) > (i.returnedQty || 0)) || false;
+  }
 
   // New order form
   newOrder: RentalOrder = { customerId: 0, items: [] };
@@ -446,7 +521,44 @@ export class RentalOrdersComponent implements OnInit {
     this.newOrder = { customerId: 0, orderDate: new Date().toISOString().split('T')[0], items: [] };
     this.selectedInventoryItemId = null;
     this.selectedQty = 1;
+    this.isEditMode.set(false);
+    this.existingOrderId.set(null);
     this.newOrderModal.open();
+  }
+
+  onCustomerChange(customerId: number): void {
+    this.newOrder.customerId = customerId;
+
+    if (!customerId) return;
+
+    // Check for existing active order
+    const existingOrder = this.orders().find(o =>
+      o.customerId === customerId &&
+      o.status !== 'COMPLETED' &&
+      o.status !== 'CANCELLED'
+    );
+
+    if (existingOrder) {
+      this.isEditMode.set(true);
+      this.existingOrderId.set(existingOrder.id!);
+
+      // Populate form with existing order data
+      this.newOrder = {
+        ...existingOrder,
+        items: existingOrder.items?.map(item => ({
+          inventoryItemId: item.inventoryItemId,
+          itemNameGujarati: item.itemNameGujarati,
+          itemNameEnglish: item.itemNameEnglish,
+          bookedQty: item.bookedQty
+        })) || []
+      };
+
+      this.toastService.info('Customer has an active order. Switched to Edit mode.');
+    } else {
+      this.isEditMode.set(false);
+      this.existingOrderId.set(null);
+      // Keep customerId but reset other fields if needed, or just keep as new
+    }
   }
 
   addItemToNewOrder(): void {
@@ -480,25 +592,47 @@ export class RentalOrdersComponent implements OnInit {
     this.newOrder.items.splice(index, 1);
   }
 
-  createBooking(): void {
+  saveBooking(): void {
     this.isSaving.set(true);
-    this.rentalOrderService.createBooking(this.newOrder).subscribe({
-      next: () => {
-        this.toastService.success('Booking created successfully');
-        this.newOrderModal.close();
-        this.loadOrders();
-        this.isSaving.set(false);
-      },
-      error: (err) => {
-        this.toastService.error(err.error?.message || 'Failed to create booking');
-        this.isSaving.set(false);
-      }
-    });
+
+    if (this.isEditMode() && this.existingOrderId()) {
+      this.rentalOrderService.update(this.existingOrderId()!, this.newOrder).subscribe({
+        next: () => {
+          this.toastService.success('Booking updated successfully');
+          this.newOrderModal.close();
+          this.loadOrders();
+          this.isSaving.set(false);
+        },
+        error: (err) => {
+          this.toastService.error(err.error?.message || 'Failed to update booking');
+          this.isSaving.set(false);
+        }
+      });
+    } else {
+      this.rentalOrderService.createBooking(this.newOrder).subscribe({
+        next: () => {
+          this.toastService.success('Booking created successfully');
+          this.newOrderModal.close();
+          this.loadOrders();
+          this.isSaving.set(false);
+        },
+        error: (err) => {
+          this.toastService.error(err.error?.message || 'Failed to create booking');
+          this.isSaving.set(false);
+        }
+      });
+    }
   }
 
   viewOrder(order: RentalOrder): void {
     this.selectedOrder.set(order);
     this.viewModal.open();
+  }
+
+  generateBill(order: RentalOrder): void {
+    // Navigate to new bill page with rental order ID
+    // We use matrix params or query params. Using matrix params (semicolon) for simplicity with route params logic
+    this.router.navigate(['/billing/new', { rentalOrderId: order.id }]);
   }
 
   openDispatchModal(order: RentalOrder): void {
@@ -521,7 +655,7 @@ export class RentalOrdersComponent implements OnInit {
         this.loadInventory();
         this.isSaving.set(false);
       },
-      error: (err) => {
+      error: (err: any) => {
         this.toastService.error(err.error?.message || 'Dispatch failed');
         this.isSaving.set(false);
       }

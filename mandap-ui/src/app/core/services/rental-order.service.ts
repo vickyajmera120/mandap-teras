@@ -27,6 +27,10 @@ export class RentalOrderService {
         return this.http.post<RentalOrder>(this.API_URL, order);
     }
 
+    update(id: number, order: RentalOrder): Observable<RentalOrder> {
+        return this.http.put<RentalOrder>(`${this.API_URL}/${id}`, order);
+    }
+
     dispatchItems(orderId: number, items: RentalOrderItem[]): Observable<RentalOrder> {
         return this.http.put<RentalOrder>(`${this.API_URL}/${orderId}/dispatch`, items);
     }

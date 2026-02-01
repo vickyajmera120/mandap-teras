@@ -68,6 +68,12 @@ public class RentalOrderService {
         Customer customer = customerRepository.findById(dto.getCustomerId())
                 .orElseThrow(() -> new RuntimeException("Customer not found: " + dto.getCustomerId()));
 
+        // Check if customer already has an active rental order
+        List<RentalOrder> existingOrders = rentalOrderRepository.findByCustomerIdOrderByOrderDateDesc(customer.getId());
+        if (!existingOrders.isEmpty()) {
+            throw new RuntimeException("Customer already has a rental order. Please edit the existing order.");
+        }
+
         // Validate stock availability
         for (RentalOrderItemDTO itemDto : dto.getItems()) {
             InventoryItem invItem = inventoryItemRepository.findById(itemDto.getInventoryItemId())
@@ -101,6 +107,91 @@ public class RentalOrderService {
                     .build();
 
             order.addItem(orderItem);
+        }
+
+        order = rentalOrderRepository.save(order);
+        return toDTO(order);
+    }
+
+    /**
+     * Update an existing rental order.
+     * Merges items: updates quantities, adds new items, removes missing items (if
+     * not dispatched).
+     */
+    public RentalOrderDTO updateOrder(Long id, RentalOrderDTO dto) {
+        RentalOrder order = rentalOrderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Rental order not found: " + id));
+
+        if (order.getStatus() == RentalOrder.RentalOrderStatus.COMPLETED ||
+                order.getStatus() == RentalOrder.RentalOrderStatus.CANCELLED) {
+            throw new RuntimeException("Cannot update completed or cancelled order");
+        }
+
+        // Update header fields
+        order.setOrderDate(dto.getOrderDate() != null ? dto.getOrderDate() : order.getOrderDate());
+        order.setExpectedReturnDate(dto.getExpectedReturnDate());
+        order.setRemarks(dto.getRemarks());
+
+        // Update items
+        if (dto.getItems() != null) {
+            // 1. Update existing items and add new ones
+            for (RentalOrderItemDTO itemDto : dto.getItems()) {
+                InventoryItem invItem = inventoryItemRepository.findById(itemDto.getInventoryItemId())
+                        .orElseThrow(() -> new RuntimeException(
+                                "Inventory item not found: " + itemDto.getInventoryItemId()));
+
+                RentalOrderItem existingItem = order.getItems().stream()
+                        .filter(i -> i.getInventoryItem().getId().equals(invItem.getId()))
+                        .findFirst()
+                        .orElse(null);
+
+                if (existingItem != null) {
+                    // Update existing
+                    if (itemDto.getBookedQty() < existingItem.getDispatchedQty()) {
+                        throw new RuntimeException("Cannot reduce booked quantity below dispatched quantity for item: "
+                                + invItem.getNameEnglish());
+                    }
+
+                    // Check stock if increasing quantity
+                    int additionalQty = itemDto.getBookedQty() - existingItem.getBookedQty();
+                    if (additionalQty > 0 && invItem.getAvailableStock() < additionalQty) {
+                        throw new RuntimeException("Insufficient stock for item: " + invItem.getNameEnglish());
+                    }
+
+                    existingItem.setBookedQty(itemDto.getBookedQty());
+                } else {
+                    // Add new item
+                    if (invItem.getAvailableStock() < itemDto.getBookedQty()) {
+                        throw new RuntimeException("Insufficient stock for item: " + invItem.getNameEnglish());
+                    }
+
+                    RentalOrderItem newItem = RentalOrderItem.builder()
+                            .inventoryItem(invItem)
+                            .bookedQty(itemDto.getBookedQty())
+                            .dispatchedQty(0)
+                            .returnedQty(0)
+                            .build();
+                    order.addItem(newItem);
+                }
+            }
+
+            // 2. Remove missing items
+            List<Long> dtoItemIds = dto.getItems().stream()
+                    .map(RentalOrderItemDTO::getInventoryItemId)
+                    .collect(Collectors.toList());
+
+            // Collect items to remove first to avoid concurrent modification
+            List<RentalOrderItem> itemsToRemove = order.getItems().stream()
+                    .filter(item -> !dtoItemIds.contains(item.getInventoryItem().getId()))
+                    .collect(Collectors.toList());
+
+            for (RentalOrderItem item : itemsToRemove) {
+                if (item.getDispatchedQty() > 0) {
+                    throw new RuntimeException(
+                            "Cannot remove item that has been dispatched: " + item.getInventoryItem().getNameEnglish());
+                }
+                order.removeItem(item);
+            }
         }
 
         order = rentalOrderRepository.save(order);

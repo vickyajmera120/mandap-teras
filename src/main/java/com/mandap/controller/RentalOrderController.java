@@ -50,6 +50,14 @@ public class RentalOrderController {
     }
 
     /**
+     * Update an existing rental order.
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<RentalOrderDTO> updateOrder(@PathVariable Long id, @RequestBody RentalOrderDTO dto) {
+        return ResponseEntity.ok(rentalOrderService.updateOrder(id, dto));
+    }
+
+    /**
      * Dispatch items for an order.
      */
     @PutMapping("/{id}/dispatch")

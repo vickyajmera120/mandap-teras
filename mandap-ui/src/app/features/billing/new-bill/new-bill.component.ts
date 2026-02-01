@@ -407,8 +407,51 @@ export class NewBillComponent implements OnInit {
           }
         });
       } else {
-        this.initializeItems(items);
-        this.isLoading.set(false);
+        // Check for rentalOrderId
+        const rentalOrderId = this.route.snapshot.paramMap.get('rentalOrderId');
+        if (rentalOrderId) {
+          this.rentalOrderService.getById(parseInt(rentalOrderId)).subscribe({
+            next: (order) => {
+              this.selectedCustomerId = order.customerId;
+              // Populate items from order
+              // We need to convert RentalOrderItem to BillItem logic (qty = booked or dispatched?)
+              // Usually for billing we charge for what was Booked (or Dispatched). 
+              // Let's use bookedQty as default charge.
+              const orderItems = order.items?.map(ri => ({
+                id: 0, // new bill item
+                itemId: ri.inventoryItemId,
+                quantity: ri.bookedQty || 0,
+                itemNameGujarati: ri.itemNameGujarati,
+                itemNameEnglish: ri.itemNameEnglish,
+                rate: 0, // Will be looked up from inventory defaults
+                total: 0
+              })) as any[]; // casting to avoid strict type checks here, logic below handles it
+
+              // We need to map rates from inventory items
+              const billItems: BillItem[] = orderItems.map(oi => {
+                const invItem = items.find(i => i.id === oi.itemId);
+                return {
+                  ...oi,
+                  rate: invItem ? invItem.defaultRate : 0,
+                  total: (oi.quantity || 0) * (invItem ? invItem.defaultRate : 0),
+                  item: invItem // needing full item object for mapping
+                };
+              });
+
+              this.initializeItems(items, billItems);
+              this.isLoading.set(false);
+              this.toastService.info('Populated from Rental Order #' + order.orderNumber);
+            },
+            error: () => {
+              this.toastService.error('Failed to load rental order');
+              this.initializeItems(items);
+              this.isLoading.set(false);
+            }
+          });
+        } else {
+          this.initializeItems(items);
+          this.isLoading.set(false);
+        }
       }
     });
   }
@@ -461,9 +504,21 @@ export class NewBillComponent implements OnInit {
 
   onCustomerChange(customer: Customer): void {
     if (customer?.id) {
-      this.rentalOrderService.getUnreturnedItemsByCustomer(customer.id).subscribe({
-        next: (items) => this.unreturnedItems.set(items),
-        error: () => this.unreturnedItems.set([])
+      // Check for existing bill
+      this.billService.getByCustomer(customer.id).subscribe({
+        next: (bills) => {
+          if (bills.length > 0 && (!this.billId() || this.billId() !== bills[0].id)) {
+            this.toastService.info('Customer already has a bill. Redirecting to edit...');
+            this.router.navigate(['/billing/edit', bills[0].id]);
+            return; // Stop further processing
+          }
+
+          // If no existing bill or already editing it, load unreturned items
+          this.rentalOrderService.getUnreturnedItemsByCustomer(customer.id).subscribe({
+            next: (items) => this.unreturnedItems.set(items),
+            error: () => this.unreturnedItems.set([])
+          });
+        }
       });
     } else {
       this.unreturnedItems.set([]);

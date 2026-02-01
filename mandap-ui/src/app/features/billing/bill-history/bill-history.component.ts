@@ -104,6 +104,13 @@ import { CurrencyInrPipe, DateFormatPipe, StatusBadgeComponent, LoadingSpinnerCo
                           <i class="fas fa-edit text-xs"></i>
                         </button>
                         <button 
+                          (click)="deleteBill(bill)"
+                          class="w-8 h-8 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
+                          title="Delete"
+                        >
+                          <i class="fas fa-trash text-xs"></i>
+                        </button>
+                        <button 
                           (click)="printBill(bill)"
                           class="w-8 h-8 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors"
                           title="Print"
@@ -300,6 +307,22 @@ export class BillHistoryComponent implements OnInit {
 
   editBill(bill: Bill): void {
     this.router.navigate(['/billing/edit', bill.id]);
+  }
+
+  deleteBill(bill: Bill): void {
+    if (confirm(`Are you sure you want to delete bill ${bill.billNumber}? This cannot be undone.`)) {
+      this.isLoading.set(true);
+      this.billService.delete(bill.id).subscribe({
+        next: () => {
+          this.toastService.success('Bill deleted successfully');
+          this.loadData();
+        },
+        error: (err) => {
+          this.toastService.error('Failed to delete bill');
+          this.isLoading.set(false);
+        }
+      });
+    }
   }
 
 
