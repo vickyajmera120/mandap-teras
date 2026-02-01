@@ -62,25 +62,31 @@ public class InventoryService {
             item.setActive(dto.getActive());
         }
         if (dto.getTotalStock() != null) {
-            item.setTotalStock(dto.getTotalStock());
+            int oldTotal = item.getTotalStock();
+            int newTotal = dto.getTotalStock();
+            int delta = newTotal - oldTotal;
+
+            item.setTotalStock(newTotal);
+            // Adjust available stock by the change in total stock
+            item.setAvailableStock(item.getAvailableStock() + delta);
         }
-        if (dto.getAvailableStock() != null) {
-            item.setAvailableStock(dto.getAvailableStock());
-        }
+        // Do not update available stock directly from DTO
 
         item = inventoryItemRepository.save(item);
         return toDTO(item);
     }
 
     public InventoryItemDTO createItem(InventoryItemDTO dto) {
+        int totalStock = dto.getTotalStock() != null ? dto.getTotalStock() : 0;
+
         InventoryItem item = InventoryItem.builder()
                 .nameGujarati(dto.getNameGujarati())
                 .nameEnglish(dto.getNameEnglish())
                 .defaultRate(dto.getDefaultRate())
                 .active(true) // Default to active
                 .displayOrder(0) // Default order, will be fixed by drag-drop or reorder
-                .totalStock(dto.getTotalStock() != null ? dto.getTotalStock() : 0)
-                .availableStock(dto.getAvailableStock() != null ? dto.getAvailableStock() : 0)
+                .totalStock(totalStock)
+                .availableStock(totalStock) // Initial available = total
                 .build();
 
         // Handle enums if present, or set defaults

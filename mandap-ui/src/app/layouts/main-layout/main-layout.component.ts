@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { SidebarComponent } from '@shared/components/sidebar/sidebar.component';
 import { ToastComponent } from '@shared/components/toast/toast.component';
+import { LayoutService } from '@core/services';
 
 @Component({
   selector: 'app-main-layout',
@@ -19,7 +20,11 @@ import { ToastComponent } from '@shared/components/toast/toast.component';
       <app-sidebar></app-sidebar>
       
       <!-- Main Content -->
-      <main class="ml-64 min-h-screen relative">
+      <main 
+        class="min-h-screen relative transition-all duration-300"
+        [class.ml-64]="!layoutService.isSidebarCollapsed()"
+        [class.ml-20]="layoutService.isSidebarCollapsed()"
+      >
         <div class="p-8">
           <router-outlet></router-outlet>
         </div>
@@ -30,5 +35,7 @@ import { ToastComponent } from '@shared/components/toast/toast.component';
     </div>
   `
 })
-export class MainLayoutComponent { }
+export class MainLayoutComponent {
+  layoutService = inject(LayoutService);
+}
 

@@ -85,7 +85,7 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                       <div class="text-xs text-[var(--color-text-muted)]">{{ order.customerMobile }}</div>
                     </td>
                     <td class="py-3 px-4 text-center text-[var(--color-text-secondary)]">{{ order.orderDate }}</td>
-                    <td class="py-3 px-4 text-center text-[var(--color-text-secondary)]">{{ order.items?.length || 0 }}</td>
+                    <td class="py-3 px-4 text-center text-[var(--color-text-secondary)]">{{ order.items.length || 0 }}</td>
                     <td class="py-3 px-4 text-center">
                       <span [class]="getStatusClass(order.status!)" class="px-2.5 py-1 rounded-full text-xs font-medium">
                         {{ order.status }}
@@ -758,8 +758,7 @@ export class RentalOrdersComponent implements OnInit {
           this.loadOrders();
           this.isSaving.set(false);
         },
-        error: (err) => {
-          this.toastService.error(err.error?.message || 'Failed to update booking');
+        error: (err: any) => {
           this.isSaving.set(false);
         }
       });
@@ -771,8 +770,7 @@ export class RentalOrdersComponent implements OnInit {
           this.loadOrders();
           this.isSaving.set(false);
         },
-        error: (err) => {
-          this.toastService.error(err.error?.message || 'Failed to create booking');
+        error: (err: any) => {
           this.isSaving.set(false);
         }
       });
@@ -832,7 +830,6 @@ export class RentalOrdersComponent implements OnInit {
         this.isSaving.set(false);
       },
       error: (err: any) => {
-        this.toastService.error(err.error?.message || 'Dispatch failed');
         this.isSaving.set(false);
       }
     });
@@ -857,8 +854,7 @@ export class RentalOrdersComponent implements OnInit {
         this.loadInventory();
         this.isSaving.set(false);
       },
-      error: (err) => {
-        this.toastService.error(err.error?.message || 'Receive failed');
+      error: (err: any) => {
         this.isSaving.set(false);
       }
     });
@@ -889,8 +885,8 @@ export class RentalOrdersComponent implements OnInit {
         this.toastService.success('Order deleted successfully');
         this.loadOrders();
       },
-      error: (err) => {
-        this.toastService.error(err.error?.message || 'Failed to delete order');
+      error: (err: any) => {
+        // Handled by interceptor
       }
     });
   }
@@ -910,7 +906,6 @@ export class RentalOrdersComponent implements OnInit {
         this.isSaving.set(false);
       },
       error: (err) => {
-        this.toastService.error(err.error?.message || 'Failed to delete order');
         this.isSaving.set(false);
       }
     });
@@ -929,8 +924,7 @@ export class RentalOrdersComponent implements OnInit {
         this.loadOrders();
         this.isSaving.set(false);
       },
-      error: (err) => {
-        this.toastService.error(err.error?.message || 'Failed to cancel order');
+      error: (err: any) => {
         this.isSaving.set(false);
       }
     });

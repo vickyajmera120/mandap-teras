@@ -179,25 +179,14 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
               >
               <label for="editIsActive" class="text-[var(--color-text-secondary)]">Active</label>
             </div>
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Total Stock</label>
-                <input 
-                  type="number"
-                  [(ngModel)]="editTotalStock"
-                  min="0"
-                  class="w-full px-4 py-3 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-xl text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
-                >
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Available Stock</label>
-                <input 
-                  type="number"
-                  [(ngModel)]="editAvailableStock"
-                  min="0"
-                  class="w-full px-4 py-3 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-xl text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
-                >
-              </div>
+            <div>
+              <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Total Stock</label>
+              <input 
+                type="number"
+                [(ngModel)]="editTotalStock"
+                min="0"
+                class="w-full px-4 py-3 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-xl text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
+              >
             </div>
             
             <div class="flex gap-3 mt-6">
