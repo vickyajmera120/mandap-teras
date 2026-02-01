@@ -529,6 +529,9 @@ export class BillHistoryComponent implements OnInit {
                         ${rows}
                     </tbody>
                 </table>
+                <div style="text-align: right; font-weight: bold; margin-top: 5px; font-size: 13px;">
+                    Total Payment: ₹${bill.deposit?.toLocaleString('en-IN')}
+                </div>
             </div>
         `;
     }
@@ -580,11 +583,13 @@ export class BillHistoryComponent implements OnInit {
           </tbody>
         </table>
         
+        <div style="text-align: right; font-size: 16px; margin-bottom: 20px; border-top: 1px solid #ccc; padding-top: 10px;">
+            <strong>Total Amount: ₹${bill.totalAmount?.toLocaleString('en-IN')}</strong>
+        </div>
+
         ${paymentsHtml}
 
-        <div class="total">
-          <p>Total Amount: ₹${bill.totalAmount?.toLocaleString('en-IN')}</p>
-          <p>Total Payment: ₹${bill.deposit?.toLocaleString('en-IN')}</p>
+        <div class="total" style="margin-top: 30px; border-top: 2px solid #008080; padding-top: 10px;">
           <p class="net">Net Payable: ₹${bill.netPayable?.toLocaleString('en-IN')}</p>
         </div>
         <script>window.print();</script>
