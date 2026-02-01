@@ -494,14 +494,16 @@ export class BillHistoryComponent implements OnInit {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const itemsHtml = bill.items?.map(item => `
+    const itemsHtml = bill.items?.map((item, index, arr) => {
+      const borderBottom = index === arr.length - 1 ? '' : 'border-bottom: 1px solid #ddd;';
+      return `
       <tr>
-        <td style="padding: 8px; border-bottom: 1px solid #ddd;">${item.itemNameGujarati}</td>
-        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: center;">${item.quantity}</td>
-        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">₹${item.rate}</td>
-        <td style="padding: 8px; border-bottom: 1px solid #ddd; text-align: right;">₹${item.total}</td>
+        <td style="padding: 8px; ${borderBottom}">${item.itemNameGujarati}</td>
+        <td style="padding: 8px; ${borderBottom} text-align: center;">${item.quantity}</td>
+        <td style="padding: 8px; ${borderBottom} text-align: right;">₹${item.rate}</td>
+        <td style="padding: 8px; ${borderBottom} text-align: right;">₹${item.total}</td>
       </tr>
-    `).join('') || '';
+    `}).join('') || '';
 
     let paymentsHtml = '';
     if (bill.payments && bill.payments.length > 0) {
