@@ -483,8 +483,19 @@ export class NewBillComponent implements OnInit {
     this.palNumbers = bill.palNumbers ? bill.palNumbers.split(',') : ['1'];
     this.billType = bill.billType;
     this.paymentStatus = bill.paymentStatus;
-    this.deposit.set(bill.deposit);
     this.remarks = bill.remarks || '';
+
+    // Fix: Find specific deposit payment instead of using total bill.deposit (which is sum of all payments)
+    const depositPayment = bill.payments?.find(p => p.isDeposit);
+    if (depositPayment) {
+      this.deposit.set(depositPayment.amount);
+      this.depositMethod.set(depositPayment.paymentMethod);
+      this.depositChequeNumber.set(depositPayment.chequeNumber || '');
+    } else {
+      this.deposit.set(0);
+      this.depositMethod.set('CASH');
+      this.depositChequeNumber.set('');
+    }
   }
 
   private initializeItems(items: InventoryItem[], billItems?: BillItem[]): void {
