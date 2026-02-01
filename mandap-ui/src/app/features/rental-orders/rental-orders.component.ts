@@ -119,9 +119,7 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                       @if (order.customerPalNumbers?.length) {
                          <div class="flex flex-wrap gap-1">
                            @for (pal of order.customerPalNumbers; track pal) {
-                             <span class="inline-block px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-400 text-[10px] font-mono border border-purple-500/20">
-                               {{ pal }}
-                             </span>
+                             <span class="px-2 py-0.5 bg-slate-700 rounded text-xs text-slate-300">{{ pal }}</span>
                            }
                          </div>
                        } @else {
