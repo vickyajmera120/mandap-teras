@@ -276,3 +276,32 @@ body.light-theme .dark-theme-only {
 body.dark-theme .light-theme-only {
     display: none;
 }
+
+/* Print Styles */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+
+    #print-section,
+    #print-section * {
+        visibility: visible;
+    }
+
+    #print-section {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 20px;
+        background: white;
+        color: black;
+        display: block !important;
+    }
+
+    @page {
+        size: auto;
+        margin: 0mm;
+    }
+}

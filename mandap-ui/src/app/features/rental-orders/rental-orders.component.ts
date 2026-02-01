@@ -100,6 +100,13 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                         >
                           <i class="fas fa-eye text-xs"></i>
                         </button>
+                        <button 
+                          (click)="editOrder(order)"
+                          class="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-400 hover:bg-teal-500/30 transition-colors"
+                          title="Edit Order"
+                        >
+                          <i class="fas fa-edit text-xs"></i>
+                        </button>
                         @if (canDispatch(order)) {
                           <button 
                             (click)="openDispatchModal(order)"
@@ -127,15 +134,20 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                             <i class="fas fa-file-invoice-dollar text-xs"></i>
                           </button>
                         }
-                        @if (order.status === 'BOOKED' || order.status === 'CANCELLED') {
-                          <button 
-                            (click)="deleteOrder(order)"
-                            class="w-8 h-8 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
-                            title="Delete Order"
-                          >
-                            <i class="fas fa-trash text-xs"></i>
-                          </button>
-                        }
+                        <button 
+                          (click)="printOrder(order)"
+                          class="w-8 h-8 rounded-lg bg-gray-500/20 text-gray-400 hover:bg-gray-500/30 transition-colors"
+                          title="Print Order"
+                        >
+                          <i class="fas fa-print text-xs"></i>
+                        </button>
+                        <button 
+                          (click)="deleteOrder(order)"
+                          class="w-8 h-8 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
+                          title="Delete Order"
+                        >
+                          <i class="fas fa-trash text-xs"></i>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -149,6 +161,92 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
           </div>
         </div>
       }
+
+      <!-- Print Template (Hidden by default, visible on print) -->
+      @if (selectedPrintOrder()) {
+        <div id="print-section" class="hidden print:block fixed inset-0 bg-white z-[9999] p-8 text-black">
+          <!-- Header -->
+          <div class="text-center border-b-2 border-gray-800 pb-4 mb-6">
+            <h1 class="text-3xl font-bold uppercase tracking-wider mb-2">Mandap Decoration</h1>
+          </div>
+
+          <!-- Order Info -->
+          <div class="flex justify-between mb-8">
+            <div>
+              <p class="text-sm text-gray-500">Order No:</p>
+              <p class="font-bold text-lg">{{ selectedPrintOrder()?.orderNumber }}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-sm text-gray-500">Date:</p>
+              <p class="font-bold">{{ selectedPrintOrder()?.orderDate }}</p>
+            </div>
+          </div>
+
+          <!-- Customer Info -->
+          <div class="mb-8 p-4 border border-gray-200 rounded-lg">
+            <h3 class="font-bold border-b border-gray-200 pb-2 mb-2">Customer Details</h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <p class="text-sm text-gray-500">Name:</p>
+                <p class="font-medium">{{ selectedPrintOrder()?.customerName }}</p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-500">Mobile:</p>
+                <p class="font-medium">{{ selectedPrintOrder()?.customerMobile }}</p>
+              </div>
+              @if (selectedPrintOrder()?.remarks) {
+                <div class="col-span-2">
+                   <p class="text-sm text-gray-500">Remarks/Address:</p>
+                   <p class="font-medium">{{ selectedPrintOrder()?.remarks }}</p>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Items Table -->
+          <table class="w-full mb-8 text-sm">
+            <thead>
+              <tr class="border-b-2 border-gray-800">
+                <th class="text-left py-2 w-10">#</th>
+                <th class="text-left py-2">Item Name</th>
+                <th class="text-center py-2">Booked</th>
+                <th class="text-center py-2">Disp.</th>
+                <th class="text-center py-2">Ret.</th>
+                <th class="text-center py-2">Out.</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of selectedPrintOrder()?.items; track item.id; let i = $index) {
+                <tr class="border-b border-gray-200">
+                  <td class="py-2 text-gray-600">{{ i + 1 }}</td>
+                  <td class="py-2 font-medium">{{ item.itemNameGujarati || item.itemNameEnglish }}</td>
+                  <td class="py-2 text-center">{{ item.bookedQty }}</td>
+                  <td class="py-2 text-center text-gray-600">{{ item.dispatchedQty || 0 }}</td>
+                  <td class="py-2 text-center text-gray-600">{{ item.returnedQty || 0 }}</td>
+                  <td class="py-2 text-center font-bold" [class.text-red-600]="(item.outstandingQty || 0) > 0">{{ item.outstandingQty || 0 }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+
+          <!-- Footer -->
+          <div class="mt-12 pt-4 border-t-2 border-gray-800 flex justify-between items-end">
+            <div class="text-center">
+              <p class="h-12"></p> <!-- Space for sign -->
+              <p class="text-sm font-bold border-t border-gray-400 pt-1 px-8">Customer Signature</p>
+            </div>
+            <div class="text-center">
+              <p class="h-12"></p> <!-- Space for sign -->
+              <p class="text-sm font-bold border-t border-gray-400 pt-1 px-8">Authorized Signature</p>
+            </div>
+          </div>
+          
+          <div class="text-center text-xs text-gray-400 mt-8">
+            <p>Thank you for your business!</p>
+          </div>
+        </div>
+      }
+
 
       <!-- New Booking Modal -->
       <app-modal #newOrderModal [title]="isEditMode() ? 'Edit Booking' : 'New Booking'" size="lg">
@@ -261,6 +359,23 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
             >
               Cancel
             </button>
+            @if (isEditMode()) {
+              <button 
+                (click)="deleteFromModal()"
+                class="flex-1 py-3 rounded-xl bg-red-500/10 text-red-500 font-semibold hover:bg-red-500/20 transition-all border border-red-500/20"
+              >
+                Delete
+              </button>
+            }
+            @if (isEditMode() && newOrder.status === 'BOOKED') {
+              <button 
+                (click)="cancelOrderFromModal()"
+                [disabled]="isSaving()"
+                class="flex-1 py-3 rounded-xl bg-orange-500/10 text-orange-500 font-semibold hover:bg-orange-500/20 transition-all border border-orange-500/20"
+              >
+                Cancel Booking
+              </button>
+            }
             <button 
               (click)="saveBooking()"
               [disabled]="isSaving() || !newOrder.customerId || newOrder.items.length === 0"
@@ -276,7 +391,7 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
       </app-modal>
 
       <!-- Dispatch Modal -->
-      <app-modal #dispatchModal title="Dispatch Items" size="md">
+      <app-modal #dispatchModal title="Dispatch Items" size="lg">
         @if (selectedOrder()) {
           <div class="space-y-4">
             <div class="text-[var(--color-text-secondary)]">
@@ -288,21 +403,26 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                   <tr>
                     <th class="text-left py-2 px-4 text-[var(--color-text-secondary)] text-sm">Item</th>
                     <th class="text-center py-2 px-4 text-[var(--color-text-secondary)] text-sm">Booked</th>
-                    <th class="text-center py-2 px-4 text-[var(--color-text-secondary)] text-sm">Dispatch Qty</th>
+                    <th class="text-center py-2 px-4 text-[var(--color-text-secondary)] text-sm">Already Disp.</th>
+                    <th class="text-center py-2 px-4 text-[var(--color-text-secondary)] text-sm">Remaining</th>
+                    <th class="text-center py-2 px-4 text-[var(--color-text-secondary)] text-sm">Dispatch Now</th>
                   </tr>
                 </thead>
                 <tbody>
-                  @for (item of dispatchItems; track item.inventoryItemId; let i = $index) {
+                  @for (item of dispatchUIItems; track item.inventoryItemId; let i = $index) {
                     <tr class="border-t border-[var(--color-border)]/50">
                       <td class="py-2 px-4 text-[var(--color-text-primary)]">{{ item.itemNameGujarati }}</td>
                       <td class="py-2 px-4 text-center text-[var(--color-text-secondary)]">{{ item.bookedQty }}</td>
+                      <td class="py-2 px-4 text-center text-[var(--color-text-secondary)]">{{ item.originalDispatchedQty }}</td>
+                      <td class="py-2 px-4 text-center font-medium" [class.text-amber-500]="item.remainingQty > 0" [class.text-green-500]="item.remainingQty === 0">{{ item.remainingQty }}</td>
                       <td class="py-2 px-4 text-center">
                         <input 
                           type="number" 
-                          [(ngModel)]="item.dispatchedQty"
-                          [attr.max]="item.bookedQty || 0"
+                          [(ngModel)]="item.toDispatchQty"
+                          [attr.max]="item.remainingQty"
                           min="0"
-                          class="w-20 px-2 py-1 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded text-center text-[var(--color-text-primary)]"
+                          class="w-24 px-2 py-1 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded text-center text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500 disabled:opacity-50"
+                          [disabled]="item.remainingQty === 0"
                         >
                       </td>
                     </tr>
@@ -312,7 +432,7 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
             </div>
             <div class="flex gap-3 mt-6">
               <button (click)="dispatchModal.close()" class="flex-1 py-3 rounded-xl bg-[var(--color-bg-hover)] text-[var(--color-text-secondary)] border border-[var(--color-border)]">Cancel</button>
-              <button (click)="dispatchOrder()" [disabled]="isSaving()" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold disabled:opacity-50">
+              <button (click)="dispatchOrder()" [disabled]="isSaving() || !canDispatchAny()" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold disabled:opacity-50">
                 @if (isSaving()) { <i class="fas fa-spinner fa-spin mr-2"></i> }
                 Dispatch
               </button>
@@ -333,6 +453,7 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                 <thead class="bg-[var(--color-bg-hover)]/30">
                   <tr>
                     <th class="text-left py-2 px-4 text-[var(--color-text-secondary)] text-sm">Item</th>
+                    <th class="text-center py-2 px-4 text-[var(--color-text-secondary)] text-sm">Booked</th>
                     <th class="text-center py-2 px-4 text-[var(--color-text-secondary)] text-sm">Outstanding</th>
                     <th class="text-center py-2 px-4 text-[var(--color-text-secondary)] text-sm">Return Qty</th>
                   </tr>
@@ -341,6 +462,7 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                   @for (item of receiveItems; track item.inventoryItemId; let i = $index) {
                     <tr class="border-t border-[var(--color-border)]/50">
                       <td class="py-2 px-4 text-[var(--color-text-primary)]">{{ item.itemNameGujarati }}</td>
+                      <td class="py-2 px-4 text-center text-[var(--color-text-secondary)]">{{ item.bookedQty }}</td>
                       <td class="py-2 px-4 text-center text-[var(--color-text-secondary)]">{{ item.outstandingQty }}</td>
                       <td class="py-2 px-4 text-center">
                         <input 
@@ -429,6 +551,7 @@ export class RentalOrdersComponent implements OnInit {
   isLoading = signal(true);
   isSaving = signal(false);
   selectedOrder = signal<RentalOrder | null>(null);
+  selectedPrintOrder = signal<RentalOrder | null>(null);
   isEditMode = signal(false);
   existingOrderId = signal<number | null>(null);
 
@@ -468,6 +591,21 @@ export class RentalOrdersComponent implements OnInit {
     return result;
   });
 
+  printOrder(order: RentalOrder) {
+    this.selectedPrintOrder.set(order);
+    // Determine title for browser print dialog
+    const originalTitle = document.title;
+    document.title = `RentalOrder_${order.orderNumber}`;
+
+    // Tiny delay to ensure template renders before printing
+    setTimeout(() => {
+      window.print();
+      // Reset after print dialog closes
+      document.title = originalTitle;
+      this.selectedPrintOrder.set(null);
+    }, 100);
+  }
+
   canDispatch(order: RentalOrder): boolean {
     if (order.status === 'COMPLETED' || order.status === 'CANCELLED') return false;
     // Can dispatch if any item has booked > dispatched
@@ -486,7 +624,8 @@ export class RentalOrdersComponent implements OnInit {
   selectedQty = 1;
 
   // Dispatch/Receive items
-  dispatchItems: RentalOrderItem[] = [];
+  // Dispatch/Receive items
+  dispatchUIItems: any[] = [];
   receiveItems: RentalOrderItem[] = [];
 
   ngOnInit(): void {
@@ -653,19 +792,40 @@ export class RentalOrdersComponent implements OnInit {
 
   openDispatchModal(order: RentalOrder): void {
     this.selectedOrder.set(order);
-    this.dispatchItems = order.items.map(i => ({
+    this.dispatchUIItems = order.items.map(i => ({
       ...i,
-      dispatchedQty: (i.bookedQty || 0) - (i.dispatchedQty || 0) // Default to remaining
+      originalDispatchedQty: i.dispatchedQty || 0,
+      remainingQty: (i.bookedQty || 0) - (i.dispatchedQty || 0),
+      toDispatchQty: (i.bookedQty || 0) - (i.dispatchedQty || 0) // Default to remaining
     }));
     this.dispatchModal.open();
   }
 
+  canDispatchAny(): boolean {
+    return this.dispatchUIItems.some(i => i.toDispatchQty > 0);
+  }
+
   dispatchOrder(): void {
     if (!this.selectedOrder()) return;
+
+    // Filter items with > 0 dispatch qty
+    const itemsToDispatch = this.dispatchUIItems
+      .filter(i => i.toDispatchQty > 0)
+      .map(i => ({
+        inventoryItemId: i.inventoryItemId,
+        dispatchedQty: i.toDispatchQty, // Send DELTA
+        bookedQty: i.bookedQty // Required by DTO usually
+      } as RentalOrderItem));
+
+    if (itemsToDispatch.length === 0) {
+      this.toastService.warning('Please enter quantity to dispatch for at least one item');
+      return;
+    }
+
     this.isSaving.set(true);
-    this.rentalOrderService.dispatchItems(this.selectedOrder()!.id!, this.dispatchItems).subscribe({
+    this.rentalOrderService.dispatchItems(this.selectedOrder()!.id!, itemsToDispatch).subscribe({
       next: () => {
-        this.toastService.success('Items dispatched');
+        this.toastService.success('Items dispatched successfully');
         this.dispatchModal.close();
         this.loadOrders();
         this.loadInventory();
@@ -704,6 +864,23 @@ export class RentalOrdersComponent implements OnInit {
     });
   }
 
+  editOrder(order: RentalOrder): void {
+    this.isEditMode.set(true);
+    this.existingOrderId.set(order.id!);
+
+    this.newOrder = {
+      ...order,
+      items: order.items?.map(item => ({
+        inventoryItemId: item.inventoryItemId,
+        itemNameGujarati: item.itemNameGujarati,
+        itemNameEnglish: item.itemNameEnglish,
+        bookedQty: item.bookedQty
+      })) || []
+    };
+
+    this.newOrderModal.open();
+  }
+
   deleteOrder(order: RentalOrder): void {
     if (!confirm(`Are you sure you want to delete order ${order.orderNumber}?`)) return;
 
@@ -714,6 +891,47 @@ export class RentalOrdersComponent implements OnInit {
       },
       error: (err) => {
         this.toastService.error(err.error?.message || 'Failed to delete order');
+      }
+    });
+  }
+
+  deleteFromModal(): void {
+    if (!this.existingOrderId()) return;
+
+    // Use window.confirm for now as requested
+    if (!confirm('Are you sure you want to delete this booking? This action cannot be undone.')) return;
+
+    this.isSaving.set(true);
+    this.rentalOrderService.delete(this.existingOrderId()!).subscribe({
+      next: () => {
+        this.toastService.success('Order deleted successfully');
+        this.newOrderModal.close();
+        this.loadOrders();
+        this.isSaving.set(false);
+      },
+      error: (err) => {
+        this.toastService.error(err.error?.message || 'Failed to delete order');
+        this.isSaving.set(false);
+      }
+    });
+  }
+
+  cancelOrderFromModal(): void {
+    if (!this.existingOrderId()) return;
+
+    if (!confirm('Are you sure you want to CANCEL this booking?')) return;
+
+    this.isSaving.set(true);
+    this.rentalOrderService.cancelOrder(this.existingOrderId()!).subscribe({
+      next: () => {
+        this.toastService.success('Order cancelled successfully');
+        this.newOrderModal.close();
+        this.loadOrders();
+        this.isSaving.set(false);
+      },
+      error: (err) => {
+        this.toastService.error(err.error?.message || 'Failed to cancel order');
+        this.isSaving.set(false);
       }
     });
   }

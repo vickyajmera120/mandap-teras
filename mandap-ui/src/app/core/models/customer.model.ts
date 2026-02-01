@@ -3,7 +3,7 @@ export interface Customer {
     id: number;
     name: string;
     mobile: string;
-    palNumber?: string;
+    palNumbers?: string[];
     address?: string;
     alternateContact?: string;
     createdAt?: string;
@@ -13,7 +13,7 @@ export interface Customer {
 export interface CustomerRequest {
     name: string;
     mobile: string;
-    palNumber?: string;
+    palNumbers?: string[];
     address?: string;
     alternateContact?: string;
 }

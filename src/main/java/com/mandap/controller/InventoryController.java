@@ -51,4 +51,9 @@ public class InventoryController {
     public ResponseEntity<List<InventoryItemDTO>> searchItems(@RequestParam("q") String query) {
         return ResponseEntity.ok(inventoryService.searchItems(query));
     }
+
+    @GetMapping("/{id}/usage")
+    public ResponseEntity<List<com.mandap.dto.ItemUsageDTO>> getItemUsage(@PathVariable Long id) {
+        return ResponseEntity.ok(inventoryService.getItemUsage(id));
+    }
 }

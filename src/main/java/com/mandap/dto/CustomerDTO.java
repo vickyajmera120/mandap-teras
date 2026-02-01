@@ -13,7 +13,7 @@ public class CustomerDTO {
     private Long id;
     private String name;
     private String mobile;
-    private String palNumber;
+    private java.util.List<String> palNumbers;
     private String alternateContact;
     private String address;
     private String notes;

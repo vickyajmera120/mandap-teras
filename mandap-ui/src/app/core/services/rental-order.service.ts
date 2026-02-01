@@ -47,6 +47,10 @@ export class RentalOrderService {
         return this.http.get<RentalOrder[]>(`${this.API_URL}/customer/${customerId}/unreturned-orders`);
     }
 
+    cancelOrder(id: number): Observable<RentalOrder> {
+        return this.http.put<RentalOrder>(`${this.API_URL}/${id}/cancel`, {});
+    }
+
     delete(id: number): Observable<void> {
         return this.http.delete<void>(`${this.API_URL}/${id}`);
     }

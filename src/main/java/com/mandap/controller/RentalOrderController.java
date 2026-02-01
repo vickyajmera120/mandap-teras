@@ -103,4 +103,12 @@ public class RentalOrderController {
         rentalOrderService.deleteOrder(id);
         return ResponseEntity.ok().build();
     }
+
+    /**
+     * Cancel a rental order.
+     */
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<RentalOrderDTO> cancelOrder(@PathVariable Long id) {
+        return ResponseEntity.ok(rentalOrderService.cancelOrder(id));
+    }
 }

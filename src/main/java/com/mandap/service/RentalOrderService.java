@@ -322,11 +322,20 @@ public class RentalOrderService {
                 .collect(Collectors.toList());
     }
 
-    private String generateOrderNumber() {
+    private synchronized String generateOrderNumber() {
         String prefix = "RO-" + Year.now().getValue() + "-";
-        Integer maxNum = rentalOrderRepository.findMaxOrderNumberByPrefix(prefix);
-        int nextNum = (maxNum != null ? maxNum : 0) + 1;
-        return prefix + String.format("%04d", nextNum);
+
+        return rentalOrderRepository.findFirstByOrderNumberStartingWithOrderByIdDesc(prefix)
+                .map(lastOrder -> {
+                    try {
+                        String numPart = lastOrder.getOrderNumber().substring(prefix.length());
+                        int nextNum = Integer.parseInt(numPart) + 1;
+                        return prefix + String.format("%04d", nextNum);
+                    } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
+                        return prefix + "0001"; // Fallback
+                    }
+                })
+                .orElse(prefix + "0001");
     }
 
     private RentalOrderDTO toDTO(RentalOrder order) {
@@ -370,11 +379,24 @@ public class RentalOrderService {
         RentalOrder order = rentalOrderRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Rental order not found: " + id));
 
-        if (order.getStatus() != RentalOrder.RentalOrderStatus.BOOKED &&
-                order.getStatus() != RentalOrder.RentalOrderStatus.CANCELLED) {
-            throw new RuntimeException("Cannot delete order with status: " + order.getStatus());
+        rentalOrderRepository.delete(order);
+    }
+
+    /**
+     * Cancel a rental order.
+     * Only allowed if status is BOOKED.
+     */
+    public RentalOrderDTO cancelOrder(Long id) {
+        RentalOrder order = rentalOrderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Rental order not found: " + id));
+
+        if (order.getStatus() != RentalOrder.RentalOrderStatus.BOOKED) {
+            throw new RuntimeException(
+                    "Cannot cancel order with status: " + order.getStatus() + ". Only BOOKED orders can be cancelled.");
         }
 
-        rentalOrderRepository.delete(order);
+        order.setStatus(RentalOrder.RentalOrderStatus.CANCELLED);
+        order = rentalOrderRepository.save(order);
+        return toDTO(order);
     }
 }

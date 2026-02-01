@@ -23,6 +23,7 @@ public interface RentalOrderRepository extends JpaRepository<RentalOrder, Long> 
     @Query("SELECT ro FROM RentalOrder ro WHERE ro.customer.id = :customerId AND ro.status IN ('DISPATCHED', 'PARTIALLY_RETURNED')")
     List<RentalOrder> findUnreturnedOrdersByCustomer(Long customerId);
 
-    @Query("SELECT COALESCE(MAX(CAST(SUBSTRING(ro.orderNumber, 4) AS int)), 0) FROM RentalOrder ro WHERE ro.orderNumber LIKE CONCAT(:prefix, '%')")
-    Integer findMaxOrderNumberByPrefix(String prefix);
+    // Fetch the latest order number for the current year prefix to generate the
+    // next number safely in Java
+    Optional<RentalOrder> findFirstByOrderNumberStartingWithOrderByIdDesc(String prefix);
 }

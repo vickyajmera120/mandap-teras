@@ -1,14 +1,15 @@
 import { Component, OnInit, inject, signal, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { CustomerService, ToastService } from '@core/services';
 import { Customer } from '@core/models';
 import { ModalComponent, LoadingSpinnerComponent } from '@shared';
+import { NgSelectModule } from '@ng-select/ng-select';
 
 @Component({
   selector: 'app-customers',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, ModalComponent, LoadingSpinnerComponent],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, ModalComponent, LoadingSpinnerComponent, NgSelectModule],
   template: `
     <div class="space-y-6">
       <!-- Header -->
@@ -58,7 +59,17 @@ import { ModalComponent, LoadingSpinnerComponent } from '@shared';
                   <tr class="border-t border-[var(--color-border)] hover:bg-[var(--color-bg-hover)] transition-colors">
                     <td class="py-4 px-6 text-[var(--color-text-primary)] font-medium">{{ customer.name }}</td>
                     <td class="py-4 px-6 text-[var(--color-text-secondary)]">{{ customer.mobile }}</td>
-                    <td class="py-4 px-6 text-[var(--color-text-muted)]">{{ customer.palNumber || '-' }}</td>
+                    <td class="py-4 px-6 text-[var(--color-text-muted)]">
+                      @if (customer.palNumbers?.length) {
+                        <div class="flex flex-wrap gap-1">
+                          @for (pal of customer.palNumbers; track pal) {
+                            <span class="px-2 py-0.5 bg-slate-700 rounded text-xs text-slate-300">{{ pal }}</span>
+                          }
+                        </div>
+                      } @else {
+                        -
+                      }
+                    </td>
                     <td class="py-4 px-6 text-[var(--color-text-muted)]">{{ customer.address || '-' }}</td>
                     <td class="py-4 px-6 text-[var(--color-text-muted)]">{{ customer.alternateContact || '-' }}</td>
                     <td class="py-4 px-6">
@@ -115,13 +126,19 @@ import { ModalComponent, LoadingSpinnerComponent } from '@shared';
               >
             </div>
             <div>
-              <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Pal Number</label>
-              <input 
-                type="text"
-                formControlName="palNumber"
-                class="input-dark w-full"
-                placeholder="Pal Number"
+              <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Pal Numbers</label>
+              <ng-select
+                [items]="[]"
+                [addTag]="true"
+                [multiple]="true"
+                [selectOnTab]="true"
+                [isOpen]="false"
+                formControlName="palNumbers"
+                placeholder="Type and press Enter"
+                class="custom-select"
               >
+              </ng-select>
+              <p class="text-xs text-slate-500 mt-1">Multi-word text allowed. Press Enter to add.</p>
             </div>
             <div>
               <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Address</label>
@@ -187,7 +204,7 @@ export class CustomersComponent implements OnInit {
     this.customerForm = this.fb.group({
       name: ['', Validators.required],
       mobile: ['', Validators.required],
-      palNumber: [''],
+      palNumbers: [[]],
       address: [''],
       alternateContact: ['']
     });

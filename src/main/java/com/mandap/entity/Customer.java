@@ -3,6 +3,8 @@ package com.mandap.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "customers")
@@ -23,8 +25,11 @@ public class Customer {
     @Column(nullable = false, length = 15)
     private String mobile;
 
-    @Column(name = "pal_number", length = 50)
-    private String palNumber;
+    @ElementCollection
+    @CollectionTable(name = "customer_pal_numbers", joinColumns = @JoinColumn(name = "customer_id"), uniqueConstraints = @UniqueConstraint(columnNames = "pal_number"))
+    @Column(name = "pal_number")
+    @Builder.Default
+    private Set<String> palNumbers = new HashSet<>();
 
     @Column(name = "alternate_contact", length = 15)
     private String alternateContact;

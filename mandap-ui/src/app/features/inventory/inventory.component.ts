@@ -100,12 +100,21 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
                       <td class="py-3 px-4 text-center text-[var(--color-text-secondary)] font-medium">{{ item.totalStock }}</td>
                       <td class="py-3 px-4 text-center font-semibold" [class]="item.availableStock > 0 ? 'text-green-400' : 'text-red-400'">{{ item.availableStock }}</td>
                       <td class="py-3 px-4 text-center">
-                        <button 
-                          (click)="editItem(item)"
-                          class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
-                        >
-                          <i class="fas fa-edit text-xs"></i>
-                        </button>
+                        <div class="flex items-center justify-center gap-2">
+                            <button 
+                              (click)="viewUsage(item)"
+                              class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 transition-colors"
+                              title="View Usage"
+                            >
+                              <i class="fas fa-history text-xs"></i>
+                            </button>
+                            <button 
+                              (click)="editItem(item)"
+                              class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
+                            >
+                              <i class="fas fa-edit text-xs"></i>
+                            </button>
+                        </div>
                       </td>
                       <!-- Drag preview -->
                       <div *cdkDragPreview class="bg-slate-700 p-4 rounded-lg shadow-xl text-white flex items-center gap-4 w-full">
@@ -204,6 +213,60 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
               </button>
             </div>
           </div>
+      </app-modal>
+
+      <!-- Usage Modal -->
+      <app-modal #usageModal [title]="'Usage: ' + usageItemName()" size="lg">
+        @if (isLoadingUsage()) {
+          <div class="flex justify-center py-8">
+            <app-loading-spinner></app-loading-spinner>
+          </div>
+        } @else {
+          <div class="overflow-hidden border border-[var(--color-border)] rounded-xl">
+             <table class="w-full text-sm">
+                 <thead class="bg-[var(--color-bg-hover)]/30">
+                     <tr>
+                         <th class="py-3 px-4 text-left text-[var(--color-text-secondary)]">Customer</th>
+                         <th class="py-3 px-4 text-left text-[var(--color-text-secondary)]">Order #</th>
+                         <th class="py-3 px-4 text-center text-[var(--color-text-secondary)]">Booked</th>
+                         <th class="py-3 px-4 text-center text-[var(--color-text-secondary)]">Disp.</th>
+                         <th class="py-3 px-4 text-center text-[var(--color-text-secondary)]">Ret.</th>
+                         <th class="py-3 px-4 text-center text-[var(--color-text-secondary)]">Out.</th>
+                     </tr>
+                 </thead>
+                 <tbody class="divide-y divide-[var(--color-border)]/50">
+                     @for (usage of usageItems(); track usage.orderNumber) {
+                         <tr class="hover:bg-[var(--color-bg-hover)]/20">
+                             <td class="py-3 px-4 text-[var(--color-text-primary)] font-medium">{{ usage.customerName }}</td>
+                             <td class="py-3 px-4 text-[var(--color-text-secondary)] font-mono text-xs">{{ usage.orderNumber }}</td>
+                             <td class="py-2 px-4 text-center text-[var(--color-text-secondary)]">{{ usage.bookedQty }}</td>
+                             <td class="py-2 px-4 text-center text-[var(--color-text-secondary)]">{{ usage.dispatchedQty }}</td>
+                             <td class="py-2 px-4 text-center text-[var(--color-text-secondary)]">{{ usage.returnedQty }}</td>
+                             <td class="py-2 px-4 text-center font-bold" [class]="usage.outstandingQty > 0 ? 'text-red-500' : 'text-green-500'">{{ usage.outstandingQty }}</td>
+                         </tr>
+                     } @empty {
+                         <tr>
+                             <td colspan="6" class="py-8 text-center text-[var(--color-text-muted)]">No active usage found</td>
+                         </tr>
+                     }
+                 </tbody>
+                 @if (usageItems().length > 0) {
+                    <tfoot class="bg-[var(--color-bg-hover)]/30 font-bold border-t-2 border-[var(--color-border)]">
+                        <tr>
+                            <td colspan="2" class="py-3 px-4 text-right text-[var(--color-text-primary)]">Total:</td>
+                            <td class="py-3 px-4 text-center text-[var(--color-text-primary)]">{{ usageTotals().booked }}</td>
+                            <td class="py-3 px-4 text-center text-[var(--color-text-primary)]">{{ usageTotals().dispatched }}</td>
+                            <td class="py-3 px-4 text-center text-[var(--color-text-primary)]">{{ usageTotals().returned }}</td>
+                            <td class="py-3 px-4 text-center" [class]="usageTotals().outstanding > 0 ? 'text-red-500' : 'text-green-500'">{{ usageTotals().outstanding }}</td>
+                        </tr>
+                    </tfoot>
+                 }
+             </table>
+          </div>
+          <div class="mt-4 flex justify-end">
+              <button (click)="usageModal.close()" class="px-6 py-2 rounded-lg bg-[var(--color-bg-hover)] text-[var(--color-text-secondary)] border border-[var(--color-border)]">Close</button>
+          </div>
+        }
       </app-modal>
     </div>
   `
@@ -425,5 +488,37 @@ export class InventoryComponent implements OnInit {
         }
       });
     }
+  }
+
+  // Usage Modal Logic
+  @ViewChild('usageModal') usageModal!: ModalComponent;
+  usageItems = signal<any[]>([]);
+  isLoadingUsage = signal(false);
+  usageItemName = signal('');
+
+  usageTotals = computed(() => {
+    return this.usageItems().reduce((acc, curr) => ({
+      booked: acc.booked + (curr.bookedQty || 0),
+      dispatched: acc.dispatched + (curr.dispatchedQty || 0),
+      returned: acc.returned + (curr.returnedQty || 0),
+      outstanding: acc.outstanding + (curr.outstandingQty || 0)
+    }), { booked: 0, dispatched: 0, returned: 0, outstanding: 0 });
+  });
+
+  viewUsage(item: InventoryItem): void {
+    this.usageItemName.set(item.nameGujarati);
+    this.isLoadingUsage.set(true);
+    this.usageModal.open();
+
+    this.inventoryService.getItemUsage(item.id).subscribe({
+      next: (data) => {
+        this.usageItems.set(data);
+        this.isLoadingUsage.set(false);
+      },
+      error: () => {
+        this.toastService.error('Failed to load usage data');
+        this.isLoadingUsage.set(false);
+      }
+    });
   }
 }

@@ -130,6 +130,23 @@ public class InventoryService {
                 .collect(Collectors.toList());
     }
 
+    @Autowired
+    private com.mandap.repository.RentalOrderItemRepository rentalOrderItemRepository;
+
+    public List<com.mandap.dto.ItemUsageDTO> getItemUsage(Long itemId) {
+        return rentalOrderItemRepository.findActiveUsageByInventoryItem(itemId).stream()
+                .map(item -> com.mandap.dto.ItemUsageDTO.builder()
+                        .customerId(item.getRentalOrder().getCustomer().getId())
+                        .customerName(item.getRentalOrder().getCustomer().getName())
+                        .orderNumber(item.getRentalOrder().getOrderNumber())
+                        .bookedQty(item.getBookedQty())
+                        .dispatchedQty(item.getDispatchedQty() != null ? item.getDispatchedQty() : 0)
+                        .returnedQty(item.getReturnedQty() != null ? item.getReturnedQty() : 0)
+                        .outstandingQty(item.getOutstandingQty() != null ? item.getOutstandingQty() : 0)
+                        .build())
+                .collect(Collectors.toList());
+    }
+
     public void reorderItems(List<Long> itemIds) {
         for (int i = 0; i < itemIds.size(); i++) {
             Long itemId = itemIds.get(i);

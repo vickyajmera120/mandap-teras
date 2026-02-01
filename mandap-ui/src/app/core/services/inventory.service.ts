@@ -38,4 +38,18 @@ export class InventoryService {
     search(query: string): Observable<InventoryItem[]> {
         return this.http.get<InventoryItem[]>(`${this.API_URL}/search`, { params: { q: query } });
     }
+
+    getItemUsage(id: number): Observable<ItemUsage[]> {
+        return this.http.get<ItemUsage[]>(`${this.API_URL}/${id}/usage`);
+    }
+}
+
+export interface ItemUsage {
+    customerId: number;
+    customerName: string;
+    orderNumber: string;
+    bookedQty: number;
+    dispatchedQty: number;
+    returnedQty: number;
+    outstandingQty: number;
 }

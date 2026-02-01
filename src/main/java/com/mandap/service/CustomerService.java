@@ -39,6 +39,8 @@ public class CustomerService {
         Customer customer = Customer.builder()
                 .name(dto.getName())
                 .mobile(dto.getMobile())
+                .palNumbers(dto.getPalNumbers() != null ? new java.util.HashSet<>(dto.getPalNumbers())
+                        : new java.util.HashSet<>())
                 .alternateContact(dto.getAlternateContact())
                 .address(dto.getAddress())
                 .notes(dto.getNotes())
@@ -58,6 +60,9 @@ public class CustomerService {
         customer.setAlternateContact(dto.getAlternateContact());
         customer.setAddress(dto.getAddress());
         customer.setNotes(dto.getNotes());
+        if (dto.getPalNumbers() != null) {
+            customer.setPalNumbers(new java.util.HashSet<>(dto.getPalNumbers()));
+        }
         if (dto.getActive() != null) {
             customer.setActive(dto.getActive());
         }
@@ -78,6 +83,8 @@ public class CustomerService {
                 .id(customer.getId())
                 .name(customer.getName())
                 .mobile(customer.getMobile())
+                .palNumbers(customer.getPalNumbers() != null ? new java.util.ArrayList<>(customer.getPalNumbers())
+                        : new java.util.ArrayList<>())
                 .alternateContact(customer.getAlternateContact())
                 .address(customer.getAddress())
                 .notes(customer.getNotes())

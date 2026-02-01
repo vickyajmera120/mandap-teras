@@ -83,7 +83,7 @@ public class BillService {
                 .billNumber(billNumber)
                 .customer(customer)
                 .palNumbers(dto.getPalNumbers() != null ? dto.getPalNumbers()
-                        : (customer.getPalNumber() != null ? customer.getPalNumber() : "1"))
+                        : (customer.getPalNumbers() != null ? String.join(",", customer.getPalNumbers()) : "1"))
                 .billType(dto.getBillType() != null ? Bill.BillType.valueOf(dto.getBillType()) : Bill.BillType.INVOICE)
                 .paymentStatus(dto.getPaymentStatus() != null ? Bill.PaymentStatus.valueOf(dto.getPaymentStatus())
                         : Bill.PaymentStatus.DUE)

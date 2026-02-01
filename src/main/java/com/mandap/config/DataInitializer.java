@@ -21,21 +21,58 @@ public class DataInitializer implements CommandLineRunner {
     private final PermissionRepository permissionRepository;
     private final InventoryItemRepository inventoryItemRepository;
     private final PasswordEncoder passwordEncoder;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     public DataInitializer(UserRepository userRepository, RoleRepository roleRepository,
             PermissionRepository permissionRepository,
             InventoryItemRepository inventoryItemRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.permissionRepository = permissionRepository;
         this.inventoryItemRepository = inventoryItemRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
     @Transactional
     public void run(String... args) {
+        // Aggressive cleanup on startup
+        try {
+            System.out.println("Running manual DB cleanup...");
+
+            // Checks for 'bills'
+            if (columnExists("bills", "event_id")) {
+                System.out.println("Found event_id in bills.");
+                // 1. Make Nullable
+                try {
+                    jdbcTemplate.execute("ALTER TABLE bills MODIFY COLUMN event_id BIGINT NULL");
+                    System.out.println("Made bills.event_id NULLABLE.");
+                } catch (Exception e) {
+                    System.err.println("Failed to make bills.event_id nullable: " + e.getMessage());
+                }
+                // 2. Drop
+                cleanupColumn("bills", "event_id");
+            }
+
+            // Checks for 'rental_orders'
+            if (columnExists("rental_orders", "event_id")) {
+                System.out.println("Found event_id in rental_orders.");
+                try {
+                    jdbcTemplate.execute("ALTER TABLE rental_orders MODIFY COLUMN event_id BIGINT NULL");
+                    System.out.println("Made rental_orders.event_id NULLABLE.");
+                } catch (Exception e) {
+                    System.err.println("Failed to make rental_orders.event_id nullable: " + e.getMessage());
+                }
+                cleanupColumn("rental_orders", "event_id");
+            }
+
+        } catch (Exception e) {
+            System.err.println("DB Cleanup warning: " + e.getMessage());
+        }
+
         // Only initialize if no users exist
         if (userRepository.count() == 0) {
             initializePermissions();
@@ -46,6 +83,51 @@ public class DataInitializer implements CommandLineRunner {
         // Initialize inventory if empty
         if (inventoryItemRepository.count() == 0) {
             initializeInventoryItems();
+        }
+    }
+
+    private boolean columnExists(String tableName, String columnName) {
+        List<Map<String, Object>> columns = jdbcTemplate.queryForList(
+                "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?",
+                tableName, columnName);
+        return !columns.isEmpty();
+    }
+
+    private void cleanupColumn(String tableName, String columnName) {
+        try {
+            // Drop FKs
+            List<Map<String, Object>> fks = jdbcTemplate.queryForList(
+                    "SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE " +
+                            "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? AND REFERENCED_TABLE_NAME IS NOT NULL",
+                    tableName, columnName);
+            for (Map<String, Object> fk : fks) {
+                String constraintName = (String) fk.get("CONSTRAINT_NAME");
+                try {
+                    jdbcTemplate.execute("ALTER TABLE " + tableName + " DROP FOREIGN KEY " + constraintName);
+                    System.out.println("Dropped FK: " + constraintName);
+                } catch (Exception e) {
+                    System.err.println("Failed to drop FK " + constraintName);
+                }
+            }
+
+            // Drop Index
+            List<Map<String, Object>> indexes = jdbcTemplate.queryForList(
+                    "SELECT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS " +
+                            "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? AND INDEX_NAME != 'PRIMARY'",
+                    tableName, columnName);
+            for (Map<String, Object> idx : indexes) {
+                String indexName = (String) idx.get("INDEX_NAME");
+                try {
+                    jdbcTemplate.execute("ALTER TABLE " + tableName + " DROP INDEX " + indexName);
+                } catch (Exception ignore) {
+                }
+            }
+
+            // Drop Column
+            jdbcTemplate.execute("ALTER TABLE " + tableName + " DROP COLUMN " + columnName);
+            System.out.println("Dropped " + columnName + " from " + tableName);
+        } catch (Exception e) {
+            System.err.println("Failed to cleanup " + columnName + " from " + tableName + ": " + e.getMessage());
         }
     }
 

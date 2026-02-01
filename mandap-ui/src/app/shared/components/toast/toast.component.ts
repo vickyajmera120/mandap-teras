@@ -7,15 +7,15 @@ import { ToastService, Toast } from '@core/services';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="fixed top-4 right-4 z-[9999] space-y-2">
+    <div class="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2">
       @for (toast of toastService.toasts(); track toast.id) {
         <div 
           class="flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg animate-slide-in-right min-w-[300px]"
           [ngClass]="{
-            'bg-gradient-to-r from-green-600 to-green-700': toast.type === 'success',
-            'bg-gradient-to-r from-red-600 to-red-700': toast.type === 'error',
-            'bg-gradient-to-r from-yellow-600 to-yellow-700': toast.type === 'warning',
-            'bg-gradient-to-r from-blue-600 to-blue-700': toast.type === 'info'
+            'bg-green-600': toast.type === 'success',
+            'bg-red-600': toast.type === 'error',
+            'bg-orange-500': toast.type === 'warning',
+            'bg-blue-600': toast.type === 'info'
           }"
         >
           <i [ngClass]="{
