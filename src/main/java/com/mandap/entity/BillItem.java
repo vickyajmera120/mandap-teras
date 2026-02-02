@@ -36,6 +36,10 @@ public class BillItem {
     @Builder.Default
     private BigDecimal total = BigDecimal.ZERO;
 
+    @Column(name = "is_lost_item")
+    @Builder.Default
+    private Boolean isLostItem = false;
+
     @PrePersist
     @PreUpdate
     protected void calculateTotal() {

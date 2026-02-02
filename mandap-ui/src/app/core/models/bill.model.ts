@@ -11,6 +11,7 @@ export interface BillItem {
     quantity: number;
     rate: number;
     total?: number;
+    isLostItem?: boolean;
 }
 
 export interface Bill {

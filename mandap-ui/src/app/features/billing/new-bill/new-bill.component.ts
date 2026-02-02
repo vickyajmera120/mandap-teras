@@ -215,6 +215,89 @@ interface ItemEntry {
                 }
               </div>
             </div>
+            
+             <!-- Lost Items Section -->
+            <div class="mt-8 mb-8 p-4 bg-red-900/10 rounded-xl border border-red-500/20">
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                   <i class="fas fa-search-dollar text-red-400"></i>
+                   <h3 class="text-red-400 font-semibold">Lost / Damaged Items</h3>
+                </div>
+                <button (click)="addLostItem()" class="text-xs flex items-center gap-1 bg-red-500/20 text-red-300 px-3 py-1.5 rounded-lg hover:bg-red-500/30 transition-colors">
+                  <i class="fas fa-plus"></i> Add Item
+                </button>
+              </div>
+              
+              <div class="space-y-3">
+                 @for (entry of lostItems(); track $index) {
+                   <div class="flex flex-col md:flex-row items-center gap-3 bg-[var(--color-bg-input)] p-3 rounded-lg border border-red-500/30">
+                      <!-- Item Selector -->
+                      <div class="flex-1 w-full">
+                        <ng-select
+                            [items]="inventoryItems()"
+                            bindLabel="nameGujarati"
+                            [(ngModel)]="entry.item"
+                            (change)="onLostItemSelect(entry, $event)"
+                            [clearable]="false"
+                            class="custom-select w-full"
+                             placeholder="Select Lost Item"
+                        >
+                            <ng-template ng-label-tmp let-item="item">
+                                 <span class="text-white">{{ item.nameGujarati }}</span>
+                            </ng-template>
+                            <ng-template ng-option-tmp let-item="item">
+                                <div class="flex justify-between">
+                                    <span class="text-white">{{ item.nameGujarati }}</span>
+                                    <span class="text-xs text-slate-400">{{ item.nameEnglish }}</span>
+                                </div>
+                            </ng-template>
+                        </ng-select>
+                      </div>
+
+                      <!-- Qty -->
+                      <div class="w-full md:w-24">
+                          <input 
+                            type="number" 
+                            [(ngModel)]="entry.quantity" 
+                            (ngModelChange)="updateLostItemTotal(entry)"
+                            min="1"
+                            class="w-full px-3 py-2 bg-[var(--color-bg-hover)] border border-[var(--color-border)] rounded-lg text-white text-center focus:border-red-500 focus:outline-none"
+                            placeholder="Qty"
+                          >
+                      </div>
+
+                      <!-- Rate (Editable) -->
+                      <div class="w-full md:w-32">
+                         <div class="relative">
+                            <span class="absolute left-3 top-2 text-slate-500">₹</span>
+                            <input 
+                                type="number" 
+                                [(ngModel)]="entry.rate" 
+                                (ngModelChange)="updateLostItemTotal(entry)"
+                                class="w-full pl-6 pr-3 py-2 bg-[var(--color-bg-hover)] border border-[var(--color-border)] rounded-lg text-white text-right focus:border-red-500 focus:outline-none"
+                                placeholder="Rate"
+                            >
+                         </div>
+                      </div>
+
+                      <!-- Total -->
+                      <div class="w-full md:w-32 text-right font-bold text-red-400">
+                         {{ entry.total | currencyInr }}
+                      </div>
+
+                      <!-- Remove -->
+                      <button (click)="removeLostItem($index)" class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/40 transition-colors">
+                         <i class="fas fa-times"></i>
+                      </button>
+                   </div>
+                 }
+                 @if (lostItems().length === 0) {
+                    <div class="text-center py-4 text-slate-500 italic text-sm">
+                       No lost items added. Click "Add Item" to add charges for lost or damaged goods.
+                    </div>
+                 }
+              </div>
+            </div>
           </div>
           
           <!-- Totals Section -->
@@ -383,6 +466,7 @@ export class NewBillComponent implements OnInit {
 
   leftItems = signal<ItemEntry[]>([]);
   rightItems = signal<ItemEntry[]>([]);
+  lostItems = signal<ItemEntry[]>([]); // New signal for lost items
 
   isLoading = signal(true);
   isSaving = signal(false);
@@ -403,11 +487,15 @@ export class NewBillComponent implements OnInit {
   depositChequeNumber = signal('');
   remarks = '';
 
+  // Available items for lost items dropdown (excluding already added ones if needed, or just all)
+  lostItemOptions = computed(() => this.inventoryItems());
+
   // Computed totals
   totalAmount = computed(() => {
     const leftTotal = this.leftItems().reduce((sum, e) => sum + e.total, 0);
     const rightTotal = this.rightItems().reduce((sum, e) => sum + e.total, 0);
-    return leftTotal + rightTotal;
+    const lostTotal = this.lostItems().reduce((sum, e) => sum + e.total, 0);
+    return leftTotal + rightTotal + lostTotal;
   });
 
   netPayable = computed(() => {
@@ -538,9 +626,31 @@ export class NewBillComponent implements OnInit {
 
   private initializeItems(items: InventoryItem[], billItems?: BillItem[]): void {
     const itemMap = new Map<number, BillItem>();
+    const lostItemList: ItemEntry[] = [];
+
     if (billItems) {
-      billItems.forEach(bi => itemMap.set(bi.itemId, bi));
+      billItems.forEach(bi => {
+        if (bi.isLostItem) {
+          const invItem = items.find(i => i.id === bi.itemId);
+          if (invItem) {
+            lostItemList.push({
+              item: invItem,
+              quantity: bi.quantity,
+              rate: bi.rate,
+              total: bi.total || (bi.quantity * bi.rate)
+            });
+          }
+        } else {
+          itemMap.set(bi.itemId, bi);
+        }
+      });
     }
+
+    // Add default empty lost item row - REMOVED
+    // if (lostItemList.length === 0) {
+    //  lostItemList.push(this.createEmptyLostItem());
+    // }
+    this.lostItems.set(lostItemList);
 
     const mapToEntry = (item: InventoryItem) => {
       const existing = itemMap.get(item.id);
@@ -562,6 +672,51 @@ export class NewBillComponent implements OnInit {
 
     this.leftItems.set(leftList.map(mapToEntry));
     this.rightItems.set(rightList.map(mapToEntry));
+  }
+
+  createEmptyLostItem(): ItemEntry {
+    // Return a placeholder item entry. Since we use ng-select, item will be null initially?
+    // ItemEntry expects 'item' to be populated. We can use a dummy or make item optional/nullable in a separate interface,
+    // but to keep it simple, let's just initialize with null and handle in template if possible, or use the first item as default?
+    // Better strategy: The array tracks entries. We need a way to have an "empty" selection.
+    // Let's modify ItemEntry or just use a default non-null assertion if we are careful.
+    // Actually, `ng-select` binds to `entry.item`. 
+    // Let's just create a dummy if the list is empty? Or just don't add one until user clicks 'Add'?
+    // Let's add one empty row if needed, but it's tricky with strict typing.
+    // Let's assume we start with 0 lost items and user adds one.
+    return {
+      item: this.inventoryItems()[0], // Default to first item to satisfy type, UI will reset
+      quantity: 1,
+      rate: 0,
+      total: 0
+    };
+  }
+
+  addLostItem() {
+    this.lostItems.update(items => [
+      ...items,
+      {
+        item: this.inventoryItems()[0],
+        quantity: 1,
+        rate: this.inventoryItems()[0]?.defaultRate || 0,
+        total: this.inventoryItems()[0]?.defaultRate || 0
+      }
+    ]);
+  }
+
+  removeLostItem(index: number) {
+    this.lostItems.update(items => items.filter((_, i) => i !== index));
+  }
+
+  onLostItemSelect(entry: ItemEntry, item: InventoryItem) {
+    entry.item = item;
+    entry.rate = item.defaultRate; // Reset rate to default when item changes
+    this.updateLostItemTotal(entry);
+  }
+
+  updateLostItemTotal(entry: ItemEntry) {
+    entry.total = entry.quantity * entry.rate;
+    this.lostItems.update(items => [...items]); // Trigger signal update
   }
 
 
@@ -633,13 +788,22 @@ export class NewBillComponent implements OnInit {
 
     // Collect items with quantity > 0
     const allItems = [...this.leftItems(), ...this.rightItems()];
-    const billItems: BillItem[] = allItems
-      .filter(e => e.quantity > 0)
-      .map(e => ({
+    const billItems: BillItem[] = [
+      ...allItems
+        .filter(e => e.quantity > 0)
+        .map(e => ({
+          itemId: e.item.id,
+          quantity: e.quantity,
+          rate: e.rate,
+          isLostItem: false
+        })),
+      ...this.lostItems().filter(e => e.quantity > 0).map(e => ({
         itemId: e.item.id,
         quantity: e.quantity,
-        rate: e.rate
-      }));
+        rate: e.rate,
+        isLostItem: true
+      }))
+    ];
 
     const billRequest: BillRequest = {
       customerId: this.selectedCustomerId!,

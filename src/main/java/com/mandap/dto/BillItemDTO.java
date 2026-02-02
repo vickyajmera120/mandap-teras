@@ -19,4 +19,5 @@ public class BillItemDTO {
     private Integer quantity;
     private BigDecimal rate;
     private BigDecimal total;
+    private Boolean isLostItem;
 }

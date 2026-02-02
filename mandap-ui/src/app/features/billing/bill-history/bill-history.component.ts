@@ -472,6 +472,10 @@ export class BillHistoryComponent implements OnInit {
     this.viewModal.open();
   }
 
+  hasLostItems(bill: Bill): boolean {
+    return bill.items.some(i => i.isLostItem);
+  }
+
   editBill(bill: Bill): void {
     this.router.navigate(['/billing/edit', bill.id]);
   }
@@ -500,6 +504,13 @@ export class BillHistoryComponent implements OnInit {
   closePaymentModal() {
     this.showPaymentModal.set(false);
     this.selectedBillForPayment.set(null);
+  }
+
+  private formatCurrency(value: number): string {
+    return '₹' + (value || 0).toLocaleString('en-IN', {
+      maximumFractionDigits: 2,
+      minimumFractionDigits: 2
+    });
   }
 
   printBill(bill: Bill): void {
@@ -620,7 +631,31 @@ export class BillHistoryComponent implements OnInit {
             </tr>
           </thead>
           <tbody>
-            ${itemsHtml}
+            ${bill.items.filter(i => !i.isLostItem).map(item => `
+              <tr>
+                <td style="text-align: left;">${item.itemNameGujarati}</td>
+                <td style="text-align: center;">${item.quantity}</td>
+                <td style="text-align: right;">${this.formatCurrency(item.rate)}</td>
+                <td style="text-align: right;">${this.formatCurrency(item.total || 0)}</td>
+              </tr>
+            `).join('')}
+            
+            ${bill.items.some(i => i.isLostItem) ? `
+              <tr class="section-header">
+                <td colspan="4" style="text-align: left; background-color: #fca5a5; color: #7f1d1d; font-weight: bold; padding: 5px 10px;">Lost / Damaged Items</td>
+              </tr>
+              ${bill.items.filter(i => i.isLostItem).map(item => `
+              <tr style="background-color: #fef2f2;">
+                <td style="text-align: left; color: #991b1b;">${item.itemNameGujarati}</td>
+                <td style="text-align: center; color: #991b1b;">${item.quantity}</td>
+                <td style="text-align: right; color: #991b1b;">${this.formatCurrency(item.rate)}</td>
+                <td style="text-align: right; font-weight: bold; color: #b91c1c;">${this.formatCurrency(item.total || 0)}</td>
+              </tr>
+            `).join('')}
+            ` : ''}
+
+            <tr class="total-row">
+            </tr>
           </tbody>
         </table>
         

@@ -116,6 +116,9 @@ public class BillService {
                                                         .quantity(itemDTO.getQuantity())
                                                         .rate(itemDTO.getRate() != null ? itemDTO.getRate()
                                                                         : inventoryItem.getDefaultRate())
+                                                        .isLostItem(itemDTO.getIsLostItem() != null
+                                                                        ? itemDTO.getIsLostItem()
+                                                                        : false)
                                                         .build();
 
                                         billItem.setTotal(billItem.getRate()
@@ -189,6 +192,9 @@ public class BillService {
                                                         .quantity(itemDTO.getQuantity())
                                                         .rate(itemDTO.getRate() != null ? itemDTO.getRate()
                                                                         : inventoryItem.getDefaultRate())
+                                                        .isLostItem(itemDTO.getIsLostItem() != null
+                                                                        ? itemDTO.getIsLostItem()
+                                                                        : false)
                                                         .build();
 
                                         billItem.setTotal(billItem.getRate()
@@ -346,6 +352,7 @@ public class BillService {
                                                 .quantity(item.getQuantity())
                                                 .rate(item.getRate())
                                                 .total(item.getTotal())
+                                                .isLostItem(Boolean.TRUE.equals(item.getIsLostItem()))
                                                 .build())
                                 .collect(Collectors.toList());
 
