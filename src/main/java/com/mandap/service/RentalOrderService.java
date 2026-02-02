@@ -2,6 +2,7 @@ package com.mandap.service;
 
 import com.mandap.dto.RentalOrderDTO;
 import com.mandap.dto.RentalOrderItemDTO;
+import com.mandap.dto.RentalOrderTransactionDTO;
 import com.mandap.entity.*;
 import com.mandap.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,9 @@ public class RentalOrderService {
 
     @Autowired
     private RentalOrderItemRepository rentalOrderItemRepository;
+
+    @Autowired
+    private RentalOrderTransactionRepository rentalOrderTransactionRepository;
 
     @Autowired
     private CustomerRepository customerRepository;
@@ -259,9 +263,9 @@ public class RentalOrderService {
     }
 
     /**
-     * Dispatch items for an order. Decreases available stock.
+     * Dispatch items for an order with voucher details.
      */
-    public RentalOrderDTO dispatchItems(Long orderId, List<RentalOrderItemDTO> dispatchItems) {
+    public RentalOrderDTO dispatchItems(Long orderId, RentalOrderTransactionDTO transactionDto) {
         RentalOrder order = rentalOrderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Rental order not found: " + orderId));
 
@@ -272,7 +276,20 @@ public class RentalOrderService {
 
         LocalDate dispatchDate = LocalDate.now();
 
-        for (RentalOrderItemDTO dispatchDto : dispatchItems) {
+        // Create Transaction Header
+        RentalOrderTransaction transaction = RentalOrderTransaction.builder()
+                .rentalOrder(order)
+                .type(RentalOrderTransaction.TransactionType.DISPATCH)
+                .voucherNumber(transactionDto.getVoucherNumber())
+                .vehicleNumber(transactionDto.getVehicleNumber())
+                .transactionDate(dispatchDate)
+                .build();
+
+        for (RentalOrderItemDTO dispatchDto : transactionDto.getItems()) {
+            if (dispatchDto.getDispatchedQty() == null || dispatchDto.getDispatchedQty() <= 0) {
+                continue;
+            }
+
             RentalOrderItem orderItem = order.getItems().stream()
                     .filter(i -> i.getInventoryItem().getId().equals(dispatchDto.getInventoryItemId()))
                     .findFirst()
@@ -283,7 +300,8 @@ public class RentalOrderService {
             int remainingToDispatch = orderItem.getBookedQty() - orderItem.getDispatchedQty();
 
             if (qtyToDispatch > remainingToDispatch) {
-                throw new RuntimeException("Cannot dispatch more than booked quantity");
+                throw new RuntimeException("Cannot dispatch more than booked quantity for item: "
+                        + orderItem.getInventoryItem().getNameEnglish());
             }
 
             // Check available stock
@@ -296,10 +314,19 @@ public class RentalOrderService {
             invItem.setAvailableStock(invItem.getAvailableStock() - qtyToDispatch);
             inventoryItemRepository.save(invItem);
 
-            // Update order item
+            // Update order item aggregate
             orderItem.setDispatchedQty(orderItem.getDispatchedQty() + qtyToDispatch);
             orderItem.setDispatchDate(dispatchDate);
+
+            // Add Transaction Item
+            RentalOrderTransactionItem transItem = RentalOrderTransactionItem.builder()
+                    .inventoryItem(invItem)
+                    .quantity(qtyToDispatch)
+                    .build();
+            transaction.addItem(transItem);
         }
+
+        rentalOrderTransactionRepository.save(transaction);
 
         order.setDispatchDate(dispatchDate);
         order.setStatus(RentalOrder.RentalOrderStatus.DISPATCHED);
@@ -309,9 +336,9 @@ public class RentalOrderService {
     }
 
     /**
-     * Receive (return) items from customer. Increases available stock.
+     * Receive (return) items from customer with voucher details.
      */
-    public RentalOrderDTO receiveItems(Long orderId, List<RentalOrderItemDTO> returnItems) {
+    public RentalOrderDTO receiveItems(Long orderId, RentalOrderTransactionDTO transactionDto) {
         RentalOrder order = rentalOrderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Rental order not found: " + orderId));
 
@@ -322,9 +349,21 @@ public class RentalOrderService {
         }
 
         LocalDate returnDate = LocalDate.now();
-        boolean allReturned = true;
 
-        for (RentalOrderItemDTO returnDto : returnItems) {
+        // Create Transaction Header
+        RentalOrderTransaction transaction = RentalOrderTransaction.builder()
+                .rentalOrder(order)
+                .type(RentalOrderTransaction.TransactionType.RETURN)
+                .voucherNumber(transactionDto.getVoucherNumber())
+                .vehicleNumber(transactionDto.getVehicleNumber())
+                .transactionDate(returnDate)
+                .build();
+
+        for (RentalOrderItemDTO returnDto : transactionDto.getItems()) {
+            if (returnDto.getReturnedQty() == null || returnDto.getReturnedQty() <= 0) {
+                continue;
+            }
+
             RentalOrderItem orderItem = order.getItems().stream()
                     .filter(i -> i.getInventoryItem().getId().equals(returnDto.getInventoryItemId()))
                     .findFirst()
@@ -335,7 +374,8 @@ public class RentalOrderService {
             int outstanding = orderItem.getDispatchedQty() - orderItem.getReturnedQty();
 
             if (qtyToReturn > outstanding) {
-                throw new RuntimeException("Cannot return more than outstanding quantity");
+                throw new RuntimeException("Cannot return more than outstanding quantity for item: "
+                        + orderItem.getInventoryItem().getNameEnglish());
             }
 
             // Update inventory available stock
@@ -343,12 +383,22 @@ public class RentalOrderService {
             invItem.setAvailableStock(invItem.getAvailableStock() + qtyToReturn);
             inventoryItemRepository.save(invItem);
 
-            // Update order item
+            // Update order item aggregate
             orderItem.setReturnedQty(orderItem.getReturnedQty() + qtyToReturn);
             orderItem.setReturnDate(returnDate);
+
+            // Add Transaction Item
+            RentalOrderTransactionItem transItem = RentalOrderTransactionItem.builder()
+                    .inventoryItem(invItem)
+                    .quantity(qtyToReturn)
+                    .build();
+            transaction.addItem(transItem);
         }
 
+        rentalOrderTransactionRepository.save(transaction);
+
         // Check if all items are returned
+        boolean allReturned = true;
         for (RentalOrderItem item : order.getItems()) {
             if (item.getDispatchedQty() > item.getReturnedQty()) {
                 allReturned = false;
@@ -413,7 +463,30 @@ public class RentalOrderService {
                 .status(order.getStatus().name())
                 .billId(order.getBill() != null ? order.getBill().getId() : null)
                 .remarks(order.getRemarks())
+                .billId(order.getBill() != null ? order.getBill().getId() : null)
+                .remarks(order.getRemarks())
                 .items(order.getItems().stream().map(this::toItemDTO).collect(Collectors.toList()))
+                .transactions(rentalOrderTransactionRepository
+                        .findByRentalOrderIdOrderByTransactionDateDesc(order.getId()).stream()
+                        .map(this::toTransactionDTO)
+                        .collect(Collectors.toList()))
+                .build();
+    }
+
+    private RentalOrderTransactionDTO toTransactionDTO(RentalOrderTransaction transaction) {
+        return RentalOrderTransactionDTO.builder()
+                .id(transaction.getId())
+                .rentalOrderId(transaction.getRentalOrder().getId())
+                .type(transaction.getType().name())
+                .voucherNumber(transaction.getVoucherNumber())
+                .vehicleNumber(transaction.getVehicleNumber())
+                .transactionDate(transaction.getTransactionDate())
+                .items(transaction.getItems().stream().map(item -> RentalOrderItemDTO.builder()
+                        .inventoryItemId(item.getInventoryItem().getId())
+                        .itemNameGujarati(item.getInventoryItem().getNameGujarati())
+                        .itemNameEnglish(item.getInventoryItem().getNameEnglish())
+                        .bookedQty(item.getQuantity()) // Reusing bookedQty field for transaction quantity
+                        .build()).collect(Collectors.toList()))
                 .build();
     }
 

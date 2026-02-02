@@ -587,6 +587,29 @@ export class BillHistoryComponent implements OnInit {
             <p><strong>Pal No(s):</strong> ${bill.palNumbers}</p>
           </div>
         </div>
+
+        ${bill.paymentStatus === 'PAID' ? `
+        <div style="
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            border: 5px solid rgba(16, 185, 129, 0.4);
+            color: rgba(16, 185, 129, 0.4);
+            font-size: 80px;
+            font-weight: bold;
+            padding: 20px 60px;
+            border-radius: 15px;
+            user-select: none;
+            pointer-events: none;
+            z-index: 0;
+            text-transform: uppercase;
+            letter-spacing: 10px;
+        ">
+            PAID
+        </div>
+        ` : ''}
+
         <table>
           <thead>
             <tr>

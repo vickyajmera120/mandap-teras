@@ -2,6 +2,7 @@ package com.mandap.controller;
 
 import com.mandap.dto.RentalOrderDTO;
 import com.mandap.dto.RentalOrderItemDTO;
+import com.mandap.dto.RentalOrderTransactionDTO;
 import com.mandap.service.RentalOrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -63,8 +64,8 @@ public class RentalOrderController {
     @PutMapping("/{id}/dispatch")
     public ResponseEntity<RentalOrderDTO> dispatchItems(
             @PathVariable Long id,
-            @RequestBody List<RentalOrderItemDTO> items) {
-        return ResponseEntity.ok(rentalOrderService.dispatchItems(id, items));
+            @RequestBody RentalOrderTransactionDTO transactionDto) {
+        return ResponseEntity.ok(rentalOrderService.dispatchItems(id, transactionDto));
     }
 
     /**
@@ -73,8 +74,8 @@ public class RentalOrderController {
     @PutMapping("/{id}/receive")
     public ResponseEntity<RentalOrderDTO> receiveItems(
             @PathVariable Long id,
-            @RequestBody List<RentalOrderItemDTO> items) {
-        return ResponseEntity.ok(rentalOrderService.receiveItems(id, items));
+            @RequestBody RentalOrderTransactionDTO transactionDto) {
+        return ResponseEntity.ok(rentalOrderService.receiveItems(id, transactionDto));
     }
 
     /**

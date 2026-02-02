@@ -30,4 +30,15 @@ export interface RentalOrder {
     billId?: number;
     remarks?: string;
     items: RentalOrderItem[];
+    transactions?: RentalOrderTransaction[];
+}
+
+export interface RentalOrderTransaction {
+    id?: number;
+    rentalOrderId?: number;
+    type?: 'DISPATCH' | 'RETURN';
+    voucherNumber?: string;
+    vehicleNumber?: string;
+    transactionDate?: string;
+    items: RentalOrderItem[];
 }

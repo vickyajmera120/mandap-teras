@@ -27,4 +27,5 @@ public class RentalOrderDTO {
     private Long billId;
     private String remarks;
     private List<RentalOrderItemDTO> items;
+    private List<RentalOrderTransactionDTO> transactions;
 }

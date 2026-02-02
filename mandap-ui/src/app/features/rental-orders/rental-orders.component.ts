@@ -143,6 +143,13 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                           <i class="fas fa-eye text-xs"></i>
                         </button>
                         <button 
+                          (click)="viewHistory(order)"
+                          class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 transition-colors"
+                          title="View History"
+                        >
+                          <i class="fas fa-history text-xs"></i>
+                        </button>
+                        <button 
                           (click)="editOrder(order)"
                           class="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-400 hover:bg-teal-500/30 transition-colors"
                           title="Edit Order"
@@ -206,70 +213,73 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
 
       <!-- Print Template (Hidden by default, visible on print) -->
       @if (selectedPrintOrder()) {
-        <div id="print-section" class="hidden print:block fixed inset-0 bg-white z-[9999] p-8 text-black">
-          <!-- Header -->
-          <div class="text-center border-b-2 border-gray-800 pb-4 mb-6">
-            <h1 class="text-3xl font-bold uppercase tracking-wider mb-2">Mandap Decoration</h1>
-          </div>
-
-          <!-- Order Info -->
-          <div class="flex justify-between mb-8">
-            <div>
-              <p class="text-sm text-gray-500">Order No:</p>
-              <p class="font-bold text-lg">{{ selectedPrintOrder()?.orderNumber }}</p>
+        <div id="print-section" class="hidden print:block print:static print:w-full print:bg-white print:z-[9999]">
+          <div class="w-full px-6 py-6 bg-white">
+            <!-- Header -->
+            <div class="text-center border-b-2 border-gray-800 pb-2 mb-4">
+              <h1 class="text-2xl font-bold uppercase tracking-wider mb-1">Mandap Decoration</h1>
             </div>
-            <div class="text-right">
-              <p class="text-sm text-gray-500">Date:</p>
-              <p class="font-bold">{{ selectedPrintOrder()?.orderDate }}</p>
-            </div>
-          </div>
 
-          <!-- Customer Info -->
-          <div class="mb-8 p-4 border border-gray-200 rounded-lg">
-            <h3 class="font-bold border-b border-gray-200 pb-2 mb-2">Customer Details</h3>
-            <div class="grid grid-cols-2 gap-4">
+            <!-- Order Info -->
+            <div class="flex justify-between mb-6 text-sm">
               <div>
-                <p class="text-sm text-gray-500">Name:</p>
-                <p class="font-medium">{{ selectedPrintOrder()?.customerName }}</p>
+                <p class="text-gray-500 text-xs">Order No:</p>
+                <p class="font-bold text-base">{{ selectedPrintOrder()?.orderNumber }}</p>
               </div>
-              <div>
-                <p class="text-sm text-gray-500">Mobile:</p>
-                <p class="font-medium">{{ selectedPrintOrder()?.customerMobile }}</p>
+              <div class="text-right">
+                <p class="text-gray-500 text-xs">Date:</p>
+                <p class="font-bold">{{ selectedPrintOrder()?.orderDate }}</p>
               </div>
-              @if (selectedPrintOrder()?.remarks) {
-                <div class="col-span-2">
-                   <p class="text-sm text-gray-500">Remarks/Address:</p>
-                   <p class="font-medium">{{ selectedPrintOrder()?.remarks }}</p>
+            </div>
+
+            <!-- Customer Info -->
+            <div class="mb-6 p-3 border border-gray-200 rounded-lg text-sm">
+              <h3 class="font-bold border-b border-gray-200 pb-1 mb-2 text-xs uppercase text-gray-500">Customer Details</h3>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <p class="text-gray-500 text-xs">Name:</p>
+                  <p class="font-medium">{{ selectedPrintOrder()?.customerName }}</p>
                 </div>
-              }
+                <div>
+                  <p class="text-gray-500 text-xs">Mobile:</p>
+                  <p class="font-medium">{{ selectedPrintOrder()?.customerMobile }}</p>
+                </div>
+                @if (selectedPrintOrder()?.remarks) {
+                  <div class="col-span-2">
+                     <p class="text-gray-500 text-xs">Remarks/Address:</p>
+                     <p class="font-medium">{{ selectedPrintOrder()?.remarks }}</p>
+                  </div>
+                }
+              </div>
             </div>
-          </div>
 
-          <!-- Items Table -->
-          <table class="w-full mb-8 text-sm">
-            <thead>
-              <tr class="border-b-2 border-gray-800">
-                <th class="text-left py-2 w-10">#</th>
-                <th class="text-left py-2">Item Name</th>
-                <th class="text-center py-2">Booked</th>
-                <th class="text-center py-2">Disp.</th>
-                <th class="text-center py-2">Ret.</th>
-                <th class="text-center py-2">Out.</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (item of selectedPrintOrder()?.items; track item.id; let i = $index) {
-                <tr class="border-b border-gray-200">
-                  <td class="py-2 text-gray-600">{{ i + 1 }}</td>
-                  <td class="py-2 font-medium">{{ item.itemNameGujarati || item.itemNameEnglish }}</td>
-                  <td class="py-2 text-center">{{ item.bookedQty }}</td>
-                  <td class="py-2 text-center text-gray-600">{{ item.dispatchedQty || 0 }}</td>
-                  <td class="py-2 text-center text-gray-600">{{ item.returnedQty || 0 }}</td>
-                  <td class="py-2 text-center font-bold" [class.text-red-600]="(item.outstandingQty || 0) > 0">{{ item.outstandingQty || 0 }}</td>
+            <!-- Items Table -->
+            <table class="w-full mb-8 text-xs">
+              <thead>
+                <tr class="border-b-2 border-gray-800">
+                  <th class="text-left py-1 w-8">#</th>
+                  <th class="text-left py-1">Item Name</th>
+                  <th class="text-center py-1 w-12">Total</th>
+                  <th class="text-center py-1 w-12">Disp.</th>
+                  <th class="text-center py-1 w-12">Pend.</th>
+                  <th class="text-center py-1 w-12">Ret.</th>
+                  <th class="text-center py-1 w-12">Out.</th>
                 </tr>
-              }
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                @for (item of selectedPrintOrder()?.items; track item.id; let i = $index) {
+                  <tr class="border-b border-gray-200">
+                    <td class="py-1 text-gray-600">{{ i + 1 }}</td>
+                    <td class="py-1 font-medium pr-2">{{ item.itemNameGujarati || item.itemNameEnglish }}</td>
+                    <td class="py-1 text-center">{{ item.bookedQty }}</td>
+                    <td class="py-1 text-center text-gray-600">{{ item.dispatchedQty || 0 }}</td>
+                    <td class="py-1 text-center text-gray-600" [class.font-bold]="(item.bookedQty - (item.dispatchedQty || 0)) > 0">{{ item.bookedQty - (item.dispatchedQty || 0) }}</td>
+                    <td class="py-1 text-center text-gray-600">{{ item.returnedQty || 0 }}</td>
+                    <td class="py-1 text-center font-bold" [class.text-red-600]="(item.outstandingQty || 0) > 0">{{ item.outstandingQty || 0 }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
 
           <!-- Footer -->
           <div class="mt-12 pt-4 border-t-2 border-gray-800 flex justify-between items-end">
@@ -285,6 +295,7 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
           
           <div class="text-center text-xs text-gray-400 mt-8">
             <p>Thank you for your business!</p>
+          </div>
           </div>
         </div>
       }
@@ -440,6 +451,28 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
               Order: <span class="text-[var(--color-text-primary)] font-mono">{{ selectedOrder()!.orderNumber }}</span>
             </div>
             <div class="border border-[var(--color-border)] rounded-xl overflow-hidden">
+              <div class="grid grid-cols-2 gap-4 p-4 bg-[var(--color-bg-hover)]/30 border-b border-[var(--color-border)]">
+                <div>
+                   <label class="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Dispatch Voucher No</label>
+                   <input 
+                     type="text" 
+                     [ngModel]="dispatchVoucherNumber()"
+                     (ngModelChange)="dispatchVoucherNumber.set($event)"
+                     placeholder="Enter voucher no"
+                     class="w-full px-3 py-2 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
+                   >
+                </div>
+                <div>
+                   <label class="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Vehicle Number</label>
+                   <input 
+                     type="text" 
+                     [ngModel]="dispatchVehicleNumber()"
+                     (ngModelChange)="dispatchVehicleNumber.set($event)"
+                     placeholder="Enter vehicle no"
+                     class="w-full px-3 py-2 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
+                   >
+                </div>
+              </div>
               <table class="w-full">
                 <thead class="bg-[var(--color-bg-hover)]/30">
                   <tr>
@@ -491,6 +524,28 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
               Order: <span class="text-[var(--color-text-primary)] font-mono">{{ selectedOrder()!.orderNumber }}</span>
             </div>
             <div class="border border-[var(--color-border)] rounded-xl overflow-hidden">
+              <div class="grid grid-cols-2 gap-4 p-4 bg-[var(--color-bg-hover)]/30 border-b border-[var(--color-border)]">
+                <div>
+                   <label class="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Return Voucher No</label>
+                   <input 
+                     type="text" 
+                     [ngModel]="returnVoucherNumber()"
+                     (ngModelChange)="returnVoucherNumber.set($event)"
+                     placeholder="Enter voucher no"
+                     class="w-full px-3 py-2 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
+                   >
+                </div>
+                <div>
+                   <label class="block text-xs font-medium text-[var(--color-text-secondary)] mb-1">Vehicle Number</label>
+                   <input 
+                     type="text" 
+                     [ngModel]="returnVehicleNumber()"
+                     (ngModelChange)="returnVehicleNumber.set($event)"
+                     placeholder="Enter vehicle no"
+                     class="w-full px-3 py-2 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
+                   >
+                </div>
+              </div>
               <table class="w-full">
                 <thead class="bg-[var(--color-bg-hover)]/30">
                   <tr>
@@ -540,33 +595,94 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
               <div><span class="text-[var(--color-text-muted)]">Status:</span> <span [class]="getStatusClass(selectedOrder()!.status!)" class="px-2 py-0.5 rounded-full text-xs">{{ selectedOrder()!.status }}</span></div>
               <div><span class="text-[var(--color-text-muted)]">Customer:</span> <span class="text-[var(--color-text-primary)]">{{ selectedOrder()!.customerName }}</span></div>
             </div>
-            <div class="border border-[var(--color-border)] rounded-xl overflow-hidden">
-              <table class="w-full text-sm">
-                <thead class="bg-[var(--color-bg-hover)]/30">
-                  <tr>
-                    <th class="text-left py-2 px-4 text-[var(--color-text-secondary)]">Item</th>
-                    <th class="text-center py-2 px-4 text-[var(--color-text-secondary)]">Booked</th>
-                    <th class="text-center py-2 px-4 text-[var(--color-text-secondary)]">Dispatched</th>
-                    <th class="text-center py-2 px-4 text-[var(--color-text-secondary)]">Returned</th>
-                    <th class="text-center py-2 px-4 text-[var(--color-text-secondary)]">Outstanding</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (item of selectedOrder()!.items; track item.inventoryItemId) {
-                    <tr class="border-t border-[var(--color-border)]/50">
-                      <td class="py-2 px-4 text-[var(--color-text-primary)]">{{ item.itemNameGujarati }}</td>
-                      <td class="py-2 px-4 text-center text-[var(--color-text-secondary)]">{{ item.bookedQty }}</td>
-                      <td class="py-2 px-4 text-center text-[var(--color-text-secondary)]">{{ item.dispatchedQty }}</td>
-                      <td class="py-2 px-4 text-center text-[var(--color-text-secondary)]">{{ item.returnedQty }}</td>
-                      <td class="py-2 px-4 text-center font-semibold" [class]="(item.outstandingQty || 0) > 0 ? 'text-red-400' : 'text-green-400'">{{ item.outstandingQty }}</td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
+            <div class="flex border-b border-[var(--color-border)] mb-4">
+               <button 
+                 (click)="showHistory.set(false)"
+                 [class.border-teal-500]="!showHistory()"
+                 [class.text-teal-500]="!showHistory()"
+                 class="px-4 py-2 border-b-2 border-transparent hover:text-teal-400 transition-colors font-medium text-sm"
+               >
+                 Items Summary
+               </button>
+               <button 
+                 (click)="showHistory.set(true)"
+                 [class.border-teal-500]="showHistory()"
+                 [class.text-teal-500]="showHistory()"
+                 class="px-4 py-2 border-b-2 border-transparent hover:text-teal-400 transition-colors font-medium text-sm"
+               >
+                 Transaction History
+               </button>
             </div>
+
+            @if (!showHistory()) {
+                <div class="border border-[var(--color-border)] rounded-xl overflow-hidden">
+                  <table class="w-full text-sm">
+                    <thead class="bg-[var(--color-bg-hover)]/30">
+                      <tr>
+                        <th class="text-left py-2 px-4 text-[var(--color-text-secondary)]">Item</th>
+                        <th class="text-center py-2 px-4 text-[var(--color-text-secondary)]">Booked</th>
+                        <th class="text-center py-2 px-4 text-[var(--color-text-secondary)]">Dispatched</th>
+                        <th class="text-center py-2 px-4 text-[var(--color-text-secondary)]">Pend. Dispatch</th>
+                        <th class="text-center py-2 px-4 text-[var(--color-text-secondary)]">Returned</th>
+                        <th class="text-center py-2 px-4 text-[var(--color-text-secondary)]">Pend. Return</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (item of selectedOrder()!.items; track item.inventoryItemId) {
+                        <tr class="border-t border-[var(--color-border)]/50">
+                          <td class="py-2 px-4 text-[var(--color-text-primary)]">{{ item.itemNameGujarati }}</td>
+                          <td class="py-2 px-4 text-center text-[var(--color-text-secondary)]">{{ item.bookedQty }}</td>
+                          <td class="py-2 px-4 text-center text-[var(--color-text-secondary)]">{{ item.dispatchedQty }}</td>
+                          <td class="py-2 px-4 text-center text-[var(--color-text-secondary)]" [class.font-medium]="(item.bookedQty - (item.dispatchedQty || 0)) > 0">{{ item.bookedQty - (item.dispatchedQty || 0) }}</td>
+                          <td class="py-2 px-4 text-center text-[var(--color-text-secondary)]">{{ item.returnedQty }}</td>
+                          <td class="py-2 px-4 text-center font-semibold" [class]="(item.outstandingQty || 0) > 0 ? 'text-red-400' : 'text-green-400'">{{ item.outstandingQty }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+            } @else {
+                <div class="space-y-4">
+                  @if (selectedOrder()?.transactions?.length) {
+                    @for (trans of selectedOrder()!.transactions; track trans.id) {
+                      <div class="border border-[var(--color-border)] rounded-xl overflow-hidden">
+                        <div class="bg-[var(--color-bg-hover)]/30 px-4 py-3 flex justify-between items-center">
+                          <div class="flex items-center gap-3">
+                             <span [class]="trans.type === 'DISPATCH' ? 'bg-orange-500/20 text-orange-400' : 'bg-green-500/20 text-green-400'" class="px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">{{ trans.type }}</span>
+                             <span class="text-sm font-medium text-[var(--color-text-primary)]">{{ trans.transactionDate }}</span>
+                          </div>
+                          <div class="flex gap-4 text-sm text-[var(--color-text-secondary)]">
+                            <div><span class="text-[var(--color-text-muted)]">Voucher:</span> {{ trans.voucherNumber || '-' }}</div>
+                            <div><span class="text-[var(--color-text-muted)]">Vehicle:</span> {{ trans.vehicleNumber || '-' }}</div>
+                          </div>
+                        </div>
+                        <table class="w-full text-sm">
+                           <thead class="bg-[var(--color-bg-input)]/30">
+                             <tr>
+                               <th class="text-left py-1.5 px-4 text-[var(--color-text-muted)] font-normal">Item</th>
+                               <th class="text-center py-1.5 px-4 text-[var(--color-text-muted)] font-normal">Quantity</th>
+                             </tr>
+                           </thead>
+                           <tbody class="divide-y divide-[var(--color-border)]/30">
+                             @for (item of trans.items; track item.inventoryItemId) {
+                               <tr>
+                                 <td class="py-1.5 px-4 text-[var(--color-text-secondary)]">{{ item.itemNameGujarati }}</td>
+                                 <td class="py-1.5 px-4 text-center text-[var(--color-text-primary)] font-medium">{{ item.bookedQty }}</td>
+                               </tr>
+                             }
+                           </tbody>
+                        </table>
+                      </div>
+                    }
+                  } @else {
+                    <div class="text-center py-8 text-[var(--color-text-muted)]">No transaction history found.</div>
+                  }
+                </div>
+            }
           </div>
         }
       </app-modal>
+
     </div>
   `
 })
@@ -586,6 +702,8 @@ export class RentalOrdersComponent implements OnInit {
   orders = signal<RentalOrder[]>([]);
   customers = signal<Customer[]>([]);
   inventoryItems = signal<InventoryItem[]>([]);
+
+  showHistory = signal(false);
 
 
 
@@ -715,9 +833,13 @@ export class RentalOrdersComponent implements OnInit {
   selectedQty = 1;
 
   // Dispatch/Receive items
-  // Dispatch/Receive items
   dispatchUIItems: any[] = [];
   receiveItems: RentalOrderItem[] = [];
+
+  dispatchVoucherNumber = signal('');
+  dispatchVehicleNumber = signal('');
+  returnVoucherNumber = signal('');
+  returnVehicleNumber = signal('');
 
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {
@@ -875,6 +997,15 @@ export class RentalOrdersComponent implements OnInit {
 
   viewOrder(order: RentalOrder): void {
     this.selectedOrder.set(order);
+    this.showHistory.set(false);
+    this.viewModal.open();
+  }
+
+  viewHistory(order: RentalOrder): void {
+    console.log('Viewing history for order:', order);
+    console.log('Transactions:', order.transactions);
+    this.selectedOrder.set(order);
+    this.showHistory.set(true);
     this.viewModal.open();
   }
 
@@ -900,32 +1031,38 @@ export class RentalOrdersComponent implements OnInit {
   }
 
   dispatchOrder(): void {
-    if (!this.selectedOrder()) return;
+    const order = this.selectedOrder();
+    if (!order) return;
 
-    // Filter items with > 0 dispatch qty
+    this.isSaving.set(true);
+
     const itemsToDispatch = this.dispatchUIItems
       .filter(i => i.toDispatchQty > 0)
       .map(i => ({
         inventoryItemId: i.inventoryItemId,
-        dispatchedQty: i.toDispatchQty, // Send DELTA
-        bookedQty: i.bookedQty // Required by DTO usually
+        dispatchedQty: i.toDispatchQty,
+        bookedQty: 0, // Ignored by backend
+        returnedQty: 0
       } as RentalOrderItem));
 
-    if (itemsToDispatch.length === 0) {
-      this.toastService.warning('Please enter quantity to dispatch for at least one item');
-      return;
-    }
+    const transaction = {
+      rentalOrderId: order.id,
+      type: 'DISPATCH' as const,
+      voucherNumber: this.dispatchVoucherNumber(),
+      vehicleNumber: this.dispatchVehicleNumber(),
+      items: itemsToDispatch
+    };
 
-    this.isSaving.set(true);
-    this.rentalOrderService.dispatchItems(this.selectedOrder()!.id!, itemsToDispatch).subscribe({
+    this.rentalOrderService.dispatchItems(order.id!, transaction).subscribe({
       next: () => {
         this.toastService.success('Items dispatched successfully');
         this.dispatchModal.close();
         this.loadOrders();
-        this.loadInventory();
         this.isSaving.set(false);
       },
-      error: (err: any) => {
+      error: (err) => {
+        console.error('Dispatch error', err);
+        // Toast handled by interceptor ideally, or add here if needed
         this.isSaving.set(false);
       }
     });
@@ -933,24 +1070,46 @@ export class RentalOrdersComponent implements OnInit {
 
   openReceiveModal(order: RentalOrder): void {
     this.selectedOrder.set(order);
+    this.returnVoucherNumber.set('');
+    this.returnVehicleNumber.set('');
+
+    // Prepare items for receive UI (only dispatched items)
     this.receiveItems = order.items
-      .filter(i => (i.outstandingQty || 0) > 0)
-      .map(i => ({ ...i, returnedQty: i.outstandingQty }));
+      .filter(item => (item.dispatchedQty || 0) > (item.returnedQty || 0))
+      .map(item => ({
+        ...item,
+        returnedQty: 0 // Default to 0
+      }));
+
     this.receiveModal.open();
   }
 
   receiveOrder(): void {
-    if (!this.selectedOrder()) return;
+    const order = this.selectedOrder();
+    if (!order) return;
+
     this.isSaving.set(true);
-    this.rentalOrderService.receiveItems(this.selectedOrder()!.id!, this.receiveItems).subscribe({
+
+    const itemsToReturn = this.receiveItems
+      .filter(i => (i.returnedQty || 0) > 0);
+
+    const transaction = {
+      rentalOrderId: order.id,
+      type: 'RETURN' as const,
+      voucherNumber: this.returnVoucherNumber(),
+      vehicleNumber: this.returnVehicleNumber(),
+      items: itemsToReturn
+    };
+
+    this.rentalOrderService.receiveItems(order.id!, transaction).subscribe({
       next: () => {
-        this.toastService.success('Items received');
+        this.toastService.success('Items received successfully');
         this.receiveModal.close();
         this.loadOrders();
-        this.loadInventory();
         this.isSaving.set(false);
       },
-      error: (err: any) => {
+      error: (err) => {
+        console.error('Receive error', err);
         this.isSaving.set(false);
       }
     });

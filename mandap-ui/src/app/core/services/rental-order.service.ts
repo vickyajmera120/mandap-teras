@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { RentalOrder, RentalOrderItem } from '../models/rental-order.model';
+import { RentalOrder, RentalOrderItem, RentalOrderTransaction } from '../models/rental-order.model';
 
 @Injectable({
     providedIn: 'root'
@@ -31,12 +31,12 @@ export class RentalOrderService {
         return this.http.put<RentalOrder>(`${this.API_URL}/${id}`, order);
     }
 
-    dispatchItems(orderId: number, items: RentalOrderItem[]): Observable<RentalOrder> {
-        return this.http.put<RentalOrder>(`${this.API_URL}/${orderId}/dispatch`, items);
+    dispatchItems(orderId: number, transaction: RentalOrderTransaction): Observable<RentalOrder> {
+        return this.http.put<RentalOrder>(`${this.API_URL}/${orderId}/dispatch`, transaction);
     }
 
-    receiveItems(orderId: number, items: RentalOrderItem[]): Observable<RentalOrder> {
-        return this.http.put<RentalOrder>(`${this.API_URL}/${orderId}/receive`, items);
+    receiveItems(orderId: number, transaction: RentalOrderTransaction): Observable<RentalOrder> {
+        return this.http.put<RentalOrder>(`${this.API_URL}/${orderId}/receive`, transaction);
     }
 
     getUnreturnedItemsByCustomer(customerId: number): Observable<RentalOrderItem[]> {
