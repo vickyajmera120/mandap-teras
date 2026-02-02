@@ -485,8 +485,16 @@ export class NewBillComponent implements OnInit {
     this.paymentStatus = bill.paymentStatus;
     this.remarks = bill.remarks || '';
 
+    // Debug logging
+    console.log('Patching Form. Bill:', bill);
+    console.log('Payments:', bill.payments);
+
     // Fix: Find specific deposit payment instead of using total bill.deposit (which is sum of all payments)
-    const depositPayment = bill.payments?.find(p => p.isDeposit);
+    // Check both isDeposit and (p as any).deposit to handle potential serialization variations
+    const depositPayment = bill.payments?.find(p => p.isDeposit || (p as any).deposit === true);
+
+    console.log('Found Deposit Payment:', depositPayment);
+
     if (depositPayment) {
       this.deposit.set(depositPayment.amount);
       this.depositMethod.set(depositPayment.paymentMethod);
