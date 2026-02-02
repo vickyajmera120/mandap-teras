@@ -61,6 +61,10 @@ public class Bill {
     @Builder.Default
     private BigDecimal deposit = BigDecimal.ZERO;
 
+    @Column(name = "settlement_discount", precision = 12, scale = 2)
+    @Builder.Default
+    private BigDecimal settlementDiscount = BigDecimal.ZERO;
+
     @Column(name = "net_payable", precision = 12, scale = 2)
     @Builder.Default
     private BigDecimal netPayable = BigDecimal.ZERO;
@@ -129,7 +133,9 @@ public class Bill {
                 .map(Payment::getAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        this.netPayable = this.totalAmount.subtract(this.deposit);
+        // Net payable = Total - Deposit - Discount
+        BigDecimal discount = this.settlementDiscount != null ? this.settlementDiscount : BigDecimal.ZERO;
+        this.netPayable = this.totalAmount.subtract(this.deposit).subtract(discount);
 
         // Update Payment Status
         if (this.netPayable.compareTo(BigDecimal.ZERO) <= 0) {

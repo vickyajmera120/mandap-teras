@@ -222,6 +222,16 @@ interface ItemEntry {
                   <span class="text-xl font-bold text-white">{{ totalAmount() | currencyInr }}</span>
                 </div>
                 <div class="flex justify-between items-center gap-4">
+                  <span class="text-slate-400">Settlement Discount:</span>
+                  <input 
+                    type="number"
+                    [ngModel]="settlementDiscount()"
+                    (ngModelChange)="settlementDiscount.set($event)"
+                    min="0"
+                    class="w-32 px-3 py-2 bg-slate-600/50 border border-slate-500 rounded-lg text-white text-right focus:outline-none focus:border-teal-500"
+                  >
+                </div>
+                <div class="flex justify-between items-center gap-4">
                   <span class="text-slate-400">Deposit:</span>
                   <input 
                     type="number"
@@ -372,6 +382,7 @@ export class NewBillComponent implements OnInit {
   billType: 'INVOICE' | 'ESTIMATE' = 'INVOICE';
   paymentStatus: 'DUE' | 'PAID' | 'PARTIAL' = 'DUE';
   deposit = signal(0);
+  settlementDiscount = signal(0);
   depositMethod = signal<'CASH' | 'CHEQUE' | 'ONLINE'>('CASH');
   depositChequeNumber = signal('');
   remarks = '';
@@ -384,7 +395,7 @@ export class NewBillComponent implements OnInit {
   });
 
   netPayable = computed(() => {
-    return Math.max(0, this.totalAmount() - this.deposit());
+    return Math.max(0, this.totalAmount() - this.deposit() - this.settlementDiscount());
   });
 
   ngOnInit(): void {
@@ -504,6 +515,9 @@ export class NewBillComponent implements OnInit {
       this.depositMethod.set('CASH');
       this.depositChequeNumber.set('');
     }
+
+    // Set settlement discount
+    this.settlementDiscount.set(bill.settlementDiscount || 0);
   }
 
   private initializeItems(items: InventoryItem[], billItems?: BillItem[]): void {
@@ -586,6 +600,7 @@ export class NewBillComponent implements OnInit {
     this.billType = 'INVOICE';
     this.paymentStatus = 'DUE';
     this.deposit.set(0);
+    this.settlementDiscount.set(0);
     this.depositMethod.set('CASH');
     this.depositChequeNumber.set('');
     this.remarks = '';
@@ -617,6 +632,7 @@ export class NewBillComponent implements OnInit {
       billType: this.billType,
       paymentStatus: this.paymentStatus,
       deposit: this.deposit(),
+      settlementDiscount: this.settlementDiscount(),
       depositMethod: this.depositMethod(),
       depositChequeNumber: this.depositChequeNumber(),
       remarks: this.remarks,
@@ -629,6 +645,7 @@ export class NewBillComponent implements OnInit {
         billType: this.billType,
         paymentStatus: this.paymentStatus,
         deposit: this.deposit(),
+        settlementDiscount: this.settlementDiscount(),
         remarks: this.remarks,
         items: billItems
       };

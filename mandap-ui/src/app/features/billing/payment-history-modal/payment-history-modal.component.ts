@@ -28,11 +28,17 @@ import { CurrencyInrPipe, DateFormatPipe, LoadingSpinnerComponent } from '@share
         <div class="flex-1 overflow-y-auto p-6 space-y-6">
           
           <!-- Summary Cards -->
-          <div class="grid grid-cols-3 gap-4">
+          <div class="grid grid-cols-4 gap-4">
             <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
               <div class="text-sm text-slate-400 mb-1">Total Bill</div>
               <div class="text-lg font-bold text-white">{{ totalAmount | currencyInr }}</div>
             </div>
+             @if (settlementDiscount > 0) {
+              <div class="bg-yellow-900/20 p-4 rounded-xl border border-yellow-800/30">
+                <div class="text-sm text-yellow-400 mb-1">Discount</div>
+                <div class="text-lg font-bold text-yellow-400">-{{ settlementDiscount | currencyInr }}</div>
+              </div>
+            }
             <div class="bg-teal-900/20 p-4 rounded-xl border border-teal-800/30">
               <div class="text-sm text-teal-400 mb-1">Total Paid</div>
               <div class="text-lg font-bold text-teal-400">{{ totalPaid() | currencyInr }}</div>
@@ -151,6 +157,7 @@ export class PaymentHistoryModalComponent implements OnInit {
   @Input() billId!: number;
   @Input() billNumber!: string;
   @Input() totalAmount: number = 0;
+  @Input() settlementDiscount: number = 0;
   @Output() close = new EventEmitter<void>();
   @Output() paymentChanged = new EventEmitter<void>();
 
@@ -170,7 +177,7 @@ export class PaymentHistoryModalComponent implements OnInit {
   formRemarks: string = '';
 
   totalPaid = computed(() => this.payments().reduce((sum, p) => sum + p.amount, 0));
-  balanceDue = computed(() => this.totalAmount - this.totalPaid());
+  balanceDue = computed(() => Math.max(0, this.totalAmount - this.totalPaid() - this.settlementDiscount));
 
   ngOnInit() {
     this.loadPayments();

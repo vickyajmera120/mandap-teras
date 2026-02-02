@@ -338,6 +338,7 @@ import { PaymentHistoryModalComponent } from '../payment-history-modal/payment-h
             [billId]="selectedBillForPayment()!.id"
             [billNumber]="selectedBillForPayment()!.billNumber"
             [totalAmount]="selectedBillForPayment()!.totalAmount"
+            [settlementDiscount]="selectedBillForPayment()!.settlementDiscount || 0"
             (close)="closePaymentModal()"
             (paymentChanged)="loadBills()" 
           ></app-payment-history-modal>
@@ -596,6 +597,7 @@ export class BillHistoryComponent implements OnInit {
         
         <div style="text-align: right; font-size: 16px; margin-bottom: 20px; border-top: 1px solid #ccc; padding-top: 10px;">
             <strong>Total Amount: ₹${bill.totalAmount?.toLocaleString('en-IN')}</strong>
+            ${(bill.settlementDiscount || 0) > 0 ? `<p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">Settlement Discount: -₹${bill.settlementDiscount?.toLocaleString('en-IN')}</p>` : ''}
         </div>
 
         ${paymentsHtml}

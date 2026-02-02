@@ -24,6 +24,7 @@ public class BillDTO {
     private String paymentStatus; // DUE, PAID, PARTIAL
     private BigDecimal totalAmount;
     private BigDecimal deposit;
+    private BigDecimal settlementDiscount;
     private BigDecimal netPayable;
     private LocalDate billDate;
     private String remarks;

@@ -96,6 +96,8 @@ public class BillService {
                                 .billDate(dto.getBillDate() != null ? dto.getBillDate() : LocalDate.now())
                                 // Deposit is handled as a payment now
                                 .deposit(BigDecimal.ZERO)
+                                .settlementDiscount(dto.getSettlementDiscount() != null ? dto.getSettlementDiscount()
+                                                : BigDecimal.ZERO)
                                 .remarks(dto.getRemarks())
                                 .createdBy(userId)
                                 .items(new ArrayList<>())
@@ -164,6 +166,8 @@ public class BillService {
                 bill.setPalNumbers(dto.getPalNumbers());
                 // bill.setDeposit(dto.getDeposit() != null ? dto.getDeposit() :
                 // BigDecimal.ZERO); // Deposit is now calculated from payments
+                bill.setSettlementDiscount(
+                                dto.getSettlementDiscount() != null ? dto.getSettlementDiscount() : BigDecimal.ZERO);
                 bill.setRemarks(dto.getRemarks());
                 if (dto.getBillType() != null) {
                         bill.setBillType(Bill.BillType.valueOf(dto.getBillType()));
@@ -358,6 +362,7 @@ public class BillService {
                                 .paymentStatus(bill.getPaymentStatus() != null ? bill.getPaymentStatus().name() : "DUE")
                                 .totalAmount(bill.getTotalAmount())
                                 .deposit(bill.getDeposit())
+                                .settlementDiscount(bill.getSettlementDiscount())
                                 .netPayable(bill.getNetPayable())
                                 .billDate(bill.getBillDate())
                                 .remarks(bill.getRemarks())

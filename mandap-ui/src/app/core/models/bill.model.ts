@@ -24,6 +24,7 @@ export interface Bill {
     paymentStatus: PaymentStatus;
     totalAmount: number;
     deposit: number;
+    settlementDiscount: number;
     netPayable: number;
     billDate: string;
     remarks?: string;
@@ -40,6 +41,7 @@ export interface BillRequest {
     billType?: BillType;
     paymentStatus?: PaymentStatus;
     deposit?: number;
+    settlementDiscount?: number;
     depositMethod?: 'CASH' | 'CHEQUE' | 'ONLINE';
     depositChequeNumber?: string;
     remarks?: string;
@@ -51,6 +53,7 @@ export interface BillUpdateRequest {
     billType?: BillType;
     paymentStatus?: PaymentStatus;
     deposit?: number;
+    settlementDiscount?: number;
     remarks?: string;
     items?: BillItem[];
 }
