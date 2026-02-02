@@ -303,6 +303,12 @@ import { PaymentHistoryModalComponent } from '../payment-history-modal/payment-h
                 <span class="text-slate-400">Total Amount:</span>
                 <span class="text-white font-semibold">{{ selectedBill()!.totalAmount | currencyInr }}</span>
               </div>
+              @if ((selectedBill()!.settlementDiscount || 0) > 0) {
+                <div class="flex justify-between">
+                  <span class="text-slate-400">Settlement Discount:</span>
+                  <span class="text-yellow-400">-{{ selectedBill()!.settlementDiscount | currencyInr }}</span>
+                </div>
+              }
               <div class="flex justify-between">
                 <span class="text-slate-400">Deposit:</span>
                 <span class="text-slate-300">{{ selectedBill()!.deposit | currencyInr }}</span>

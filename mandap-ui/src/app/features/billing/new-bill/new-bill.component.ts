@@ -146,14 +146,20 @@ interface ItemEntry {
               </div>
               <div class="space-y-3">
                 @for (entry of leftItems(); track entry.item.id) {
-                  <div class="flex items-center gap-3 bg-[var(--color-bg-input)] rounded-lg p-3 border border-[var(--color-border)]">
-                    <span class="flex-1 text-[var(--color-text-primary)] font-medium">{{ entry.item.nameGujarati }}</span>
+                  <div class="flex items-center gap-3 rounded-lg p-3 border transition-colors duration-200"
+                       [ngClass]="{
+                         'bg-[var(--color-bg-input)] border-[var(--color-border)]': entry.quantity === 0,
+                         'bg-teal-900/20 border-teal-500/50': entry.quantity > 0
+                       }">
+                    <span class="flex-1 text-[var(--color-text-primary)] font-medium"
+                          [class.text-teal-300]="entry.quantity > 0">{{ entry.item.nameGujarati }}</span>
                     <input 
                       type="number"
                       [value]="entry.quantity"
                       (input)="updateQuantity(entry, $event)"
                       min="0"
                       class="w-20 px-3 py-2 bg-[var(--color-bg-hover)]/50 border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] text-center focus:outline-none focus:border-teal-500 transition-colors"
+                      [class.border-teal-500]="entry.quantity > 0"
                       placeholder="Qty"
                     >
                     <input 
@@ -162,7 +168,9 @@ interface ItemEntry {
                       readonly
                       class="w-24 px-3 py-2 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-secondary)] text-center cursor-not-allowed focus:outline-none"
                     >
-                    <span class="w-24 text-right text-teal-400 font-medium whitespace-nowrap">{{ entry.total | currencyInr }}</span>
+                    <span class="w-24 text-right font-medium whitespace-nowrap"
+                          [class.text-teal-400]="entry.quantity > 0"
+                          [class.text-slate-500]="entry.quantity === 0">{{ entry.total | currencyInr }}</span>
                   </div>
                 }
               </div>
@@ -178,14 +186,20 @@ interface ItemEntry {
               </div>
               <div class="space-y-3">
                 @for (entry of rightItems(); track entry.item.id) {
-                  <div class="flex items-center gap-3 bg-[var(--color-bg-input)] rounded-lg p-3 border border-[var(--color-border)]">
-                    <span class="flex-1 text-[var(--color-text-primary)] font-medium">{{ entry.item.nameGujarati }}</span>
+                  <div class="flex items-center gap-3 rounded-lg p-3 border transition-colors duration-200"
+                       [ngClass]="{
+                         'bg-[var(--color-bg-input)] border-[var(--color-border)]': entry.quantity === 0,
+                         'bg-teal-900/20 border-teal-500/50': entry.quantity > 0
+                       }">
+                    <span class="flex-1 text-[var(--color-text-primary)] font-medium"
+                          [class.text-teal-300]="entry.quantity > 0">{{ entry.item.nameGujarati }}</span>
                     <input 
                       type="number"
                       [value]="entry.quantity"
                       (input)="updateQuantity(entry, $event)"
                       min="0"
                       class="w-20 px-3 py-2 bg-[var(--color-bg-hover)]/50 border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] text-center focus:outline-none focus:border-teal-500 transition-colors"
+                      [class.border-teal-500]="entry.quantity > 0"
                       placeholder="Qty"
                     >
                     <input 
@@ -194,7 +208,9 @@ interface ItemEntry {
                       readonly
                       class="w-24 px-3 py-2 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-secondary)] text-center cursor-not-allowed focus:outline-none"
                     >
-                    <span class="w-24 text-right text-teal-400 font-medium whitespace-nowrap">{{ entry.total | currencyInr }}</span>
+                    <span class="w-24 text-right font-medium whitespace-nowrap"
+                          [class.text-teal-400]="entry.quantity > 0"
+                          [class.text-slate-500]="entry.quantity === 0">{{ entry.total | currencyInr }}</span>
                   </div>
                 }
               </div>
