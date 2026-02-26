@@ -5,11 +5,12 @@ import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { RentalOrderService, CustomerService, InventoryService, ToastService } from '@core/services';
 import { RentalOrder, RentalOrderItem, RentalOrderStatus, Customer, InventoryItem } from '@core/models';
 import { LoadingSpinnerComponent, ModalComponent } from '@shared';
+import { NgSelectModule } from '@ng-select/ng-select';
 
 @Component({
   selector: 'app-rental-orders',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, LoadingSpinnerComponent, ModalComponent],
+  imports: [CommonModule, FormsModule, RouterModule, LoadingSpinnerComponent, ModalComponent, NgSelectModule],
   template: `
     <div class="space-y-6">
       <!-- Header -->
@@ -306,17 +307,27 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
         <div class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Customer *</label>
-            <select 
-              [ngModel]="newOrder.customerId"
-              (ngModelChange)="onCustomerChange($event)"
+            <ng-select
+              [items]="customers()"
+              bindLabel="name"
+              bindValue="id"
+              [(ngModel)]="newOrder.customerId"
+              (change)="onCustomerSelect($event)"
+              [searchFn]="customerSearchFn"
               [disabled]="isEditMode()"
-              class="w-full px-4 py-3 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-xl text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500 disabled:opacity-50"
+              placeholder="Search customer by name or mobile..."
+              class="custom-select"
             >
-              <option [ngValue]="null">Select Customer</option>
-              @for (customer of customers(); track customer.id) {
-                <option [ngValue]="customer.id">{{ customer.name }} ({{ customer.mobile }})</option>
-              }
-            </select>
+              <ng-template ng-option-tmp let-item="item">
+                <div class="flex flex-col">
+                  <span class="font-medium text-[var(--color-text-primary)]">{{ item.name }}</span>
+                  <span class="text-xs text-[var(--color-text-muted)]">{{ item.mobile }}</span>
+                </div>
+              </ng-template>
+              <ng-template ng-label-tmp let-item="item">
+                <span class="text-[var(--color-text-primary)]">{{ item.name }} ({{ item.mobile }})</span>
+              </ng-template>
+            </ng-select>
           </div>
           <div class="grid grid-cols-2 gap-4">
             <div>
@@ -341,18 +352,29 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
           <div>
             <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Add Items</label>
             <div class="flex gap-2">
-              <div class="flex-1 min-w-0" title="Select Item">
-                <select 
+              <div class="flex-1 min-w-0">
+                <ng-select
+                  [items]="inventoryItems()"
+                  bindLabel="nameGujarati"
+                  bindValue="id"
                   [(ngModel)]="selectedInventoryItemId"
-                  class="w-full px-4 py-3 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-xl text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500 truncate"
+                  [searchFn]="itemSearchFn"
+                  placeholder="Search item by name..."
+                  class="custom-select"
                 >
-                  <option [ngValue]="null">Select Item</option>
-                  @for (item of inventoryItems(); track item.id) {
-                    <option [ngValue]="item.id" [title]="item.nameGujarati + ' (' + item.nameEnglish + ')'">
-                      {{ item.nameGujarati }} ({{ item.nameEnglish }}) - Avail: {{ item.availableStock - (item.pendingDispatchQty || 0) }}
-                    </option>
-                  }
-                </select>
+                  <ng-template ng-option-tmp let-item="item">
+                    <div class="flex justify-between items-center">
+                      <div>
+                        <span class="font-medium text-[var(--color-text-primary)]">{{ item.nameGujarati }}</span>
+                        <span class="text-[var(--color-text-muted)] ml-1">({{ item.nameEnglish }})</span>
+                      </div>
+                      <span class="text-xs text-[var(--color-text-muted)]">Avail: {{ item.availableStock - (item.pendingDispatchQty || 0) }}</span>
+                    </div>
+                  </ng-template>
+                  <ng-template ng-label-tmp let-item="item">
+                    <span class="text-[var(--color-text-primary)]">{{ item.nameGujarati }} ({{ item.nameEnglish }})</span>
+                  </ng-template>
+                </ng-select>
               </div>
               <input 
                 type="number" 
@@ -699,6 +721,17 @@ export class RentalOrdersComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
+  // Custom search functions for ng-select (substring matching)
+  customerSearchFn = (term: string, item: Customer) => {
+    term = term.toLowerCase();
+    return (item.name?.toLowerCase().includes(term) || item.mobile?.toLowerCase().includes(term)) ?? false;
+  };
+
+  itemSearchFn = (term: string, item: InventoryItem) => {
+    term = term.toLowerCase();
+    return (item.nameGujarati?.toLowerCase().includes(term) || item.nameEnglish?.toLowerCase().includes(term)) ?? false;
+  };
+
   orders = signal<RentalOrder[]>([]);
   customers = signal<Customer[]>([]);
   inventoryItems = signal<InventoryItem[]>([]);
@@ -897,6 +930,12 @@ export class RentalOrdersComponent implements OnInit {
     this.isEditMode.set(false);
     this.existingOrderId.set(null);
     this.newOrderModal.open();
+  }
+
+  onCustomerSelect(customer: Customer): void {
+    if (customer?.id) {
+      this.onCustomerChange(customer.id);
+    }
   }
 
   onCustomerChange(customerId: number): void {
