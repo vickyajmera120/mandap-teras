@@ -26,11 +26,6 @@ public class InventoryController {
         return ResponseEntity.ok(inventoryService.createItem(dto));
     }
 
-    @GetMapping("/side/{side}")
-    public ResponseEntity<List<InventoryItemDTO>> getItemsBySide(@PathVariable String side) {
-        return ResponseEntity.ok(inventoryService.getItemsBySide(side));
-    }
-
     @GetMapping("/{id}")
     public ResponseEntity<InventoryItemDTO> getItemById(@PathVariable Long id) {
         return ResponseEntity.ok(inventoryService.getItemById(id));

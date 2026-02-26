@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { InventoryItem, InventoryUpdateRequest, ItemSide } from '../models';
+import { InventoryItem, InventoryUpdateRequest } from '../models';
 
 @Injectable({
     providedIn: 'root'
@@ -13,10 +13,6 @@ export class InventoryService {
 
     getAll(): Observable<InventoryItem[]> {
         return this.http.get<InventoryItem[]>(this.API_URL);
-    }
-
-    getBySide(side: ItemSide): Observable<InventoryItem[]> {
-        return this.http.get<InventoryItem[]>(`${this.API_URL}/side/${side}`);
     }
 
     getById(id: number): Observable<InventoryItem> {

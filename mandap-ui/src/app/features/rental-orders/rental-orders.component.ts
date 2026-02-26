@@ -2,15 +2,14 @@ import { Component, OnInit, inject, signal, computed, ViewChild } from '@angular
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
-import { RentalOrderService, CustomerService, InventoryService, ToastService } from '@core/services';
-import { RentalOrder, RentalOrderItem, RentalOrderStatus, Customer, InventoryItem } from '@core/models';
+import { RentalOrderService, ToastService } from '@core/services';
+import { RentalOrder, RentalOrderItem, RentalOrderStatus } from '@core/models';
 import { LoadingSpinnerComponent, ModalComponent } from '@shared';
-import { NgSelectModule } from '@ng-select/ng-select';
 
 @Component({
   selector: 'app-rental-orders',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, LoadingSpinnerComponent, ModalComponent, NgSelectModule],
+  imports: [CommonModule, FormsModule, RouterModule, LoadingSpinnerComponent, ModalComponent],
   template: `
     <div class="space-y-6">
       <!-- Header -->
@@ -20,7 +19,7 @@ import { NgSelectModule } from '@ng-select/ng-select';
           <p class="text-[var(--color-text-secondary)] mt-1">Manage bookings, dispatch, and returns</p>
         </div>
         <button 
-          (click)="openNewOrderModal()"
+          (click)="navigateToNewBooking()"
           class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors flex items-center gap-2"
         >
           <i class="fas fa-plus"></i> New Booking
@@ -151,7 +150,7 @@ import { NgSelectModule } from '@ng-select/ng-select';
                           <i class="fas fa-history text-xs"></i>
                         </button>
                         <button 
-                          (click)="editOrder(order)"
+                          (click)="navigateToEdit(order)"
                           class="w-8 h-8 rounded-lg bg-teal-500/20 text-teal-400 hover:bg-teal-500/30 transition-colors"
                           title="Edit Order"
                         >
@@ -301,169 +300,6 @@ import { NgSelectModule } from '@ng-select/ng-select';
         </div>
       }
 
-
-      <!-- New Booking Modal -->
-      <app-modal #newOrderModal [title]="isEditMode() ? 'Edit Booking' : 'New Booking'" size="lg">
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Customer *</label>
-            <ng-select
-              [items]="customers()"
-              bindLabel="name"
-              bindValue="id"
-              [(ngModel)]="newOrder.customerId"
-              (change)="onCustomerSelect($event)"
-              [searchFn]="customerSearchFn"
-              [disabled]="isEditMode()"
-              placeholder="Search customer by name or mobile..."
-              class="custom-select"
-            >
-              <ng-template ng-option-tmp let-item="item">
-                <div class="flex flex-col">
-                  <span class="font-medium text-[var(--color-text-primary)]">{{ item.name }}</span>
-                  <span class="text-xs text-[var(--color-text-muted)]">{{ item.mobile }}</span>
-                </div>
-              </ng-template>
-              <ng-template ng-label-tmp let-item="item">
-                <span class="text-[var(--color-text-primary)]">{{ item.name }} ({{ item.mobile }})</span>
-              </ng-template>
-            </ng-select>
-          </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Order Date</label>
-              <input 
-                type="date" 
-                [(ngModel)]="newOrder.orderDate"
-                class="w-full px-4 py-3 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-xl text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
-              >
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Expected Return</label>
-              <input 
-                type="date" 
-                [(ngModel)]="newOrder.expectedReturnDate"
-                class="w-full px-4 py-3 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-xl text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
-              >
-            </div>
-          </div>
-
-          <!-- Item Selection -->
-          <div>
-            <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">Add Items</label>
-            <div class="flex gap-2">
-              <div class="flex-1 min-w-0">
-                <ng-select
-                  [items]="inventoryItems()"
-                  bindLabel="nameGujarati"
-                  bindValue="id"
-                  [(ngModel)]="selectedInventoryItemId"
-                  [searchFn]="itemSearchFn"
-                  placeholder="Search item by name..."
-                  class="custom-select"
-                >
-                  <ng-template ng-option-tmp let-item="item">
-                    <div class="flex justify-between items-center">
-                      <div>
-                        <span class="font-medium text-[var(--color-text-primary)]">{{ item.nameGujarati }}</span>
-                        <span class="text-[var(--color-text-muted)] ml-1">({{ item.nameEnglish }})</span>
-                      </div>
-                      <span class="text-xs text-[var(--color-text-muted)]">Avail: {{ item.availableStock - (item.pendingDispatchQty || 0) }}</span>
-                    </div>
-                  </ng-template>
-                  <ng-template ng-label-tmp let-item="item">
-                    <span class="text-[var(--color-text-primary)]">{{ item.nameGujarati }} ({{ item.nameEnglish }})</span>
-                  </ng-template>
-                </ng-select>
-              </div>
-              <input 
-                type="number" 
-                [(ngModel)]="selectedQty"
-                min="1"
-                placeholder="Qty"
-                class="w-24 px-4 py-3 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-xl text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
-              >
-              <button 
-                (click)="addItemToNewOrder()"
-                class="px-4 py-3 bg-teal-600 text-white rounded-xl hover:bg-teal-700 transition-colors"
-              >
-                <i class="fas fa-plus"></i>
-              </button>
-            </div>
-          </div>
-
-          <!-- Selected Items Table -->
-          @if (newOrder.items.length > 0) {
-            <div class="border border-[var(--color-border)] rounded-xl overflow-hidden">
-              <table class="w-full">
-                <thead class="bg-[var(--color-bg-hover)]/30">
-                  <tr>
-                    <th class="text-left py-2 px-4 text-[var(--color-text-secondary)] text-sm">Item</th>
-                    <th class="text-center py-2 px-4 text-[var(--color-text-secondary)] text-sm">Qty</th>
-                    <th class="text-center py-2 px-4 text-[var(--color-text-secondary)] text-sm"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  @for (item of newOrder.items; track item.inventoryItemId; let i = $index) {
-                    <tr class="border-t border-[var(--color-border)]/50">
-                      <td class="py-2 px-4 text-[var(--color-text-primary)]">{{ item.itemNameGujarati }}</td>
-                      <td class="py-2 px-4 text-center">
-                        <input 
-                          type="number" 
-                          [(ngModel)]="item.bookedQty" 
-                          min="1" 
-                          class="w-20 px-2 py-1 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded text-center text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
-                        >
-                      </td>
-                      <td class="py-2 px-4 text-center">
-                        <button (click)="removeItemFromNewOrder(i)" class="text-red-400 hover:text-red-300">
-                          <i class="fas fa-trash text-xs"></i>
-                        </button>
-                      </td>
-                    </tr>
-                  }
-                </tbody>
-              </table>
-            </div>
-          }
-
-          <div class="flex gap-3 mt-6">
-            <button 
-              (click)="newOrderModal.close()"
-              class="flex-1 py-3 rounded-xl bg-[var(--color-bg-hover)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-card)] transition-colors border border-[var(--color-border)]"
-            >
-              Cancel
-            </button>
-            @if (isEditMode()) {
-              <button 
-                (click)="deleteFromModal()"
-                class="flex-1 py-3 rounded-xl bg-red-500/10 text-red-500 font-semibold hover:bg-red-500/20 transition-all border border-red-500/20"
-              >
-                Delete
-              </button>
-            }
-            @if (isEditMode() && newOrder.status === 'BOOKED') {
-              <button 
-                (click)="cancelOrderFromModal()"
-                [disabled]="isSaving()"
-                class="flex-1 py-3 rounded-xl bg-orange-500/10 text-orange-500 font-semibold hover:bg-orange-500/20 transition-all border border-orange-500/20"
-              >
-                Cancel Booking
-              </button>
-            }
-            <button 
-              (click)="saveBooking()"
-              [disabled]="isSaving() || !newOrder.customerId || newOrder.items.length === 0"
-              class="flex-1 py-3 rounded-xl bg-gradient-to-r from-teal-500 to-teal-600 text-white font-semibold hover:from-teal-600 hover:to-teal-700 disabled:opacity-50 transition-all"
-            >
-              @if (isSaving()) {
-                <i class="fas fa-spinner fa-spin mr-2"></i>
-              }
-              {{ isEditMode() ? 'Update Booking' : 'Create Booking' }}
-            </button>
-          </div>
-        </div>
-      </app-modal>
 
       <!-- Dispatch Modal -->
       <app-modal #dispatchModal title="Dispatch Items" size="lg">
@@ -709,43 +545,23 @@ import { NgSelectModule } from '@ng-select/ng-select';
   `
 })
 export class RentalOrdersComponent implements OnInit {
-  @ViewChild('newOrderModal') newOrderModal!: ModalComponent;
   @ViewChild('dispatchModal') dispatchModal!: ModalComponent;
   @ViewChild('receiveModal') receiveModal!: ModalComponent;
   @ViewChild('viewModal') viewModal!: ModalComponent;
 
   private rentalOrderService = inject(RentalOrderService);
-  private customerService = inject(CustomerService);
-  private inventoryService = inject(InventoryService);
   private toastService = inject(ToastService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
-  // Custom search functions for ng-select (substring matching)
-  customerSearchFn = (term: string, item: Customer) => {
-    term = term.toLowerCase();
-    return (item.name?.toLowerCase().includes(term) || item.mobile?.toLowerCase().includes(term)) ?? false;
-  };
-
-  itemSearchFn = (term: string, item: InventoryItem) => {
-    term = term.toLowerCase();
-    return (item.nameGujarati?.toLowerCase().includes(term) || item.nameEnglish?.toLowerCase().includes(term)) ?? false;
-  };
-
   orders = signal<RentalOrder[]>([]);
-  customers = signal<Customer[]>([]);
-  inventoryItems = signal<InventoryItem[]>([]);
 
   showHistory = signal(false);
-
-
 
   isLoading = signal(true);
   isSaving = signal(false);
   selectedOrder = signal<RentalOrder | null>(null);
   selectedPrintOrder = signal<RentalOrder | null>(null);
-  isEditMode = signal(false);
-  existingOrderId = signal<number | null>(null);
 
   statusOptions = [
     { label: 'Booked', value: 'BOOKED' },
@@ -860,11 +676,6 @@ export class RentalOrdersComponent implements OnInit {
     return order.items?.some(i => (i.dispatchedQty || 0) > (i.returnedQty || 0)) || false;
   }
 
-  // New order form
-  newOrder: RentalOrder = { customerId: 0, items: [] };
-  selectedInventoryItemId: number | null = null;
-  selectedQty = 1;
-
   // Dispatch/Receive items
   dispatchUIItems: any[] = [];
   receiveItems: RentalOrderItem[] = [];
@@ -881,8 +692,6 @@ export class RentalOrdersComponent implements OnInit {
       }
     });
     this.loadOrders();
-    this.loadCustomers();
-    this.loadInventory();
   }
 
   loadOrders(): void {
@@ -892,18 +701,6 @@ export class RentalOrdersComponent implements OnInit {
         this.isLoading.set(false);
       },
       error: () => this.isLoading.set(false)
-    });
-  }
-
-  loadCustomers(): void {
-    this.customerService.getAll().subscribe({
-      next: (customers) => this.customers.set(customers)
-    });
-  }
-
-  loadInventory(): void {
-    this.inventoryService.getAll().subscribe({
-      next: (items) => this.inventoryItems.set(items.filter(i => i.active))
     });
   }
 
@@ -923,116 +720,15 @@ export class RentalOrdersComponent implements OnInit {
     }
   }
 
-  openNewOrderModal(): void {
-    this.newOrder = { customerId: 0, orderDate: new Date().toISOString().split('T')[0], items: [] };
-    this.selectedInventoryItemId = null;
-    this.selectedQty = 1;
-    this.isEditMode.set(false);
-    this.existingOrderId.set(null);
-    this.newOrderModal.open();
+  navigateToNewBooking(): void {
+    this.router.navigate(['/rental-orders/new']);
   }
 
-  onCustomerSelect(customer: Customer): void {
-    if (customer?.id) {
-      this.onCustomerChange(customer.id);
-    }
+  navigateToEdit(order: RentalOrder): void {
+    this.router.navigate(['/rental-orders/edit', order.id]);
   }
 
-  onCustomerChange(customerId: number): void {
-    this.newOrder.customerId = customerId;
 
-    if (!customerId) return;
-
-    // Check for existing active order
-    const existingOrder = this.orders().find(o =>
-      o.customerId === customerId &&
-      o.status !== 'COMPLETED' &&
-      o.status !== 'CANCELLED'
-    );
-
-    if (existingOrder) {
-      this.isEditMode.set(true);
-      this.existingOrderId.set(existingOrder.id!);
-
-      // Populate form with existing order data
-      this.newOrder = {
-        ...existingOrder,
-        items: existingOrder.items?.map(item => ({
-          inventoryItemId: item.inventoryItemId,
-          itemNameGujarati: item.itemNameGujarati,
-          itemNameEnglish: item.itemNameEnglish,
-          bookedQty: item.bookedQty
-        })) || []
-      };
-
-      this.toastService.info('Customer has an active order. Switched to Edit mode.');
-    } else {
-      this.isEditMode.set(false);
-      this.existingOrderId.set(null);
-      // Keep customerId but reset other fields if needed, or just keep as new
-    }
-  }
-
-  addItemToNewOrder(): void {
-    if (!this.selectedInventoryItemId || this.selectedQty < 1) return;
-
-    const invItem = this.inventoryItems().find(i => i.id === this.selectedInventoryItemId);
-    if (!invItem) return;
-
-    if (this.newOrder.items.find(i => i.inventoryItemId === invItem.id)) {
-      this.toastService.error('Item already added');
-      return;
-    }
-
-    if (this.selectedQty > invItem.availableStock) {
-      this.toastService.error(`Only ${invItem.availableStock} available`);
-      return;
-    }
-
-    this.newOrder.items.push({
-      inventoryItemId: invItem.id,
-      itemNameGujarati: invItem.nameGujarati,
-      itemNameEnglish: invItem.nameEnglish,
-      bookedQty: this.selectedQty
-    });
-
-    this.selectedInventoryItemId = null;
-    this.selectedQty = 1;
-  }
-
-  removeItemFromNewOrder(index: number): void {
-    this.newOrder.items.splice(index, 1);
-  }
-
-  saveBooking(): void {
-    this.isSaving.set(true);
-
-    if (this.isEditMode() && this.existingOrderId()) {
-      this.rentalOrderService.update(this.existingOrderId()!, this.newOrder).subscribe({
-        next: () => {
-          this.toastService.success('Booking updated successfully');
-          this.newOrderModal.close();
-          this.loadOrders();
-          this.isSaving.set(false);
-        },
-        error: (err: any) => {
-          this.isSaving.set(false);
-        }
-      });
-    } else {
-      this.rentalOrderService.createBooking(this.newOrder).subscribe({
-        next: () => {
-          this.toastService.success('Booking created successfully');
-          this.newOrderModal.close();
-          this.loadOrders();
-          this.isSaving.set(false);
-        },
-        error: (err: any) => {
-          this.isSaving.set(false);
-        }
-      });
-    }
-  }
 
   viewOrder(order: RentalOrder): void {
     this.selectedOrder.set(order);
@@ -1154,23 +850,6 @@ export class RentalOrdersComponent implements OnInit {
     });
   }
 
-  editOrder(order: RentalOrder): void {
-    this.isEditMode.set(true);
-    this.existingOrderId.set(order.id!);
-
-    this.newOrder = {
-      ...order,
-      items: order.items?.map(item => ({
-        inventoryItemId: item.inventoryItemId,
-        itemNameGujarati: item.itemNameGujarati,
-        itemNameEnglish: item.itemNameEnglish,
-        bookedQty: item.bookedQty
-      })) || []
-    };
-
-    this.newOrderModal.open();
-  }
-
   deleteOrder(order: RentalOrder): void {
     if (!confirm(`Are you sure you want to delete order ${order.orderNumber}?`)) return;
 
@@ -1181,45 +860,6 @@ export class RentalOrdersComponent implements OnInit {
       },
       error: (err: any) => {
         // Handled by interceptor
-      }
-    });
-  }
-
-  deleteFromModal(): void {
-    if (!this.existingOrderId()) return;
-
-    // Use window.confirm for now as requested
-    if (!confirm('Are you sure you want to delete this booking? This action cannot be undone.')) return;
-
-    this.isSaving.set(true);
-    this.rentalOrderService.delete(this.existingOrderId()!).subscribe({
-      next: () => {
-        this.toastService.success('Order deleted successfully');
-        this.newOrderModal.close();
-        this.loadOrders();
-        this.isSaving.set(false);
-      },
-      error: (err) => {
-        this.isSaving.set(false);
-      }
-    });
-  }
-
-  cancelOrderFromModal(): void {
-    if (!this.existingOrderId()) return;
-
-    if (!confirm('Are you sure you want to CANCEL this booking?')) return;
-
-    this.isSaving.set(true);
-    this.rentalOrderService.cancelOrder(this.existingOrderId()!).subscribe({
-      next: () => {
-        this.toastService.success('Order cancelled successfully');
-        this.newOrderModal.close();
-        this.loadOrders();
-        this.isSaving.set(false);
-      },
-      error: (err: any) => {
-        this.isSaving.set(false);
       }
     });
   }

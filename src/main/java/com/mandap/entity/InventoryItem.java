@@ -24,11 +24,6 @@ public class InventoryItem {
         MISCELLANEOUS
     }
 
-    public enum ItemSide {
-        LEFT,
-        RIGHT
-    }
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -45,10 +40,6 @@ public class InventoryItem {
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private ItemCategory category;
-
-    @Enumerated(EnumType.STRING)
-    @Column(length = 10)
-    private ItemSide side;
 
     @Column(name = "display_order")
     @Builder.Default

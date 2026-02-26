@@ -17,7 +17,6 @@ public class InventoryItemDTO {
     private String nameEnglish;
     private BigDecimal defaultRate;
     private String category;
-    private String side;
     private Integer displayOrder;
     private Boolean active;
     private Integer totalStock;

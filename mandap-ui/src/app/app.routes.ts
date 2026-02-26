@@ -56,7 +56,20 @@ export const routes: Routes = [
             },
             {
                 path: 'rental-orders',
-                loadComponent: () => import('./features/rental-orders/rental-orders.component').then(m => m.RentalOrdersComponent)
+                children: [
+                    {
+                        path: '',
+                        loadComponent: () => import('./features/rental-orders/rental-orders.component').then(m => m.RentalOrdersComponent)
+                    },
+                    {
+                        path: 'new',
+                        loadComponent: () => import('./features/rental-orders/new-booking/new-booking.component').then(m => m.NewBookingComponent)
+                    },
+                    {
+                        path: 'edit/:id',
+                        loadComponent: () => import('./features/rental-orders/new-booking/new-booking.component').then(m => m.NewBookingComponent)
+                    }
+                ]
             },
             {
                 path: 'users',

@@ -16,12 +16,12 @@ public interface InventoryItemRepository extends JpaRepository<InventoryItem, Lo
     @Query("SELECT i FROM InventoryItem i ORDER BY i.displayOrder")
     List<InventoryItem> findAllOrdered();
 
-    @Query("SELECT i FROM InventoryItem i WHERE i.active = true AND i.side = :side ORDER BY i.displayOrder")
-    List<InventoryItem> findBySide(InventoryItem.ItemSide side);
-
     @Query("SELECT i FROM InventoryItem i WHERE i.active = true AND i.category = :category ORDER BY i.displayOrder")
     List<InventoryItem> findByCategory(InventoryItem.ItemCategory category);
 
     @Query("SELECT i FROM InventoryItem i WHERE i.active = true AND (LOWER(i.nameEnglish) LIKE LOWER(CONCAT('%', :query, '%')) OR i.nameGujarati LIKE CONCAT('%', :query, '%')) ORDER BY i.displayOrder")
     List<InventoryItem> searchByName(String query);
+
+    @Query("SELECT COALESCE(MAX(i.displayOrder), 0) FROM InventoryItem i")
+    Integer findMaxDisplayOrder();
 }

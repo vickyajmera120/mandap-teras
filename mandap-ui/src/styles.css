@@ -101,12 +101,14 @@ body.light-theme {
     color: var(--color-text-secondary) !important;
 }
 
-.ng-select .ng-dropdown-panel .ng-dropdown-panel-items .ng-option.ng-option-marked {
+.ng-select .ng-dropdown-panel .ng-dropdown-panel-items .ng-option.ng-option-marked,
+.ng-select .ng-dropdown-panel .ng-dropdown-panel-items .ng-option.ng-option-marked * {
     background-color: var(--color-bg-hover) !important;
     color: var(--color-text-primary) !important;
 }
 
-.ng-select .ng-dropdown-panel .ng-dropdown-panel-items .ng-option.ng-option-selected {
+.ng-select .ng-dropdown-panel .ng-dropdown-panel-items .ng-option.ng-option-selected,
+.ng-select .ng-dropdown-panel .ng-dropdown-panel-items .ng-option.ng-option-selected * {
     background-color: var(--color-primary) !important;
     color: white !important;
 }
