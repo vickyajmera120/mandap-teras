@@ -251,7 +251,15 @@ import { PaymentHistoryModalComponent } from '../payment-history-modal/payment-h
                     <tbody>
                       @for (item of selectedBill()!.items; track item.id) {
                         <tr class="border-t border-slate-600/30">
-                          <td class="py-2 px-3 text-white">{{ item.itemNameGujarati }}</td>
+                          <td class="py-2 px-3 text-white">
+                            {{ item.itemNameGujarati }}
+                            @if (item.isLostItem) {
+                              <span class="ml-2 text-xs text-red-400 border border-red-500/50 px-1 rounded">Lost</span>
+                            }
+                            @if (item.isCustomItem) {
+                              <span class="ml-2 text-xs text-blue-400 border border-blue-500/50 px-1 rounded">Custom</span>
+                            }
+                          </td>
                           <td class="py-2 px-3 text-center text-slate-300">{{ item.quantity }}</td>
                           <td class="py-2 px-3 text-right text-slate-300">{{ item.rate | currencyInr }}</td>
                           <td class="py-2 px-3 text-right text-teal-400">{{ item.total | currencyInr }}</td>
@@ -631,7 +639,7 @@ export class BillHistoryComponent implements OnInit {
             </tr>
           </thead>
           <tbody>
-            ${bill.items.filter(i => !i.isLostItem).map(item => `
+            ${bill.items.filter(i => !i.isLostItem && !i.isCustomItem).map(item => `
               <tr>
                 <td style="text-align: left;">${item.itemNameGujarati}</td>
                 <td style="text-align: center;">${item.quantity}</td>
@@ -650,6 +658,20 @@ export class BillHistoryComponent implements OnInit {
                 <td style="text-align: center; color: #991b1b;">${item.quantity}</td>
                 <td style="text-align: right; color: #991b1b;">${this.formatCurrency(item.rate)}</td>
                 <td style="text-align: right; font-weight: bold; color: #b91c1c;">${this.formatCurrency(item.total || 0)}</td>
+              </tr>
+            `).join('')}
+            ` : ''}
+
+            ${bill.items.some(i => i.isCustomItem) ? `
+              <tr class="section-header">
+                <td colspan="4" style="text-align: left; background-color: #bfdbfe; color: #1e3a5f; font-weight: bold; padding: 5px 10px;">Custom / Other Items</td>
+              </tr>
+              ${bill.items.filter(i => i.isCustomItem).map(item => `
+              <tr style="background-color: #eff6ff;">
+                <td style="text-align: left; color: #1e40af;">${item.customItemName || item.itemNameGujarati}</td>
+                <td style="text-align: center; color: #1e40af;">${item.quantity}</td>
+                <td style="text-align: right; color: #1e40af;">${this.formatCurrency(item.rate)}</td>
+                <td style="text-align: right; font-weight: bold; color: #1d4ed8;">${this.formatCurrency(item.total || 0)}</td>
               </tr>
             `).join('')}
             ` : ''}

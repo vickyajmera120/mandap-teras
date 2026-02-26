@@ -103,24 +103,40 @@ public class BillService {
                 if (dto.getItems() != null) {
                         for (BillItemDTO itemDTO : dto.getItems()) {
                                 if (itemDTO.getQuantity() != null && itemDTO.getQuantity() > 0) {
-                                        InventoryItem inventoryItem = inventoryItemRepository
-                                                        .findById(itemDTO.getItemId())
-                                                        .orElseThrow(() -> new RuntimeException(
-                                                                        "Item not found: " + itemDTO.getItemId()));
+                                        if (Boolean.TRUE.equals(itemDTO.getIsCustomItem())) {
+                                                // Custom item - no inventory reference
+                                                BillItem billItem = BillItem.builder()
+                                                                .quantity(itemDTO.getQuantity())
+                                                                .rate(itemDTO.getRate())
+                                                                .isLostItem(false)
+                                                                .isCustomItem(true)
+                                                                .customItemName(itemDTO.getCustomItemName())
+                                                                .build();
+                                                billItem.setTotal(billItem.getRate()
+                                                                .multiply(BigDecimal.valueOf(billItem.getQuantity())));
+                                                bill.addItem(billItem);
+                                        } else {
+                                                InventoryItem inventoryItem = inventoryItemRepository
+                                                                .findById(itemDTO.getItemId())
+                                                                .orElseThrow(() -> new RuntimeException(
+                                                                                "Item not found: "
+                                                                                                + itemDTO.getItemId()));
 
-                                        BillItem billItem = BillItem.builder()
-                                                        .item(inventoryItem)
-                                                        .quantity(itemDTO.getQuantity())
-                                                        .rate(itemDTO.getRate() != null ? itemDTO.getRate()
-                                                                        : inventoryItem.getDefaultRate())
-                                                        .isLostItem(itemDTO.getIsLostItem() != null
-                                                                        ? itemDTO.getIsLostItem()
-                                                                        : false)
-                                                        .build();
+                                                BillItem billItem = BillItem.builder()
+                                                                .item(inventoryItem)
+                                                                .quantity(itemDTO.getQuantity())
+                                                                .rate(itemDTO.getRate() != null ? itemDTO.getRate()
+                                                                                : inventoryItem.getDefaultRate())
+                                                                .isLostItem(itemDTO.getIsLostItem() != null
+                                                                                ? itemDTO.getIsLostItem()
+                                                                                : false)
+                                                                .isCustomItem(false)
+                                                                .build();
 
-                                        billItem.setTotal(billItem.getRate()
-                                                        .multiply(BigDecimal.valueOf(billItem.getQuantity())));
-                                        bill.addItem(billItem);
+                                                billItem.setTotal(billItem.getRate()
+                                                                .multiply(BigDecimal.valueOf(billItem.getQuantity())));
+                                                bill.addItem(billItem);
+                                        }
                                 }
                         }
                 }
@@ -179,24 +195,40 @@ public class BillService {
                 if (dto.getItems() != null) {
                         for (BillItemDTO itemDTO : dto.getItems()) {
                                 if (itemDTO.getQuantity() != null && itemDTO.getQuantity() > 0) {
-                                        InventoryItem inventoryItem = inventoryItemRepository
-                                                        .findById(itemDTO.getItemId())
-                                                        .orElseThrow(() -> new RuntimeException(
-                                                                        "Item not found: " + itemDTO.getItemId()));
+                                        if (Boolean.TRUE.equals(itemDTO.getIsCustomItem())) {
+                                                // Custom item - no inventory reference
+                                                BillItem billItem = BillItem.builder()
+                                                                .quantity(itemDTO.getQuantity())
+                                                                .rate(itemDTO.getRate())
+                                                                .isLostItem(false)
+                                                                .isCustomItem(true)
+                                                                .customItemName(itemDTO.getCustomItemName())
+                                                                .build();
+                                                billItem.setTotal(billItem.getRate()
+                                                                .multiply(BigDecimal.valueOf(billItem.getQuantity())));
+                                                bill.addItem(billItem);
+                                        } else {
+                                                InventoryItem inventoryItem = inventoryItemRepository
+                                                                .findById(itemDTO.getItemId())
+                                                                .orElseThrow(() -> new RuntimeException(
+                                                                                "Item not found: "
+                                                                                                + itemDTO.getItemId()));
 
-                                        BillItem billItem = BillItem.builder()
-                                                        .item(inventoryItem)
-                                                        .quantity(itemDTO.getQuantity())
-                                                        .rate(itemDTO.getRate() != null ? itemDTO.getRate()
-                                                                        : inventoryItem.getDefaultRate())
-                                                        .isLostItem(itemDTO.getIsLostItem() != null
-                                                                        ? itemDTO.getIsLostItem()
-                                                                        : false)
-                                                        .build();
+                                                BillItem billItem = BillItem.builder()
+                                                                .item(inventoryItem)
+                                                                .quantity(itemDTO.getQuantity())
+                                                                .rate(itemDTO.getRate() != null ? itemDTO.getRate()
+                                                                                : inventoryItem.getDefaultRate())
+                                                                .isLostItem(itemDTO.getIsLostItem() != null
+                                                                                ? itemDTO.getIsLostItem()
+                                                                                : false)
+                                                                .isCustomItem(false)
+                                                                .build();
 
-                                        billItem.setTotal(billItem.getRate()
-                                                        .multiply(BigDecimal.valueOf(billItem.getQuantity())));
-                                        bill.addItem(billItem);
+                                                billItem.setTotal(billItem.getRate()
+                                                                .multiply(BigDecimal.valueOf(billItem.getQuantity())));
+                                                bill.addItem(billItem);
+                                        }
                                 }
                         }
                 }
@@ -341,16 +373,27 @@ public class BillService {
 
         private BillDTO toDTO(Bill bill) {
                 List<BillItemDTO> itemDTOs = bill.getItems().stream()
-                                .map(item -> BillItemDTO.builder()
-                                                .id(item.getId())
-                                                .itemId(item.getItem().getId())
-                                                .itemNameGujarati(item.getItem().getNameGujarati())
-                                                .itemNameEnglish(item.getItem().getNameEnglish())
-                                                .quantity(item.getQuantity())
-                                                .rate(item.getRate())
-                                                .total(item.getTotal())
-                                                .isLostItem(Boolean.TRUE.equals(item.getIsLostItem()))
-                                                .build())
+                                .map(item -> {
+                                        BillItemDTO.BillItemDTOBuilder builder = BillItemDTO.builder()
+                                                        .id(item.getId())
+                                                        .quantity(item.getQuantity())
+                                                        .rate(item.getRate())
+                                                        .total(item.getTotal())
+                                                        .isLostItem(Boolean.TRUE.equals(item.getIsLostItem()))
+                                                        .isCustomItem(Boolean.TRUE.equals(item.getIsCustomItem()))
+                                                        .customItemName(item.getCustomItemName());
+
+                                        if (item.getItem() != null) {
+                                                builder.itemId(item.getItem().getId())
+                                                                .itemNameGujarati(item.getItem().getNameGujarati())
+                                                                .itemNameEnglish(item.getItem().getNameEnglish());
+                                        } else if (item.getCustomItemName() != null) {
+                                                builder.itemNameGujarati(item.getCustomItemName())
+                                                                .itemNameEnglish(item.getCustomItemName());
+                                        }
+
+                                        return builder.build();
+                                })
                                 .collect(Collectors.toList());
 
                 return BillDTO.builder()

@@ -14,6 +14,13 @@ interface ItemEntry {
   total: number;
 }
 
+interface CustomItemEntry {
+  name: string;
+  quantity: number;
+  rate: number;
+  total: number;
+}
+
 @Component({
   selector: 'app-new-bill',
   standalone: true,
@@ -239,6 +246,7 @@ interface ItemEntry {
                             [(ngModel)]="entry.item"
                             (change)="onLostItemSelect(entry, $event)"
                             [clearable]="false"
+                            [searchFn]="itemSearchFn"
                             class="custom-select w-full"
                              placeholder="Select Lost Item"
                         >
@@ -294,6 +302,76 @@ interface ItemEntry {
                  @if (lostItems().length === 0) {
                     <div class="text-center py-4 text-slate-500 italic text-sm">
                        No lost items added. Click "Add Item" to add charges for lost or damaged goods.
+                    </div>
+                 }
+              </div>
+            </div>
+
+            <!-- Custom / Other Items Section -->
+            <div class="mt-8 mb-8 p-4 bg-blue-900/10 rounded-xl border border-blue-500/20">
+              <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                   <i class="fas fa-plus-circle text-blue-400"></i>
+                   <h3 class="text-blue-400 font-semibold">Custom / Other Items</h3>
+                </div>
+                <button (click)="addCustomItem()" class="text-xs flex items-center gap-1 bg-blue-500/20 text-blue-300 px-3 py-1.5 rounded-lg hover:bg-blue-500/30 transition-colors">
+                  <i class="fas fa-plus"></i> Add Item
+                </button>
+              </div>
+              
+              <div class="space-y-3">
+                 @for (entry of customItems(); track $index) {
+                   <div class="flex flex-col md:flex-row items-center gap-3 bg-[var(--color-bg-input)] p-3 rounded-lg border border-blue-500/30">
+                      <!-- Item Name -->
+                      <div class="flex-1 w-full">
+                        <input 
+                          type="text" 
+                          [(ngModel)]="entry.name" 
+                          placeholder="Item name (e.g. Decoration, Labour, Transport)"
+                          class="w-full px-3 py-2 bg-[var(--color-bg-hover)] border border-[var(--color-border)] rounded-lg text-white focus:border-blue-500 focus:outline-none"
+                        >
+                      </div>
+
+                      <!-- Qty -->
+                      <div class="w-full md:w-24">
+                          <input 
+                            type="number" 
+                            [(ngModel)]="entry.quantity" 
+                            (ngModelChange)="updateCustomItemTotal(entry)"
+                            min="1"
+                            class="w-full px-3 py-2 bg-[var(--color-bg-hover)] border border-[var(--color-border)] rounded-lg text-white text-center focus:border-blue-500 focus:outline-none"
+                            placeholder="Qty"
+                          >
+                      </div>
+
+                      <!-- Rate -->
+                      <div class="w-full md:w-32">
+                         <div class="relative">
+                            <span class="absolute left-3 top-2 text-slate-500">₹</span>
+                            <input 
+                                type="number" 
+                                [(ngModel)]="entry.rate" 
+                                (ngModelChange)="updateCustomItemTotal(entry)"
+                                class="w-full pl-6 pr-3 py-2 bg-[var(--color-bg-hover)] border border-[var(--color-border)] rounded-lg text-white text-right focus:border-blue-500 focus:outline-none"
+                                placeholder="Rate"
+                            >
+                         </div>
+                      </div>
+
+                      <!-- Total -->
+                      <div class="w-full md:w-32 text-right font-bold text-blue-400">
+                         {{ entry.total | currencyInr }}
+                      </div>
+
+                      <!-- Remove -->
+                      <button (click)="removeCustomItem($index)" class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/40 transition-colors">
+                         <i class="fas fa-times"></i>
+                      </button>
+                   </div>
+                 }
+                 @if (customItems().length === 0) {
+                    <div class="text-center py-4 text-slate-500 italic text-sm">
+                       No custom items added. Click "Add Item" to add charges for items not in inventory.
                     </div>
                  }
               </div>
@@ -467,6 +545,7 @@ export class NewBillComponent implements OnInit {
   leftItems = signal<ItemEntry[]>([]);
   rightItems = signal<ItemEntry[]>([]);
   lostItems = signal<ItemEntry[]>([]); // New signal for lost items
+  customItems = signal<CustomItemEntry[]>([]); // Custom/other items not in inventory
 
   isLoading = signal(true);
   isSaving = signal(false);
@@ -490,12 +569,19 @@ export class NewBillComponent implements OnInit {
   // Available items for lost items dropdown (excluding already added ones if needed, or just all)
   lostItemOptions = computed(() => this.inventoryItems());
 
+  // Custom search function for ng-select (matches both Gujarati and English names)
+  itemSearchFn = (term: string, item: InventoryItem) => {
+    term = term.toLowerCase();
+    return (item.nameGujarati?.toLowerCase().includes(term) || item.nameEnglish?.toLowerCase().includes(term)) ?? false;
+  };
+
   // Computed totals
   totalAmount = computed(() => {
     const leftTotal = this.leftItems().reduce((sum, e) => sum + e.total, 0);
     const rightTotal = this.rightItems().reduce((sum, e) => sum + e.total, 0);
     const lostTotal = this.lostItems().reduce((sum, e) => sum + e.total, 0);
-    return leftTotal + rightTotal + lostTotal;
+    const customTotal = this.customItems().reduce((sum, e) => sum + e.total, 0);
+    return leftTotal + rightTotal + lostTotal + customTotal;
   });
 
   netPayable = computed(() => {
@@ -627,10 +713,18 @@ export class NewBillComponent implements OnInit {
   private initializeItems(items: InventoryItem[], billItems?: BillItem[]): void {
     const itemMap = new Map<number, BillItem>();
     const lostItemList: ItemEntry[] = [];
+    const customItemList: CustomItemEntry[] = [];
 
     if (billItems) {
       billItems.forEach(bi => {
-        if (bi.isLostItem) {
+        if (bi.isCustomItem) {
+          customItemList.push({
+            name: bi.customItemName || bi.itemNameGujarati || '',
+            quantity: bi.quantity,
+            rate: bi.rate,
+            total: bi.total || (bi.quantity * bi.rate)
+          });
+        } else if (bi.isLostItem) {
           const invItem = items.find(i => i.id === bi.itemId);
           if (invItem) {
             lostItemList.push({
@@ -646,11 +740,8 @@ export class NewBillComponent implements OnInit {
       });
     }
 
-    // Add default empty lost item row - REMOVED
-    // if (lostItemList.length === 0) {
-    //  lostItemList.push(this.createEmptyLostItem());
-    // }
     this.lostItems.set(lostItemList);
+    this.customItems.set(customItemList);
 
     const mapToEntry = (item: InventoryItem) => {
       const existing = itemMap.get(item.id);
@@ -719,7 +810,21 @@ export class NewBillComponent implements OnInit {
     this.lostItems.update(items => [...items]); // Trigger signal update
   }
 
+  addCustomItem() {
+    this.customItems.update(items => [
+      ...items,
+      { name: '', quantity: 1, rate: 0, total: 0 }
+    ]);
+  }
 
+  removeCustomItem(index: number) {
+    this.customItems.update(items => items.filter((_, i) => i !== index));
+  }
+
+  updateCustomItemTotal(entry: CustomItemEntry) {
+    entry.total = entry.quantity * entry.rate;
+    this.customItems.update(items => [...items]); // Trigger signal update
+  }
 
   onCustomerChange(customer: Customer): void {
     if (customer?.id) {
@@ -775,6 +880,7 @@ export class NewBillComponent implements OnInit {
     this.depositMethod.set('CASH');
     this.depositChequeNumber.set('');
     this.remarks = '';
+    this.customItems.set([]);
     this.initializeItems(this.inventoryItems());
   }
 
@@ -802,6 +908,14 @@ export class NewBillComponent implements OnInit {
         quantity: e.quantity,
         rate: e.rate,
         isLostItem: true
+      })),
+      ...this.customItems().filter(e => e.quantity > 0 && e.name.trim()).map(e => ({
+        itemId: 0,
+        quantity: e.quantity,
+        rate: e.rate,
+        isLostItem: false,
+        isCustomItem: true,
+        customItemName: e.name.trim()
       }))
     ];
 

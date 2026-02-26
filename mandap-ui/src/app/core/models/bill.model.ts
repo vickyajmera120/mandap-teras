@@ -12,6 +12,8 @@ export interface BillItem {
     rate: number;
     total?: number;
     isLostItem?: boolean;
+    customItemName?: string;
+    isCustomItem?: boolean;
 }
 
 export interface Bill {

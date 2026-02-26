@@ -20,4 +20,6 @@ public class BillItemDTO {
     private BigDecimal rate;
     private BigDecimal total;
     private Boolean isLostItem;
+    private String customItemName;
+    private Boolean isCustomItem;
 }

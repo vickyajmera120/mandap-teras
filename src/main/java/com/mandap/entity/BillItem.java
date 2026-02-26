@@ -22,7 +22,7 @@ public class BillItem {
     private Bill bill;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "item_id", nullable = false)
+    @JoinColumn(name = "item_id", nullable = true)
     private InventoryItem item;
 
     @Column(nullable = false)
@@ -39,6 +39,13 @@ public class BillItem {
     @Column(name = "is_lost_item")
     @Builder.Default
     private Boolean isLostItem = false;
+
+    @Column(name = "custom_item_name", length = 200)
+    private String customItemName;
+
+    @Column(name = "is_custom_item")
+    @Builder.Default
+    private Boolean isCustomItem = false;
 
     @PrePersist
     @PreUpdate
