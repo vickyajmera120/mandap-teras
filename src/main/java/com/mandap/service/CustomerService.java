@@ -3,6 +3,7 @@ package com.mandap.service;
 import com.mandap.dto.CustomerDTO;
 import com.mandap.entity.Customer;
 import com.mandap.repository.CustomerRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Transactional
 public class CustomerService {
@@ -48,6 +50,8 @@ public class CustomerService {
                 .build();
 
         customer = customerRepository.save(customer);
+        log.info("Customer created: id={}, name={}, mobile={}", customer.getId(), customer.getName(),
+                customer.getMobile());
         return toDTO(customer);
     }
 
@@ -76,6 +80,7 @@ public class CustomerService {
                 .orElseThrow(() -> new RuntimeException("Customer not found: " + id));
         customer.setActive(false);
         customerRepository.save(customer);
+        log.info("Customer soft-deleted: id={}", id);
     }
 
     private CustomerDTO toDTO(Customer customer) {

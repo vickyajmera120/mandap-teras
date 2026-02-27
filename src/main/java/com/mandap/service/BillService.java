@@ -5,6 +5,7 @@ import com.mandap.dto.BillItemDTO;
 import com.mandap.dto.PaymentDTO;
 import com.mandap.entity.*;
 import com.mandap.repository.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Transactional
 public class BillService {
@@ -68,6 +70,7 @@ public class BillService {
         }
 
         public BillDTO createBill(BillDTO dto, Long userId) {
+                log.info("Creating bill for customerId={}, userId={}", dto.getCustomerId(), userId);
                 Customer customer = customerRepository.findById(dto.getCustomerId())
                                 .orElseThrow(() -> new RuntimeException("Customer not found: " + dto.getCustomerId()));
 
@@ -143,6 +146,8 @@ public class BillService {
 
                 bill.calculateTotals();
                 bill = billRepository.save(bill);
+                log.info("Bill created: number={}, total={}, items={}", bill.getBillNumber(), bill.getTotalAmount(),
+                                bill.getItems().size());
 
                 // Create initial payment if deposit is provided
                 if (dto.getDeposit() != null && dto.getDeposit().compareTo(BigDecimal.ZERO) > 0) {
@@ -176,6 +181,7 @@ public class BillService {
         }
 
         public BillDTO updateBill(Long id, BillDTO dto) {
+                log.info("Updating bill id={}", id);
                 Bill bill = billRepository.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Bill not found: " + id));
 
@@ -281,9 +287,11 @@ public class BillService {
         }
 
         public void deleteBill(Long id) {
+                log.warn("Deleting bill id={}", id);
                 Bill bill = billRepository.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Bill not found: " + id));
                 billRepository.delete(bill);
+                log.info("Bill deleted: number={}", bill.getBillNumber());
         }
 
         public List<PaymentDTO> getPaymentsByBillId(Long billId) {
@@ -293,6 +301,8 @@ public class BillService {
         }
 
         public PaymentDTO addPayment(PaymentDTO dto, Long userId) {
+                log.info("Adding payment: billId={}, amount={}, isDeposit={}", dto.getBillId(), dto.getAmount(),
+                                dto.isDeposit());
                 Bill bill = billRepository.findById(dto.getBillId())
                                 .orElseThrow(() -> new RuntimeException("Bill not found: " + dto.getBillId()));
 
@@ -339,10 +349,12 @@ public class BillService {
         }
 
         public void deletePayment(Long id) {
+                log.warn("Deleting payment id={}", id);
                 Payment payment = paymentRepository.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Payment not found: " + id));
 
                 Bill bill = payment.getBill();
+                log.info("Removing payment from bill: number={}, amount={}", bill.getBillNumber(), payment.getAmount());
                 bill.removePayment(payment);
                 bill.calculateTotals();
                 billRepository.save(bill);

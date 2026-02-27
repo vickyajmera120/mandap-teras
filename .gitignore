@@ -28,3 +28,6 @@ src/main/resources/static/
 # OS
 Thumbs.db
 Desktop.ini
+
+# Logs
+logs/

@@ -5,6 +5,7 @@ import com.mandap.dto.RentalOrderItemDTO;
 import com.mandap.dto.RentalOrderTransactionDTO;
 import com.mandap.entity.*;
 import com.mandap.repository.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,529 +19,567 @@ import java.util.stream.Collectors;
  * Service for managing rental order lifecycle: booking, dispatch, return, and
  * billing integration.
  */
+@Slf4j
 @Service
 @Transactional
 public class RentalOrderService {
 
-    @Autowired
-    private RentalOrderRepository rentalOrderRepository;
+        @Autowired
+        private RentalOrderRepository rentalOrderRepository;
 
-    @Autowired
-    private RentalOrderItemRepository rentalOrderItemRepository;
+        @Autowired
+        private RentalOrderItemRepository rentalOrderItemRepository;
 
-    @Autowired
-    private RentalOrderTransactionRepository rentalOrderTransactionRepository;
+        @Autowired
+        private RentalOrderTransactionRepository rentalOrderTransactionRepository;
 
-    @Autowired
-    private CustomerRepository customerRepository;
+        @Autowired
+        private CustomerRepository customerRepository;
 
-    @Autowired
-    private InventoryItemRepository inventoryItemRepository;
+        @Autowired
+        private InventoryItemRepository inventoryItemRepository;
 
-    /**
-     * Get all rental orders.
-     */
-    public List<RentalOrderDTO> getAllOrders() {
-        return rentalOrderRepository.findAll().stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Get active (non-completed, non-cancelled) orders.
-     */
-    public List<RentalOrderDTO> getActiveOrders() {
-        return rentalOrderRepository.findActiveOrders().stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Get order by ID.
-     */
-    public RentalOrderDTO getOrderById(Long id) {
-        RentalOrder order = rentalOrderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Rental order not found: " + id));
-        return toDTO(order);
-    }
-
-    /**
-     * Create a new booking (rental order).
-     * This reserves items but does not affect available stock yet.
-     */
-    public RentalOrderDTO createBooking(RentalOrderDTO dto) {
-        Customer customer = customerRepository.findById(dto.getCustomerId())
-                .orElseThrow(() -> new RuntimeException("Customer not found: " + dto.getCustomerId()));
-
-        // Check if customer already has an active rental order
-        List<RentalOrder> existingOrders = rentalOrderRepository.findByCustomerIdOrderByOrderDateDesc(customer.getId());
-        if (!existingOrders.isEmpty()) {
-            throw new RuntimeException("Customer already has a rental order. Please edit the existing order.");
+        /**
+         * Get all rental orders.
+         */
+        public List<RentalOrderDTO> getAllOrders() {
+                return rentalOrderRepository.findAll().stream()
+                                .map(this::toDTO)
+                                .collect(Collectors.toList());
         }
 
-        // Validate stock availability
-        for (RentalOrderItemDTO itemDto : dto.getItems()) {
-            InventoryItem invItem = inventoryItemRepository.findById(itemDto.getInventoryItemId())
-                    .orElseThrow(
-                            () -> new RuntimeException("Inventory item not found: " + itemDto.getInventoryItemId()));
-
-            // ATP Calculation:
-            // Real Available = Total Stock - (Sum of (Booked - Returned) for all active
-            // orders)
-            // Note: We use the repository method we just added for Usage to get all active
-            // items
-            List<RentalOrderItem> activeItems = rentalOrderItemRepository
-                    .findActiveUsageByInventoryItem(invItem.getId());
-
-            int totalCommitted = activeItems.stream()
-                    .mapToInt(i -> i.getBookedQty() - (i.getReturnedQty() != null ? i.getReturnedQty() : 0))
-                    .sum();
-
-            int realAvailable = invItem.getTotalStock() - totalCommitted;
-
-            if (realAvailable < itemDto.getBookedQty()) {
-                throw new RuntimeException("Insufficient stock for item: " + invItem.getNameEnglish() +
-                        ". Total Stock: " + invItem.getTotalStock() +
-                        ", Committed: " + totalCommitted +
-                        " (Real Available: " + realAvailable + ")" +
-                        ", Requested: " + itemDto.getBookedQty());
-            }
+        /**
+         * Get active (non-completed, non-cancelled) orders.
+         */
+        public List<RentalOrderDTO> getActiveOrders() {
+                return rentalOrderRepository.findActiveOrders().stream()
+                                .map(this::toDTO)
+                                .collect(Collectors.toList());
         }
 
-        RentalOrder order = RentalOrder.builder()
-                .orderNumber(generateOrderNumber())
-                .customer(customer)
-                .orderDate(dto.getOrderDate() != null ? dto.getOrderDate() : LocalDate.now())
-                .expectedReturnDate(dto.getExpectedReturnDate())
-                .status(RentalOrder.RentalOrderStatus.BOOKED)
-                .remarks(dto.getRemarks())
-                .build();
-
-        // Add items
-        for (RentalOrderItemDTO itemDto : dto.getItems()) {
-            InventoryItem invItem = inventoryItemRepository.findById(itemDto.getInventoryItemId()).get();
-
-            RentalOrderItem orderItem = RentalOrderItem.builder()
-                    .inventoryItem(invItem)
-                    .bookedQty(itemDto.getBookedQty())
-                    .dispatchedQty(0)
-                    .returnedQty(0)
-                    .build();
-
-            order.addItem(orderItem);
+        /**
+         * Get order by ID.
+         */
+        public RentalOrderDTO getOrderById(Long id) {
+                RentalOrder order = rentalOrderRepository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("Rental order not found: " + id));
+                return toDTO(order);
         }
 
-        order = rentalOrderRepository.save(order);
-        return toDTO(order);
-    }
+        /**
+         * Create a new booking (rental order).
+         * This reserves items but does not affect available stock yet.
+         */
+        public RentalOrderDTO createBooking(RentalOrderDTO dto) {
+                log.info("Creating booking for customerId={}, items={}", dto.getCustomerId(),
+                                dto.getItems() != null ? dto.getItems().size() : 0);
+                Customer customer = customerRepository.findById(dto.getCustomerId())
+                                .orElseThrow(() -> new RuntimeException("Customer not found: " + dto.getCustomerId()));
 
-    /**
-     * Update an existing rental order.
-     * Merges items: updates quantities, adds new items, removes missing items (if
-     * not dispatched).
-     */
-    public RentalOrderDTO updateOrder(Long id, RentalOrderDTO dto) {
-        RentalOrder order = rentalOrderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Rental order not found: " + id));
-
-        if (order.getStatus() == RentalOrder.RentalOrderStatus.COMPLETED ||
-                order.getStatus() == RentalOrder.RentalOrderStatus.CANCELLED) {
-            throw new RuntimeException("Cannot update completed or cancelled order");
-        }
-
-        // Update header fields
-        order.setOrderDate(dto.getOrderDate() != null ? dto.getOrderDate() : order.getOrderDate());
-        order.setExpectedReturnDate(dto.getExpectedReturnDate());
-        order.setRemarks(dto.getRemarks());
-
-        // Update items
-        if (dto.getItems() != null) {
-            // 1. Update existing items and add new ones
-            for (RentalOrderItemDTO itemDto : dto.getItems()) {
-                InventoryItem invItem = inventoryItemRepository.findById(itemDto.getInventoryItemId())
-                        .orElseThrow(() -> new RuntimeException(
-                                "Inventory item not found: " + itemDto.getInventoryItemId()));
-
-                RentalOrderItem existingItem = order.getItems().stream()
-                        .filter(i -> i.getInventoryItem().getId().equals(invItem.getId()))
-                        .findFirst()
-                        .orElse(null);
-
-                final Long currentOrderId = order.getId();
-
-                if (existingItem != null) {
-                    // Update existing
-                    if (itemDto.getBookedQty() < existingItem.getDispatchedQty()) {
-                        throw new RuntimeException("Cannot reduce booked quantity below dispatched quantity for item: "
-                                + invItem.getNameEnglish());
-                    }
-
-                    // ATP Check for update:
-                    // 1. Get all active usage
-                    List<RentalOrderItem> activeItems = rentalOrderItemRepository
-                            .findActiveUsageByInventoryItem(invItem.getId());
-
-                    // 2. Calculate committed quantity by OTHERS
-                    int committedByOthers = activeItems.stream()
-                            .filter(i -> !i.getRentalOrder().getId().equals(currentOrderId))
-                            .mapToInt(i -> i.getBookedQty() - (i.getReturnedQty() != null ? i.getReturnedQty() : 0))
-                            .sum();
-
-                    // 3. Real Available for THIS order = Total Stock - CommittedByOthers + (My
-                    // Returned So Far)
-                    // Wait, logic: TotalStock >= CommittedByOthers + MyNewBooked - MyReturned
-                    // So: AvailableForBooking = TotalStock - CommittedByOthers + MyReturned
-                    // Check if MyNewBooked <= AvailableForBooking
-
-                    int myReturned = existingItem.getReturnedQty() != null ? existingItem.getReturnedQty() : 0;
-                    int maxBookable = invItem.getTotalStock() - committedByOthers + myReturned; // Actually, strictly
-                                                                                                // committedByOthers =
-                                                                                                // booked-returned.
-                    // Let's stick to base formula:
-                    // Committed_New = CommittedByOthers + (NewBooked - MyReturned)
-                    // if Committed_New > TotalStock -> Error.
-
-                    int newCommitted = committedByOthers + (itemDto.getBookedQty() - myReturned);
-
-                    if (newCommitted > invItem.getTotalStock()) {
-                        throw new RuntimeException("Insufficient stock for item: " + invItem.getNameEnglish() +
-                                ". Total: " + invItem.getTotalStock() +
-                                ", Others Committed: " + committedByOthers +
-                                ", You Requested: " + itemDto.getBookedQty() +
-                                " (Max Allocatable: " + (invItem.getTotalStock() - committedByOthers + myReturned)
-                                + ")");
-                    }
-
-                    existingItem.setBookedQty(itemDto.getBookedQty());
-                } else {
-                    // Add new item
-                    // ATP Check
-                    List<RentalOrderItem> activeItems = rentalOrderItemRepository
-                            .findActiveUsageByInventoryItem(invItem.getId());
-                    int committedByOthers = activeItems.stream()
-                            .filter(i -> !i.getRentalOrder().getId().equals(currentOrderId))
-                            .mapToInt(i -> i.getBookedQty() - (i.getReturnedQty() != null ? i.getReturnedQty() : 0))
-                            .sum();
-
-                    // Since it's a new item in this order, MyReturned = 0.
-                    int newCommitted = committedByOthers + itemDto.getBookedQty();
-
-                    if (newCommitted > invItem.getTotalStock()) {
-                        throw new RuntimeException("Insufficient stock for item: " + invItem.getNameEnglish());
-                    }
-
-                    RentalOrderItem newItem = RentalOrderItem.builder()
-                            .inventoryItem(invItem)
-                            .bookedQty(itemDto.getBookedQty())
-                            .dispatchedQty(0)
-                            .returnedQty(0)
-                            .build();
-                    order.addItem(newItem);
+                // Check if customer already has an active rental order
+                List<RentalOrder> existingOrders = rentalOrderRepository
+                                .findByCustomerIdOrderByOrderDateDesc(customer.getId());
+                if (!existingOrders.isEmpty()) {
+                        throw new RuntimeException(
+                                        "Customer already has a rental order. Please edit the existing order.");
                 }
-            }
 
-            // 2. Remove missing items
-            List<Long> dtoItemIds = dto.getItems().stream()
-                    .map(RentalOrderItemDTO::getInventoryItemId)
-                    .collect(Collectors.toList());
+                // Validate stock availability
+                for (RentalOrderItemDTO itemDto : dto.getItems()) {
+                        InventoryItem invItem = inventoryItemRepository.findById(itemDto.getInventoryItemId())
+                                        .orElseThrow(
+                                                        () -> new RuntimeException("Inventory item not found: "
+                                                                        + itemDto.getInventoryItemId()));
 
-            // Collect items to remove first to avoid concurrent modification
-            List<RentalOrderItem> itemsToRemove = order.getItems().stream()
-                    .filter(item -> !dtoItemIds.contains(item.getInventoryItem().getId()))
-                    .collect(Collectors.toList());
+                        // ATP Calculation:
+                        // Real Available = Total Stock - (Sum of (Booked - Returned) for all active
+                        // orders)
+                        // Note: We use the repository method we just added for Usage to get all active
+                        // items
+                        List<RentalOrderItem> activeItems = rentalOrderItemRepository
+                                        .findActiveUsageByInventoryItem(invItem.getId());
 
-            for (RentalOrderItem item : itemsToRemove) {
-                if (item.getDispatchedQty() > 0) {
-                    throw new RuntimeException(
-                            "Cannot remove item that has been dispatched: " + item.getInventoryItem().getNameEnglish());
+                        int totalCommitted = activeItems.stream()
+                                        .mapToInt(i -> i.getBookedQty()
+                                                        - (i.getReturnedQty() != null ? i.getReturnedQty() : 0))
+                                        .sum();
+
+                        int realAvailable = invItem.getTotalStock() - totalCommitted;
+
+                        if (realAvailable < itemDto.getBookedQty()) {
+                                throw new RuntimeException("Insufficient stock for item: " + invItem.getNameEnglish() +
+                                                ". Total Stock: " + invItem.getTotalStock() +
+                                                ", Committed: " + totalCommitted +
+                                                " (Real Available: " + realAvailable + ")" +
+                                                ", Requested: " + itemDto.getBookedQty());
+                        }
                 }
-                order.removeItem(item);
-            }
+
+                RentalOrder order = RentalOrder.builder()
+                                .orderNumber(generateOrderNumber())
+                                .customer(customer)
+                                .orderDate(dto.getOrderDate() != null ? dto.getOrderDate() : LocalDate.now())
+                                .expectedReturnDate(dto.getExpectedReturnDate())
+                                .status(RentalOrder.RentalOrderStatus.BOOKED)
+                                .remarks(dto.getRemarks())
+                                .build();
+
+                // Add items
+                for (RentalOrderItemDTO itemDto : dto.getItems()) {
+                        InventoryItem invItem = inventoryItemRepository.findById(itemDto.getInventoryItemId()).get();
+
+                        RentalOrderItem orderItem = RentalOrderItem.builder()
+                                        .inventoryItem(invItem)
+                                        .bookedQty(itemDto.getBookedQty())
+                                        .dispatchedQty(0)
+                                        .returnedQty(0)
+                                        .build();
+
+                        order.addItem(orderItem);
+                }
+
+                order = rentalOrderRepository.save(order);
+                log.info("Booking created: orderNumber={}, customerId={}, items={}", order.getOrderNumber(),
+                                customer.getId(), order.getItems().size());
+                return toDTO(order);
         }
 
-        order = rentalOrderRepository.save(order);
-        return toDTO(order);
-    }
+        /**
+         * Update an existing rental order.
+         * Merges items: updates quantities, adds new items, removes missing items (if
+         * not dispatched).
+         */
+        public RentalOrderDTO updateOrder(Long id, RentalOrderDTO dto) {
+                RentalOrder order = rentalOrderRepository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("Rental order not found: " + id));
 
-    /**
-     * Dispatch items for an order with voucher details.
-     */
-    public RentalOrderDTO dispatchItems(Long orderId, RentalOrderTransactionDTO transactionDto) {
-        RentalOrder order = rentalOrderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Rental order not found: " + orderId));
+                if (order.getStatus() == RentalOrder.RentalOrderStatus.COMPLETED ||
+                                order.getStatus() == RentalOrder.RentalOrderStatus.CANCELLED) {
+                        throw new RuntimeException("Cannot update completed or cancelled order");
+                }
 
-        if (order.getStatus() == RentalOrder.RentalOrderStatus.COMPLETED ||
-                order.getStatus() == RentalOrder.RentalOrderStatus.CANCELLED) {
-            throw new RuntimeException("Cannot dispatch items for a completed or cancelled order");
+                // Update header fields
+                order.setOrderDate(dto.getOrderDate() != null ? dto.getOrderDate() : order.getOrderDate());
+                order.setExpectedReturnDate(dto.getExpectedReturnDate());
+                order.setRemarks(dto.getRemarks());
+
+                // Update items
+                if (dto.getItems() != null) {
+                        // 1. Update existing items and add new ones
+                        for (RentalOrderItemDTO itemDto : dto.getItems()) {
+                                InventoryItem invItem = inventoryItemRepository.findById(itemDto.getInventoryItemId())
+                                                .orElseThrow(() -> new RuntimeException(
+                                                                "Inventory item not found: "
+                                                                                + itemDto.getInventoryItemId()));
+
+                                RentalOrderItem existingItem = order.getItems().stream()
+                                                .filter(i -> i.getInventoryItem().getId().equals(invItem.getId()))
+                                                .findFirst()
+                                                .orElse(null);
+
+                                final Long currentOrderId = order.getId();
+
+                                if (existingItem != null) {
+                                        // Update existing
+                                        if (itemDto.getBookedQty() < existingItem.getDispatchedQty()) {
+                                                throw new RuntimeException(
+                                                                "Cannot reduce booked quantity below dispatched quantity for item: "
+                                                                                + invItem.getNameEnglish());
+                                        }
+
+                                        // ATP Check for update:
+                                        // 1. Get all active usage
+                                        List<RentalOrderItem> activeItems = rentalOrderItemRepository
+                                                        .findActiveUsageByInventoryItem(invItem.getId());
+
+                                        // 2. Calculate committed quantity by OTHERS
+                                        int committedByOthers = activeItems.stream()
+                                                        .filter(i -> !i.getRentalOrder().getId().equals(currentOrderId))
+                                                        .mapToInt(i -> i.getBookedQty() - (i.getReturnedQty() != null
+                                                                        ? i.getReturnedQty()
+                                                                        : 0))
+                                                        .sum();
+
+                                        // 3. Real Available for THIS order = Total Stock - CommittedByOthers + (My
+                                        // Returned So Far)
+                                        // Wait, logic: TotalStock >= CommittedByOthers + MyNewBooked - MyReturned
+                                        // So: AvailableForBooking = TotalStock - CommittedByOthers + MyReturned
+                                        // Check if MyNewBooked <= AvailableForBooking
+
+                                        int myReturned = existingItem.getReturnedQty() != null
+                                                        ? existingItem.getReturnedQty()
+                                                        : 0;
+                                        int maxBookable = invItem.getTotalStock() - committedByOthers + myReturned; // Actually,
+                                                                                                                    // strictly
+                                                                                                                    // committedByOthers
+                                                                                                                    // =
+                                                                                                                    // booked-returned.
+                                        // Let's stick to base formula:
+                                        // Committed_New = CommittedByOthers + (NewBooked - MyReturned)
+                                        // if Committed_New > TotalStock -> Error.
+
+                                        int newCommitted = committedByOthers + (itemDto.getBookedQty() - myReturned);
+
+                                        if (newCommitted > invItem.getTotalStock()) {
+                                                throw new RuntimeException("Insufficient stock for item: "
+                                                                + invItem.getNameEnglish() +
+                                                                ". Total: " + invItem.getTotalStock() +
+                                                                ", Others Committed: " + committedByOthers +
+                                                                ", You Requested: " + itemDto.getBookedQty() +
+                                                                " (Max Allocatable: "
+                                                                + (invItem.getTotalStock() - committedByOthers
+                                                                                + myReturned)
+                                                                + ")");
+                                        }
+
+                                        existingItem.setBookedQty(itemDto.getBookedQty());
+                                } else {
+                                        // Add new item
+                                        // ATP Check
+                                        List<RentalOrderItem> activeItems = rentalOrderItemRepository
+                                                        .findActiveUsageByInventoryItem(invItem.getId());
+                                        int committedByOthers = activeItems.stream()
+                                                        .filter(i -> !i.getRentalOrder().getId().equals(currentOrderId))
+                                                        .mapToInt(i -> i.getBookedQty() - (i.getReturnedQty() != null
+                                                                        ? i.getReturnedQty()
+                                                                        : 0))
+                                                        .sum();
+
+                                        // Since it's a new item in this order, MyReturned = 0.
+                                        int newCommitted = committedByOthers + itemDto.getBookedQty();
+
+                                        if (newCommitted > invItem.getTotalStock()) {
+                                                throw new RuntimeException("Insufficient stock for item: "
+                                                                + invItem.getNameEnglish());
+                                        }
+
+                                        RentalOrderItem newItem = RentalOrderItem.builder()
+                                                        .inventoryItem(invItem)
+                                                        .bookedQty(itemDto.getBookedQty())
+                                                        .dispatchedQty(0)
+                                                        .returnedQty(0)
+                                                        .build();
+                                        order.addItem(newItem);
+                                }
+                        }
+
+                        // 2. Remove missing items
+                        List<Long> dtoItemIds = dto.getItems().stream()
+                                        .map(RentalOrderItemDTO::getInventoryItemId)
+                                        .collect(Collectors.toList());
+
+                        // Collect items to remove first to avoid concurrent modification
+                        List<RentalOrderItem> itemsToRemove = order.getItems().stream()
+                                        .filter(item -> !dtoItemIds.contains(item.getInventoryItem().getId()))
+                                        .collect(Collectors.toList());
+
+                        for (RentalOrderItem item : itemsToRemove) {
+                                if (item.getDispatchedQty() > 0) {
+                                        throw new RuntimeException(
+                                                        "Cannot remove item that has been dispatched: "
+                                                                        + item.getInventoryItem().getNameEnglish());
+                                }
+                                order.removeItem(item);
+                        }
+                }
+
+                order = rentalOrderRepository.save(order);
+                return toDTO(order);
         }
 
-        LocalDate dispatchDate = LocalDate.now();
+        /**
+         * Dispatch items for an order with voucher details.
+         */
+        public RentalOrderDTO dispatchItems(Long orderId, RentalOrderTransactionDTO transactionDto) {
+                log.info("Dispatching items for orderId={}, voucher={}", orderId, transactionDto.getVoucherNumber());
+                RentalOrder order = rentalOrderRepository.findById(orderId)
+                                .orElseThrow(() -> new RuntimeException("Rental order not found: " + orderId));
 
-        // Create Transaction Header
-        RentalOrderTransaction transaction = RentalOrderTransaction.builder()
-                .rentalOrder(order)
-                .type(RentalOrderTransaction.TransactionType.DISPATCH)
-                .voucherNumber(transactionDto.getVoucherNumber())
-                .vehicleNumber(transactionDto.getVehicleNumber())
-                .transactionDate(dispatchDate)
-                .build();
+                if (order.getStatus() == RentalOrder.RentalOrderStatus.COMPLETED ||
+                                order.getStatus() == RentalOrder.RentalOrderStatus.CANCELLED) {
+                        throw new RuntimeException("Cannot dispatch items for a completed or cancelled order");
+                }
 
-        for (RentalOrderItemDTO dispatchDto : transactionDto.getItems()) {
-            if (dispatchDto.getDispatchedQty() == null || dispatchDto.getDispatchedQty() <= 0) {
-                continue;
-            }
+                LocalDate dispatchDate = LocalDate.now();
 
-            RentalOrderItem orderItem = order.getItems().stream()
-                    .filter(i -> i.getInventoryItem().getId().equals(dispatchDto.getInventoryItemId()))
-                    .findFirst()
-                    .orElseThrow(
-                            () -> new RuntimeException("Item not found in order: " + dispatchDto.getInventoryItemId()));
+                // Create Transaction Header
+                RentalOrderTransaction transaction = RentalOrderTransaction.builder()
+                                .rentalOrder(order)
+                                .type(RentalOrderTransaction.TransactionType.DISPATCH)
+                                .voucherNumber(transactionDto.getVoucherNumber())
+                                .vehicleNumber(transactionDto.getVehicleNumber())
+                                .transactionDate(dispatchDate)
+                                .build();
 
-            int qtyToDispatch = dispatchDto.getDispatchedQty();
-            int remainingToDispatch = orderItem.getBookedQty() - orderItem.getDispatchedQty();
+                for (RentalOrderItemDTO dispatchDto : transactionDto.getItems()) {
+                        if (dispatchDto.getDispatchedQty() == null || dispatchDto.getDispatchedQty() <= 0) {
+                                continue;
+                        }
 
-            if (qtyToDispatch > remainingToDispatch) {
-                throw new RuntimeException("Cannot dispatch more than booked quantity for item: "
-                        + orderItem.getInventoryItem().getNameEnglish());
-            }
+                        RentalOrderItem orderItem = order.getItems().stream()
+                                        .filter(i -> i.getInventoryItem().getId()
+                                                        .equals(dispatchDto.getInventoryItemId()))
+                                        .findFirst()
+                                        .orElseThrow(
+                                                        () -> new RuntimeException("Item not found in order: "
+                                                                        + dispatchDto.getInventoryItemId()));
 
-            // Check available stock
-            InventoryItem invItem = orderItem.getInventoryItem();
-            if (invItem.getAvailableStock() < qtyToDispatch) {
-                throw new RuntimeException("Insufficient available stock for: " + invItem.getNameEnglish());
-            }
+                        int qtyToDispatch = dispatchDto.getDispatchedQty();
+                        int remainingToDispatch = orderItem.getBookedQty() - orderItem.getDispatchedQty();
 
-            // Update inventory available stock
-            invItem.setAvailableStock(invItem.getAvailableStock() - qtyToDispatch);
-            inventoryItemRepository.save(invItem);
+                        if (qtyToDispatch > remainingToDispatch) {
+                                throw new RuntimeException("Cannot dispatch more than booked quantity for item: "
+                                                + orderItem.getInventoryItem().getNameEnglish());
+                        }
 
-            // Update order item aggregate
-            orderItem.setDispatchedQty(orderItem.getDispatchedQty() + qtyToDispatch);
-            orderItem.setDispatchDate(dispatchDate);
+                        // Check available stock
+                        InventoryItem invItem = orderItem.getInventoryItem();
+                        if (invItem.getAvailableStock() < qtyToDispatch) {
+                                throw new RuntimeException(
+                                                "Insufficient available stock for: " + invItem.getNameEnglish());
+                        }
 
-            // Add Transaction Item
-            RentalOrderTransactionItem transItem = RentalOrderTransactionItem.builder()
-                    .inventoryItem(invItem)
-                    .quantity(qtyToDispatch)
-                    .build();
-            transaction.addItem(transItem);
+                        // Update inventory available stock
+                        invItem.setAvailableStock(invItem.getAvailableStock() - qtyToDispatch);
+                        inventoryItemRepository.save(invItem);
+
+                        // Update order item aggregate
+                        orderItem.setDispatchedQty(orderItem.getDispatchedQty() + qtyToDispatch);
+                        orderItem.setDispatchDate(dispatchDate);
+
+                        // Add Transaction Item
+                        RentalOrderTransactionItem transItem = RentalOrderTransactionItem.builder()
+                                        .inventoryItem(invItem)
+                                        .quantity(qtyToDispatch)
+                                        .build();
+                        transaction.addItem(transItem);
+                }
+
+                rentalOrderTransactionRepository.save(transaction);
+
+                order.setDispatchDate(dispatchDate);
+                order.setStatus(RentalOrder.RentalOrderStatus.DISPATCHED);
+                order = rentalOrderRepository.save(order);
+
+                return toDTO(order);
         }
 
-        rentalOrderTransactionRepository.save(transaction);
+        /**
+         * Receive (return) items from customer with voucher details.
+         */
+        public RentalOrderDTO receiveItems(Long orderId, RentalOrderTransactionDTO transactionDto) {
+                log.info("Receiving items for orderId={}, voucher={}", orderId, transactionDto.getVoucherNumber());
+                RentalOrder order = rentalOrderRepository.findById(orderId)
+                                .orElseThrow(() -> new RuntimeException("Rental order not found: " + orderId));
 
-        order.setDispatchDate(dispatchDate);
-        order.setStatus(RentalOrder.RentalOrderStatus.DISPATCHED);
-        order = rentalOrderRepository.save(order);
+                if (order.getStatus() == RentalOrder.RentalOrderStatus.COMPLETED ||
+                                order.getStatus() == RentalOrder.RentalOrderStatus.CANCELLED ||
+                                order.getStatus() == RentalOrder.RentalOrderStatus.BOOKED) {
+                        throw new RuntimeException("Cannot receive items for order in status: " + order.getStatus());
+                }
 
-        return toDTO(order);
-    }
+                LocalDate returnDate = LocalDate.now();
 
-    /**
-     * Receive (return) items from customer with voucher details.
-     */
-    public RentalOrderDTO receiveItems(Long orderId, RentalOrderTransactionDTO transactionDto) {
-        RentalOrder order = rentalOrderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Rental order not found: " + orderId));
+                // Create Transaction Header
+                RentalOrderTransaction transaction = RentalOrderTransaction.builder()
+                                .rentalOrder(order)
+                                .type(RentalOrderTransaction.TransactionType.RETURN)
+                                .voucherNumber(transactionDto.getVoucherNumber())
+                                .vehicleNumber(transactionDto.getVehicleNumber())
+                                .transactionDate(returnDate)
+                                .build();
 
-        if (order.getStatus() == RentalOrder.RentalOrderStatus.COMPLETED ||
-                order.getStatus() == RentalOrder.RentalOrderStatus.CANCELLED ||
-                order.getStatus() == RentalOrder.RentalOrderStatus.BOOKED) {
-            throw new RuntimeException("Cannot receive items for order in status: " + order.getStatus());
+                for (RentalOrderItemDTO returnDto : transactionDto.getItems()) {
+                        if (returnDto.getReturnedQty() == null || returnDto.getReturnedQty() <= 0) {
+                                continue;
+                        }
+
+                        RentalOrderItem orderItem = order.getItems().stream()
+                                        .filter(i -> i.getInventoryItem().getId()
+                                                        .equals(returnDto.getInventoryItemId()))
+                                        .findFirst()
+                                        .orElseThrow(
+                                                        () -> new RuntimeException("Item not found in order: "
+                                                                        + returnDto.getInventoryItemId()));
+
+                        int qtyToReturn = returnDto.getReturnedQty();
+                        int outstanding = orderItem.getDispatchedQty() - orderItem.getReturnedQty();
+
+                        if (qtyToReturn > outstanding) {
+                                throw new RuntimeException("Cannot return more than outstanding quantity for item: "
+                                                + orderItem.getInventoryItem().getNameEnglish());
+                        }
+
+                        // Update inventory available stock
+                        InventoryItem invItem = orderItem.getInventoryItem();
+                        invItem.setAvailableStock(invItem.getAvailableStock() + qtyToReturn);
+                        inventoryItemRepository.save(invItem);
+
+                        // Update order item aggregate
+                        orderItem.setReturnedQty(orderItem.getReturnedQty() + qtyToReturn);
+                        orderItem.setReturnDate(returnDate);
+
+                        // Add Transaction Item
+                        RentalOrderTransactionItem transItem = RentalOrderTransactionItem.builder()
+                                        .inventoryItem(invItem)
+                                        .quantity(qtyToReturn)
+                                        .build();
+                        transaction.addItem(transItem);
+                }
+
+                rentalOrderTransactionRepository.save(transaction);
+
+                // Check if all items are returned
+                boolean allReturned = true;
+                for (RentalOrderItem item : order.getItems()) {
+                        if (item.getDispatchedQty() > item.getReturnedQty()) {
+                                allReturned = false;
+                                break;
+                        }
+                }
+
+                order.setActualReturnDate(returnDate);
+                order.setStatus(allReturned ? RentalOrder.RentalOrderStatus.RETURNED
+                                : RentalOrder.RentalOrderStatus.PARTIALLY_RETURNED);
+                order = rentalOrderRepository.save(order);
+
+                log.info("Receive complete for orderId={}, status={}", orderId, order.getStatus());
+                return toDTO(order);
         }
 
-        LocalDate returnDate = LocalDate.now();
-
-        // Create Transaction Header
-        RentalOrderTransaction transaction = RentalOrderTransaction.builder()
-                .rentalOrder(order)
-                .type(RentalOrderTransaction.TransactionType.RETURN)
-                .voucherNumber(transactionDto.getVoucherNumber())
-                .vehicleNumber(transactionDto.getVehicleNumber())
-                .transactionDate(returnDate)
-                .build();
-
-        for (RentalOrderItemDTO returnDto : transactionDto.getItems()) {
-            if (returnDto.getReturnedQty() == null || returnDto.getReturnedQty() <= 0) {
-                continue;
-            }
-
-            RentalOrderItem orderItem = order.getItems().stream()
-                    .filter(i -> i.getInventoryItem().getId().equals(returnDto.getInventoryItemId()))
-                    .findFirst()
-                    .orElseThrow(
-                            () -> new RuntimeException("Item not found in order: " + returnDto.getInventoryItemId()));
-
-            int qtyToReturn = returnDto.getReturnedQty();
-            int outstanding = orderItem.getDispatchedQty() - orderItem.getReturnedQty();
-
-            if (qtyToReturn > outstanding) {
-                throw new RuntimeException("Cannot return more than outstanding quantity for item: "
-                        + orderItem.getInventoryItem().getNameEnglish());
-            }
-
-            // Update inventory available stock
-            InventoryItem invItem = orderItem.getInventoryItem();
-            invItem.setAvailableStock(invItem.getAvailableStock() + qtyToReturn);
-            inventoryItemRepository.save(invItem);
-
-            // Update order item aggregate
-            orderItem.setReturnedQty(orderItem.getReturnedQty() + qtyToReturn);
-            orderItem.setReturnDate(returnDate);
-
-            // Add Transaction Item
-            RentalOrderTransactionItem transItem = RentalOrderTransactionItem.builder()
-                    .inventoryItem(invItem)
-                    .quantity(qtyToReturn)
-                    .build();
-            transaction.addItem(transItem);
+        /**
+         * Get unreturned items for a customer (for billing warning).
+         */
+        public List<RentalOrderItemDTO> getUnreturnedItemsByCustomer(Long customerId) {
+                return rentalOrderItemRepository.findUnreturnedItemsByCustomer(customerId).stream()
+                                .map(this::toItemDTO)
+                                .collect(Collectors.toList());
         }
 
-        rentalOrderTransactionRepository.save(transaction);
-
-        // Check if all items are returned
-        boolean allReturned = true;
-        for (RentalOrderItem item : order.getItems()) {
-            if (item.getDispatchedQty() > item.getReturnedQty()) {
-                allReturned = false;
-                break;
-            }
+        /**
+         * Get orders with unreturned items for a customer.
+         */
+        public List<RentalOrderDTO> getUnreturnedOrdersByCustomer(Long customerId) {
+                return rentalOrderRepository.findUnreturnedOrdersByCustomer(customerId).stream()
+                                .map(this::toDTO)
+                                .collect(Collectors.toList());
         }
 
-        order.setActualReturnDate(returnDate);
-        order.setStatus(allReturned ? RentalOrder.RentalOrderStatus.RETURNED
-                : RentalOrder.RentalOrderStatus.PARTIALLY_RETURNED);
-        order = rentalOrderRepository.save(order);
+        private synchronized String generateOrderNumber() {
+                String prefix = "RO-" + Year.now().getValue() + "-";
 
-        return toDTO(order);
-    }
-
-    /**
-     * Get unreturned items for a customer (for billing warning).
-     */
-    public List<RentalOrderItemDTO> getUnreturnedItemsByCustomer(Long customerId) {
-        return rentalOrderItemRepository.findUnreturnedItemsByCustomer(customerId).stream()
-                .map(this::toItemDTO)
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Get orders with unreturned items for a customer.
-     */
-    public List<RentalOrderDTO> getUnreturnedOrdersByCustomer(Long customerId) {
-        return rentalOrderRepository.findUnreturnedOrdersByCustomer(customerId).stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
-    }
-
-    private synchronized String generateOrderNumber() {
-        String prefix = "RO-" + Year.now().getValue() + "-";
-
-        return rentalOrderRepository.findFirstByOrderNumberStartingWithOrderByIdDesc(prefix)
-                .map(lastOrder -> {
-                    try {
-                        String numPart = lastOrder.getOrderNumber().substring(prefix.length());
-                        int nextNum = Integer.parseInt(numPart) + 1;
-                        return prefix + String.format("%04d", nextNum);
-                    } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-                        return prefix + "0001"; // Fallback
-                    }
-                })
-                .orElse(prefix + "0001");
-    }
-
-    private RentalOrderDTO toDTO(RentalOrder order) {
-        return RentalOrderDTO.builder()
-                .id(order.getId())
-                .orderNumber(order.getOrderNumber())
-                .customerId(order.getCustomer().getId())
-                .customerName(order.getCustomer().getName())
-                .customerMobile(order.getCustomer().getMobile())
-                .customerPalNumbers(new java.util.ArrayList<>(order.getCustomer().getPalNumbers()))
-                .orderDate(order.getOrderDate())
-                .dispatchDate(order.getDispatchDate())
-                .expectedReturnDate(order.getExpectedReturnDate())
-                .actualReturnDate(order.getActualReturnDate())
-                .status(order.getStatus().name())
-                .billId(order.getBill() != null ? order.getBill().getId() : null)
-                .remarks(order.getRemarks())
-                .billId(order.getBill() != null ? order.getBill().getId() : null)
-                .remarks(order.getRemarks())
-                .items(order.getItems().stream().map(this::toItemDTO).collect(Collectors.toList()))
-                .transactions(rentalOrderTransactionRepository
-                        .findByRentalOrderIdOrderByTransactionDateDesc(order.getId()).stream()
-                        .map(this::toTransactionDTO)
-                        .collect(Collectors.toList()))
-                .build();
-    }
-
-    private RentalOrderTransactionDTO toTransactionDTO(RentalOrderTransaction transaction) {
-        return RentalOrderTransactionDTO.builder()
-                .id(transaction.getId())
-                .rentalOrderId(transaction.getRentalOrder().getId())
-                .type(transaction.getType().name())
-                .voucherNumber(transaction.getVoucherNumber())
-                .vehicleNumber(transaction.getVehicleNumber())
-                .transactionDate(transaction.getTransactionDate())
-                .items(transaction.getItems().stream().map(item -> RentalOrderItemDTO.builder()
-                        .inventoryItemId(item.getInventoryItem().getId())
-                        .itemNameGujarati(item.getInventoryItem().getNameGujarati())
-                        .itemNameEnglish(item.getInventoryItem().getNameEnglish())
-                        .bookedQty(item.getQuantity()) // Reusing bookedQty field for transaction quantity
-                        .build()).collect(Collectors.toList()))
-                .build();
-    }
-
-    private RentalOrderItemDTO toItemDTO(RentalOrderItem item) {
-        return RentalOrderItemDTO.builder()
-                .id(item.getId())
-                .inventoryItemId(item.getInventoryItem().getId())
-                .itemNameGujarati(item.getInventoryItem().getNameGujarati())
-                .itemNameEnglish(item.getInventoryItem().getNameEnglish())
-                .bookedQty(item.getBookedQty())
-                .dispatchedQty(item.getDispatchedQty())
-                .returnedQty(item.getReturnedQty())
-                .outstandingQty(item.getOutstandingQty())
-                .dispatchDate(item.getDispatchDate())
-                .returnDate(item.getReturnDate())
-                .build();
-    }
-
-    /**
-     * Delete a rental order.
-     * Only allowed if status is BOOKED or CANCELLED.
-     */
-    public void deleteOrder(Long id) {
-        RentalOrder order = rentalOrderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Rental order not found: " + id));
-
-        // Validation: Verify no outstanding items
-        for (RentalOrderItem item : order.getItems()) {
-            int outstanding = item.getDispatchedQty() - (item.getReturnedQty() != null ? item.getReturnedQty() : 0);
-            if (outstanding > 0) {
-                throw new RuntimeException(
-                        "Cannot delete order with outstanding items (" + item.getInventoryItem().getNameEnglish()
-                                + "). Please return the items first.");
-            }
+                return rentalOrderRepository.findFirstByOrderNumberStartingWithOrderByIdDesc(prefix)
+                                .map(lastOrder -> {
+                                        try {
+                                                String numPart = lastOrder.getOrderNumber().substring(prefix.length());
+                                                int nextNum = Integer.parseInt(numPart) + 1;
+                                                return prefix + String.format("%04d", nextNum);
+                                        } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
+                                                return prefix + "0001"; // Fallback
+                                        }
+                                })
+                                .orElse(prefix + "0001");
         }
 
-        rentalOrderRepository.delete(order);
-    }
-
-    /**
-     * Cancel a rental order.
-     * Only allowed if status is BOOKED.
-     */
-    public RentalOrderDTO cancelOrder(Long id) {
-        RentalOrder order = rentalOrderRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Rental order not found: " + id));
-
-        if (order.getStatus() != RentalOrder.RentalOrderStatus.BOOKED) {
-            throw new RuntimeException(
-                    "Cannot cancel order with status: " + order.getStatus() + ". Only BOOKED orders can be cancelled.");
+        private RentalOrderDTO toDTO(RentalOrder order) {
+                return RentalOrderDTO.builder()
+                                .id(order.getId())
+                                .orderNumber(order.getOrderNumber())
+                                .customerId(order.getCustomer().getId())
+                                .customerName(order.getCustomer().getName())
+                                .customerMobile(order.getCustomer().getMobile())
+                                .customerPalNumbers(new java.util.ArrayList<>(order.getCustomer().getPalNumbers()))
+                                .orderDate(order.getOrderDate())
+                                .dispatchDate(order.getDispatchDate())
+                                .expectedReturnDate(order.getExpectedReturnDate())
+                                .actualReturnDate(order.getActualReturnDate())
+                                .status(order.getStatus().name())
+                                .billId(order.getBill() != null ? order.getBill().getId() : null)
+                                .remarks(order.getRemarks())
+                                .billId(order.getBill() != null ? order.getBill().getId() : null)
+                                .remarks(order.getRemarks())
+                                .items(order.getItems().stream().map(this::toItemDTO).collect(Collectors.toList()))
+                                .transactions(rentalOrderTransactionRepository
+                                                .findByRentalOrderIdOrderByTransactionDateDesc(order.getId()).stream()
+                                                .map(this::toTransactionDTO)
+                                                .collect(Collectors.toList()))
+                                .build();
         }
 
-        order.setStatus(RentalOrder.RentalOrderStatus.CANCELLED);
-        order = rentalOrderRepository.save(order);
-        return toDTO(order);
-    }
+        private RentalOrderTransactionDTO toTransactionDTO(RentalOrderTransaction transaction) {
+                return RentalOrderTransactionDTO.builder()
+                                .id(transaction.getId())
+                                .rentalOrderId(transaction.getRentalOrder().getId())
+                                .type(transaction.getType().name())
+                                .voucherNumber(transaction.getVoucherNumber())
+                                .vehicleNumber(transaction.getVehicleNumber())
+                                .transactionDate(transaction.getTransactionDate())
+                                .items(transaction.getItems().stream().map(item -> RentalOrderItemDTO.builder()
+                                                .inventoryItemId(item.getInventoryItem().getId())
+                                                .itemNameGujarati(item.getInventoryItem().getNameGujarati())
+                                                .itemNameEnglish(item.getInventoryItem().getNameEnglish())
+                                                .bookedQty(item.getQuantity()) // Reusing bookedQty field for
+                                                                               // transaction quantity
+                                                .build()).collect(Collectors.toList()))
+                                .build();
+        }
+
+        private RentalOrderItemDTO toItemDTO(RentalOrderItem item) {
+                return RentalOrderItemDTO.builder()
+                                .id(item.getId())
+                                .inventoryItemId(item.getInventoryItem().getId())
+                                .itemNameGujarati(item.getInventoryItem().getNameGujarati())
+                                .itemNameEnglish(item.getInventoryItem().getNameEnglish())
+                                .bookedQty(item.getBookedQty())
+                                .dispatchedQty(item.getDispatchedQty())
+                                .returnedQty(item.getReturnedQty())
+                                .outstandingQty(item.getOutstandingQty())
+                                .dispatchDate(item.getDispatchDate())
+                                .returnDate(item.getReturnDate())
+                                .build();
+        }
+
+        /**
+         * Delete a rental order.
+         * Only allowed if status is BOOKED or CANCELLED.
+         */
+        public void deleteOrder(Long id) {
+                RentalOrder order = rentalOrderRepository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("Rental order not found: " + id));
+
+                // Validation: Verify no outstanding items
+                for (RentalOrderItem item : order.getItems()) {
+                        int outstanding = item.getDispatchedQty()
+                                        - (item.getReturnedQty() != null ? item.getReturnedQty() : 0);
+                        if (outstanding > 0) {
+                                throw new RuntimeException(
+                                                "Cannot delete order with outstanding items ("
+                                                                + item.getInventoryItem().getNameEnglish()
+                                                                + "). Please return the items first.");
+                        }
+                }
+
+                log.warn("Deleting rental order id={}, orderNumber={}", id, order.getOrderNumber());
+                rentalOrderRepository.delete(order);
+        }
+
+        /**
+         * Cancel a rental order.
+         * Only allowed if status is BOOKED.
+         */
+        public RentalOrderDTO cancelOrder(Long id) {
+                RentalOrder order = rentalOrderRepository.findById(id)
+                                .orElseThrow(() -> new RuntimeException("Rental order not found: " + id));
+
+                if (order.getStatus() != RentalOrder.RentalOrderStatus.BOOKED) {
+                        throw new RuntimeException(
+                                        "Cannot cancel order with status: " + order.getStatus()
+                                                        + ". Only BOOKED orders can be cancelled.");
+                }
+
+                order.setStatus(RentalOrder.RentalOrderStatus.CANCELLED);
+                order = rentalOrderRepository.save(order);
+                log.info("Rental order cancelled: orderNumber={}", order.getOrderNumber());
+                return toDTO(order);
+        }
 }

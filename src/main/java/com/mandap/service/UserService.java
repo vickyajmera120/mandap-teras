@@ -5,6 +5,7 @@ import com.mandap.entity.Role;
 import com.mandap.entity.User;
 import com.mandap.repository.RoleRepository;
 import com.mandap.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Transactional
 public class UserService {
@@ -64,6 +66,7 @@ public class UserService {
                 .build();
 
         user = userRepository.save(user);
+        log.info("User created: id={}, username={}", user.getId(), user.getUsername());
         return toDTO(user);
     }
 
@@ -101,6 +104,7 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found: " + id));
         user.setActive(false);
         userRepository.save(user);
+        log.info("User deactivated: id={}", id);
     }
 
     private UserDTO toDTO(User user) {

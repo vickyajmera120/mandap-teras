@@ -5,6 +5,7 @@ import com.mandap.dto.BillDTO;
 import com.mandap.entity.User;
 import com.mandap.security.CustomUserDetailsService;
 import com.mandap.service.BillService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/bills")
 @CrossOrigin(origins = "*")
@@ -56,16 +58,23 @@ public class BillController {
     @PostMapping
     public ResponseEntity<BillDTO> createBill(@RequestBody BillDTO dto, Authentication authentication) {
         User user = userDetailsService.getUserByUsername(authentication.getName());
-        return ResponseEntity.ok(billService.createBill(dto, user.getId()));
+        log.info("Creating bill for customer={}, by user={}", dto.getCustomerId(), authentication.getName());
+        BillDTO result = billService.createBill(dto, user.getId());
+        log.info("Bill created: billNumber={}, totalAmount={}", result.getBillNumber(), result.getTotalAmount());
+        return ResponseEntity.ok(result);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<BillDTO> updateBill(@PathVariable Long id, @RequestBody BillDTO dto) {
-        return ResponseEntity.ok(billService.updateBill(id, dto));
+        log.info("Updating bill id={}", id);
+        BillDTO result = billService.updateBill(id, dto);
+        log.info("Bill updated: billNumber={}, totalAmount={}", result.getBillNumber(), result.getTotalAmount());
+        return ResponseEntity.ok(result);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse> deleteBill(@PathVariable Long id) {
+        log.warn("Deleting bill id={}", id);
         billService.deleteBill(id);
         return ResponseEntity.ok(ApiResponse.success("Bill deleted successfully"));
     }
