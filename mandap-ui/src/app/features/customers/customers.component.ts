@@ -74,27 +74,27 @@ import { NgSelectModule } from '@ng-select/ng-select';
       } @else {
         <!-- Table -->
         <div class="bg-[var(--color-bg-card)] backdrop-blur-xl rounded-2xl border border-[var(--color-border)] overflow-hidden">
-          <div class="overflow-x-auto">
+          <div class="overflow-auto max-h-[calc(100vh-280px)]">
             <table class="w-full">
-              <thead class="bg-[var(--color-bg-hover)]">
+              <thead class="sticky top-0 z-20 bg-[var(--color-bg-hover)] border-b border-[var(--color-border)] shadow-md">
                 <tr>
                   <!-- Sortable Name -->
-                  <th (click)="onSort('name')" class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold cursor-pointer group select-none">
+                  <th (click)="onSort('name')" class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold cursor-pointer group select-none bg-[var(--color-bg-hover)]">
                     Name 
                     <i class="fas ml-1" [class]="sortConfig().column === 'name' ? (sortConfig().direction === 'asc' ? 'fa-sort-up text-teal-500' : 'fa-sort-down text-teal-500') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
                   </th>
-                  <th class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold">Mobile</th>
+                  <th class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold bg-[var(--color-bg-hover)]">Mobile</th>
                   <!-- Sortable Pal No -->
-                  <th (click)="onSort('palNumbers')" class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold cursor-pointer group select-none">
+                  <th (click)="onSort('palNumbers')" class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold cursor-pointer group select-none bg-[var(--color-bg-hover)]">
                     Pal No
                     <i class="fas ml-1" [class]="sortConfig().column === 'palNumbers' ? (sortConfig().direction === 'asc' ? 'fa-sort-up text-teal-500' : 'fa-sort-down text-teal-500') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
                   </th>
-                  <th class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold">Address</th>
-                  <th class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold">Alt. Contact</th>
-                  <th class="text-center py-4 px-6 text-[var(--color-text-secondary)] font-semibold">Actions</th>
+                  <th class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold bg-[var(--color-bg-hover)]">Address</th>
+                  <th class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold bg-[var(--color-bg-hover)]">Alt. Contact</th>
+                  <th class="text-center py-4 px-6 text-[var(--color-text-secondary)] font-semibold bg-[var(--color-bg-hover)]">Actions</th>
                 </tr>
                 <!-- Search Inputs Row -->
-                <tr class="border-b border-[var(--color-border)]/50">
+                <tr class="border-b border-[var(--color-border)]/50 bg-[var(--color-bg-hover)]">
                     <th class="p-2">
                         <input type="text" placeholder="Filter Name..." class="w-full px-3 py-2 text-sm bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500" (input)="updateFilter('name', $any($event.target).value)">
                     </th>
@@ -108,7 +108,7 @@ import { NgSelectModule } from '@ng-select/ng-select';
                         <input type="text" placeholder="Filter Address..." class="w-full px-3 py-2 text-sm bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500" (input)="updateFilter('address', $any($event.target).value)">
                     </th>
                     <th class="p-2">
-                        <input type="text" placeholder="Filter Alt..." class="w-full px-3 py-2 text-sm bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500" (input)="updateFilter('alternateContact', $any($event.target).value)">
+                        <input type="text" placeholder="Filter Alt..." class="w-full px-3 py-2 text-sm bg-[var(--color-bg-input)] border border(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500" (input)="updateFilter('alternateContact', $any($event.target).value)">
                     </th>
                     <th class="p-2"></th>
                 </tr>

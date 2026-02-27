@@ -28,16 +28,16 @@ import { ModalComponent, LoadingSpinnerComponent, StatusBadgeComponent } from '@
         <app-loading-spinner></app-loading-spinner>
       } @else {
         <div class="bg-[var(--color-bg-card)] backdrop-blur-xl rounded-2xl border border-[var(--color-border)] overflow-hidden">
-          <div class="overflow-x-auto">
+          <div class="overflow-auto max-h-[calc(100vh-280px)]">
             <table class="w-full">
-              <thead class="bg-[var(--color-bg-hover)]">
+              <thead class="sticky top-0 z-20 bg-[var(--color-bg-hover)] border-b border-[var(--color-border)] shadow-md">
                 <tr>
-                  <th class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold">Username</th>
-                  <th class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold">Full Name</th>
-                  <th class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold">Email</th>
-                  <th class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold">Roles</th>
-                  <th class="text-center py-4 px-6 text-[var(--color-text-secondary)] font-semibold">Status</th>
-                  <th class="text-center py-4 px-6 text-[var(--color-text-secondary)] font-semibold">Actions</th>
+                  <th class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold bg-[var(--color-bg-hover)]">Username</th>
+                  <th class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold bg-[var(--color-bg-hover)]">Full Name</th>
+                  <th class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold bg-[var(--color-bg-hover)]">Email</th>
+                  <th class="text-left py-4 px-6 text-[var(--color-text-secondary)] font-semibold bg-[var(--color-bg-hover)]">Roles</th>
+                  <th class="text-center py-4 px-6 text-[var(--color-text-secondary)] font-semibold bg-[var(--color-bg-hover)]">Status</th>
+                  <th class="text-center py-4 px-6 text-[var(--color-text-secondary)] font-semibold bg-[var(--color-bg-hover)]">Actions</th>
                 </tr>
               </thead>
               <tbody>

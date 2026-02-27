@@ -26,11 +26,11 @@ import { PaymentHistoryModalComponent } from '../payment-history-modal/payment-h
       } @else {
         <!-- Table -->
         <div class="bg-[var(--color-bg-card)] backdrop-blur-xl rounded-2xl border border-[var(--color-border)] overflow-hidden transition-colors">
-          <div class="overflow-x-auto">
+          <div class="overflow-auto max-h-[calc(100vh-280px)]">
             <table class="w-full">
-              <thead class="bg-[var(--color-bg-hover)]/30">
+              <thead class="sticky top-0 z-20 bg-[var(--color-bg-hover)] border-b border-[var(--color-border)] shadow-md">
                 <tr>
-                  <th class="py-3 px-4 text-left align-top min-w-[120px]">
+                  <th class="py-3 px-4 text-left align-top min-w-[120px] bg-[var(--color-bg-hover)]">
                     <div class="flex items-center gap-2 mb-2 cursor-pointer group" (click)="onSort('billNumber')">
                       <div class="text-[var(--color-text-secondary)] font-medium text-sm group-hover:text-[var(--color-text-primary)] transition-colors">Bill No</div>
                       @if (sortColumn() === 'billNumber') {
@@ -41,7 +41,7 @@ import { PaymentHistoryModalComponent } from '../payment-history-modal/payment-h
                     </div>
                     <input type="text" [ngModel]="billNoFilter()" (ngModelChange)="billNoFilter.set($event)" placeholder="Search..." class="w-full px-2 py-1 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500">
                   </th>
-                  <th class="py-3 px-4 text-left align-top min-w-[150px]">
+                  <th class="py-3 px-4 text-left align-top min-w-[150px] bg-[var(--color-bg-hover)]">
                     <div class="flex items-center gap-2 mb-2 cursor-pointer group" (click)="onSort('customerName')">
                       <div class="text-[var(--color-text-secondary)] font-medium text-sm group-hover:text-[var(--color-text-primary)] transition-colors">Customer</div>
                       @if (sortColumn() === 'customerName') {
@@ -52,11 +52,11 @@ import { PaymentHistoryModalComponent } from '../payment-history-modal/payment-h
                     </div>
                     <input type="text" [ngModel]="customerFilter()" (ngModelChange)="customerFilter.set($event)" placeholder="Name..." class="w-full px-2 py-1 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500">
                   </th>
-                  <th class="py-3 px-4 text-left align-top min-w-[120px]">
+                  <th class="py-3 px-4 text-left align-top min-w-[120px] bg-[var(--color-bg-hover)]">
                     <div class="text-[var(--color-text-secondary)] font-medium text-sm mb-2">Mobile</div>
                     <input type="text" [ngModel]="mobileFilter()" (ngModelChange)="mobileFilter.set($event)" placeholder="Mobile..." class="w-full px-2 py-1 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500">
                   </th>
-                  <th class="py-3 px-4 text-left align-top min-w-[120px]">
+                  <th class="py-3 px-4 text-left align-top min-w-[120px] bg-[var(--color-bg-hover)]">
                     <div class="flex items-center gap-2 mb-2 cursor-pointer group" (click)="onSort('palNumbers')">
                       <div class="text-[var(--color-text-secondary)] font-medium text-sm group-hover:text-[var(--color-text-primary)] transition-colors">Pal No(s)</div>
                       @if (sortColumn() === 'palNumbers') {
@@ -67,7 +67,7 @@ import { PaymentHistoryModalComponent } from '../payment-history-modal/payment-h
                     </div>
                     <input type="text" [ngModel]="palFilter()" (ngModelChange)="palFilter.set($event)" placeholder="Pal #..." class="w-full px-2 py-1 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500">
                   </th>
-                  <th class="py-3 px-4 text-center align-top min-w-[100px]">
+                  <th class="py-3 px-4 text-center align-top min-w-[100px] bg-[var(--color-bg-hover)]">
                     <div class="flex items-center justify-center gap-2 mb-2 cursor-pointer group" (click)="onSort('billType')">
                       <div class="text-[var(--color-text-secondary)] font-medium text-sm group-hover:text-[var(--color-text-primary)] transition-colors">Type</div>
                        @if (sortColumn() === 'billType') {
@@ -82,7 +82,7 @@ import { PaymentHistoryModalComponent } from '../payment-history-modal/payment-h
                       <option value="INVOICE">INVOICE</option>
                     </select>
                   </th>
-                  <th class="py-3 px-4 text-center align-top min-w-[100px]">
+                  <th class="py-3 px-4 text-center align-top min-w-[100px] bg-[var(--color-bg-hover)]">
                     <div class="flex items-center justify-center gap-2 mb-2 cursor-pointer group" (click)="onSort('paymentStatus')">
                       <div class="text-[var(--color-text-secondary)] font-medium text-sm group-hover:text-[var(--color-text-primary)] transition-colors">Status</div>
                        @if (sortColumn() === 'paymentStatus') {
@@ -98,7 +98,7 @@ import { PaymentHistoryModalComponent } from '../payment-history-modal/payment-h
                       <option value="PARTIAL">PARTIAL</option>
                     </select>
                   </th>
-                  <th class="py-3 px-4 text-right align-top cursor-pointer group" (click)="onSort('totalAmount')">
+                  <th class="py-3 px-4 text-right align-top cursor-pointer group bg-[var(--color-bg-hover)]" (click)="onSort('totalAmount')">
                     <div class="flex items-center justify-end gap-2 mb-8">
                        <div class="text-[var(--color-text-secondary)] font-semibold text-sm group-hover:text-[var(--color-text-primary)] transition-colors">Total</div>
                        @if (sortColumn() === 'totalAmount') {
@@ -108,7 +108,7 @@ import { PaymentHistoryModalComponent } from '../payment-history-modal/payment-h
                       }
                     </div>
                   </th>
-                  <th class="py-3 px-4 text-right align-top cursor-pointer group" (click)="onSort('netPayable')">
+                  <th class="py-3 px-4 text-right align-top cursor-pointer group bg-[var(--color-bg-hover)]" (click)="onSort('netPayable')">
                     <div class="flex items-center justify-end gap-2 mb-8">
                        <div class="text-[var(--color-text-secondary)] font-semibold text-sm group-hover:text-[var(--color-text-primary)] transition-colors">Net Payable</div>
                        @if (sortColumn() === 'netPayable') {
@@ -118,8 +118,8 @@ import { PaymentHistoryModalComponent } from '../payment-history-modal/payment-h
                       }
                     </div>
                   </th>
-                  <th class="py-3 px-4 text-left align-top text-[var(--color-text-secondary)] font-semibold">Date</th>
-                  <th class="py-3 px-4 text-center align-top text-[var(--color-text-secondary)] font-semibold">Actions</th>
+                  <th class="py-3 px-4 text-left align-top text-[var(--color-text-secondary)] font-semibold bg-[var(--color-bg-hover)]">Date</th>
+                  <th class="py-3 px-4 text-center align-top text-[var(--color-text-secondary)] font-semibold bg-[var(--color-bg-hover)]">Actions</th>
                 </tr>
               </thead>
               <tbody>

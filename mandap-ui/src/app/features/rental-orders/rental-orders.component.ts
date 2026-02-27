@@ -96,11 +96,11 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
         <app-loading-spinner></app-loading-spinner>
       } @else {
         <div class="bg-[var(--color-bg-card)] backdrop-blur-xl rounded-2xl border border-[var(--color-border)] overflow-hidden">
-          <div class="overflow-x-auto">
+          <div class="overflow-auto max-h-[calc(100vh-320px)]">
             <table class="w-full">
-              <thead class="bg-[var(--color-bg-hover)]/30">
+              <thead class="sticky top-0 z-20 bg-[var(--color-bg-hover)] border-b border-[var(--color-border)] shadow-md">
                 <tr>
-                  <th class="py-3 px-4 text-left align-top min-w-[140px]">
+                  <th class="py-3 px-4 text-left align-top min-w-[140px] bg-[var(--color-bg-hover)]">
                     <div class="flex items-center gap-2 mb-2 cursor-pointer group" (click)="onSort('orderNumber')">
                       <div class="text-[var(--color-text-secondary)] font-medium text-sm group-hover:text-[var(--color-text-primary)] transition-colors">Order #</div>
                       @if (sortColumn() === 'orderNumber') {
@@ -117,7 +117,7 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                       class="w-full px-2 py-1 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
                     >
                   </th>
-                  <th class="py-3 px-4 text-left align-top min-w-[200px]">
+                  <th class="py-3 px-4 text-left align-top min-w-[200px] bg-[var(--color-bg-hover)]">
                     <div class="flex items-center gap-2 mb-2 cursor-pointer group" (click)="onSort('customerName')">
                       <div class="text-[var(--color-text-secondary)] font-medium text-sm group-hover:text-[var(--color-text-primary)] transition-colors">Customer</div>
                        @if (sortColumn() === 'customerName') {
@@ -134,7 +134,7 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                       class="w-full px-2 py-1 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
                     >
                   </th>
-                  <th class="py-3 px-4 text-left align-top min-w-[140px]">
+                  <th class="py-3 px-4 text-left align-top min-w-[140px] bg-[var(--color-bg-hover)]">
                     <div class="flex items-center gap-2 mb-2 cursor-pointer group" (click)="onSort('palNumber')">
                       <div class="text-[var(--color-text-secondary)] font-medium text-sm group-hover:text-[var(--color-text-primary)] transition-colors">Pal #</div>
                        @if (sortColumn() === 'palNumber') {
@@ -151,9 +151,9 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                       class="w-full px-2 py-1 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded text-xs text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
                     >
                   </th>
-                  <th class="py-3 px-4 text-center align-top text-[var(--color-text-secondary)] font-medium text-sm">Order Date</th>
-                  <th class="py-3 px-4 text-center align-top text-[var(--color-text-secondary)] font-medium text-sm">Items</th>
-                  <th class="py-3 px-4 text-center align-top min-w-[160px]">
+                  <th class="py-3 px-4 text-center align-top text-[var(--color-text-secondary)] font-medium text-sm bg-[var(--color-bg-hover)]">Order Date</th>
+                  <th class="py-3 px-4 text-center align-top text-[var(--color-text-secondary)] font-medium text-sm bg-[var(--color-bg-hover)]">Items</th>
+                  <th class="py-3 px-4 text-center align-top min-w-[160px] bg-[var(--color-bg-hover)]">
                     <div class="text-[var(--color-text-secondary)] font-medium text-sm mb-2">Status</div>
                     <!-- Simple multiselect simulation for now, or just a dropdown -->
                     <select 
