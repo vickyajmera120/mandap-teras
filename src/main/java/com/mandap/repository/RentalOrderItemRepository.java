@@ -23,4 +23,11 @@ public interface RentalOrderItemRepository extends JpaRepository<RentalOrderItem
             "WHERE roi.rentalOrder.status NOT IN ('CANCELLED', 'COMPLETED') " +
             "GROUP BY roi.inventoryItem.id")
     List<Object[]> getPendingDispatchQuantities();
+
+    @Query("SELECT roi.inventoryItem.id, SUM(roi.bookedQty), SUM(COALESCE(roi.dispatchedQty, 0)), SUM(COALESCE(roi.returnedQty, 0)) "
+            +
+            "FROM RentalOrderItem roi " +
+            "WHERE roi.rentalOrder.status NOT IN ('CANCELLED', 'COMPLETED') " +
+            "GROUP BY roi.inventoryItem.id")
+    List<Object[]> getInventoryTotals();
 }

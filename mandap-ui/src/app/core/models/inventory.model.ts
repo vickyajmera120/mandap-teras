@@ -10,6 +10,10 @@ export interface InventoryItem {
     totalStock: number;
     availableStock: number;
     pendingDispatchQty?: number;
+    bookedQty?: number;
+    dispatchedQty?: number;
+    returnedQty?: number;
+    pendingReturnQty?: number;
 }
 
 export interface InventoryUpdateRequest {

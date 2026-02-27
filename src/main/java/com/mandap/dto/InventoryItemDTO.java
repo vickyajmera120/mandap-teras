@@ -22,4 +22,8 @@ public class InventoryItemDTO {
     private Integer totalStock;
     private Integer availableStock;
     private Integer pendingDispatchQty;
+    private Integer bookedQty;
+    private Integer dispatchedQty;
+    private Integer returnedQty;
+    private Integer pendingReturnQty;
 }

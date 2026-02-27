@@ -22,17 +22,39 @@ public class InventoryService {
                 .map(this::toDTO)
                 .collect(Collectors.toList());
 
-        // Populate pending dispatch quantities efficienty
-        java.util.Map<Long, Integer> pendingMap = rentalOrderItemRepository.getPendingDispatchQuantities().stream()
+        populateTotals(items);
+        return items;
+    }
+
+    private void populateTotals(List<InventoryItemDTO> items) {
+        if (items.isEmpty())
+            return;
+
+        java.util.Map<Long, Object[]> totalsMap = rentalOrderItemRepository.getInventoryTotals().stream()
                 .collect(Collectors.toMap(
                         obj -> (Long) obj[0],
-                        obj -> ((Number) obj[1]).intValue()));
+                        obj -> obj));
 
         items.forEach(item -> {
-            item.setPendingDispatchQty(pendingMap.getOrDefault(item.getId(), 0));
-        });
+            Object[] totals = totalsMap.get(item.getId());
+            if (totals != null) {
+                int booked = ((Number) totals[1]).intValue();
+                int dispatched = ((Number) totals[2]).intValue();
+                int returned = ((Number) totals[3]).intValue();
 
-        return items;
+                item.setBookedQty(booked);
+                item.setDispatchedQty(dispatched);
+                item.setReturnedQty(returned);
+                item.setPendingReturnQty(dispatched - returned);
+                item.setPendingDispatchQty(booked - dispatched);
+            } else {
+                item.setBookedQty(0);
+                item.setDispatchedQty(0);
+                item.setReturnedQty(0);
+                item.setPendingReturnQty(0);
+                item.setPendingDispatchQty(0);
+            }
+        });
     }
 
     public InventoryItemDTO getItemById(Long id) {
@@ -115,9 +137,11 @@ public class InventoryService {
     }
 
     public List<InventoryItemDTO> searchItems(String query) {
-        return inventoryItemRepository.searchByName(query).stream()
+        List<InventoryItemDTO> items = inventoryItemRepository.searchByName(query).stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
+        populateTotals(items);
+        return items;
     }
 
     @Autowired
