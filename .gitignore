@@ -23,6 +23,7 @@ buildNumber.properties
 mandap-ui/node_modules/
 mandap-ui/dist/
 mandap-ui/.angular/
+src/main/resources/static/
 
 # OS
 Thumbs.db
