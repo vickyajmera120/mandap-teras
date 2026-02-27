@@ -26,4 +26,6 @@ public interface RentalOrderRepository extends JpaRepository<RentalOrder, Long> 
     // Fetch the latest order number for the current year prefix to generate the
     // next number safely in Java
     Optional<RentalOrder> findFirstByOrderNumberStartingWithOrderByIdDesc(String prefix);
+
+    Optional<RentalOrder> findByBillId(Long billId);
 }

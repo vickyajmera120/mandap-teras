@@ -66,6 +66,10 @@ public class RentalOrder {
     @JoinColumn(name = "bill_id")
     private Bill bill;
 
+    @Column(name = "bill_out_of_sync")
+    @Builder.Default
+    private boolean billOutOfSync = false;
+
     @Column(length = 500)
     private String remarks;
 

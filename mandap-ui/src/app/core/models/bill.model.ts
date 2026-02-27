@@ -48,6 +48,7 @@ export interface BillRequest {
     depositMethod?: 'CASH' | 'CHEQUE' | 'ONLINE';
     depositChequeNumber?: string;
     remarks?: string;
+    rentalOrderId?: number;
     items: BillItem[];
 }
 

@@ -174,7 +174,23 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                             <i class="fas fa-hand-holding text-xs"></i>
                           </button>
                         }
-                        @if (!order.billId && order.status !== 'CANCELLED') {
+                        @if (order.billId) {
+                          <div class="relative">
+                            <button 
+                              (click)="viewBill(order)"
+                              class="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 transition-colors"
+                              title="View Bill"
+                            >
+                              <i class="fas fa-file-invoice-dollar text-xs"></i>
+                            </button>
+                            @if (order.billOutOfSync) {
+                              <span 
+                                class="absolute -top-1 -right-1 w-3 h-3 bg-amber-500 rounded-full border border-[var(--color-bg-card)] animate-pulse cursor-help"
+                                title="Order was modified after bill was generated. Please update the bill."
+                              ></span>
+                            }
+                          </div>
+                        } @else if (order.status !== 'CANCELLED') {
                           <button 
                             (click)="generateBill(order)"
                             class="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 transition-colors"
@@ -366,6 +382,12 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                 <div><span class="text-[var(--color-text-muted)]">Pal No(s):</span> <span class="text-[var(--color-text-primary)]">{{ selectedOrder()!.customerPalNumbers!.join(', ') }}</span></div>
               }
             </div>
+            @if (selectedOrder()?.billOutOfSync) {
+              <div class="flex items-center gap-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-sm">
+                <i class="fas fa-exclamation-triangle text-amber-500"></i>
+                <span class="text-amber-400">This order was modified after the bill was generated. Please <a (click)="viewBill(selectedOrder()!); viewModal.close()" class="underline font-semibold cursor-pointer hover:text-amber-300">update the bill</a> to reflect the latest changes.</span>
+              </div>
+            }
             <div class="flex border-b border-[var(--color-border)] mb-4">
                <button 
                  (click)="showHistory.set(false)"
@@ -735,8 +757,16 @@ export class RentalOrdersComponent implements OnInit {
     this.router.navigate(['/billing/new', { rentalOrderId: order.id }]);
   }
 
+  viewBill(order: RentalOrder): void {
+    if (order.billId) {
+      this.router.navigate(['/billing/edit', order.billId]);
+    }
+  }
+
   openDispatchModal(order: RentalOrder): void {
     this.selectedOrder.set(order);
+    this.dispatchVoucherNumber.set('');
+    this.dispatchVehicleNumber.set('');
     this.dispatchUIItems = order.items.map(i => ({
       ...i,
       originalDispatchedQty: i.dispatchedQty || 0,

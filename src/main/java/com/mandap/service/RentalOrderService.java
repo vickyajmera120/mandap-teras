@@ -283,6 +283,11 @@ public class RentalOrderService {
                         }
                 }
 
+                // If this order has a linked bill, mark it as out-of-sync
+                if (order.getBill() != null) {
+                        order.setBillOutOfSync(true);
+                }
+
                 order = rentalOrderRepository.save(order);
                 return toDTO(order);
         }
@@ -495,8 +500,7 @@ public class RentalOrderService {
                                 .actualReturnDate(order.getActualReturnDate())
                                 .status(order.getStatus().name())
                                 .billId(order.getBill() != null ? order.getBill().getId() : null)
-                                .remarks(order.getRemarks())
-                                .billId(order.getBill() != null ? order.getBill().getId() : null)
+                                .billOutOfSync(order.isBillOutOfSync())
                                 .remarks(order.getRemarks())
                                 .items(order.getItems().stream().map(this::toItemDTO).collect(Collectors.toList()))
                                 .transactions(rentalOrderTransactionRepository

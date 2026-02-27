@@ -565,6 +565,7 @@ export class NewBillComponent implements OnInit {
   depositMethod = signal<'CASH' | 'CHEQUE' | 'ONLINE'>('CASH');
   depositChequeNumber = signal('');
   remarks = '';
+  rentalOrderId: number | null = null;
 
   // Available items for lost items dropdown (excluding already added ones if needed, or just all)
   lostItemOptions = computed(() => this.inventoryItems());
@@ -626,7 +627,8 @@ export class NewBillComponent implements OnInit {
         // Check for rentalOrderId
         const rentalOrderId = this.route.snapshot.paramMap.get('rentalOrderId');
         if (rentalOrderId) {
-          this.rentalOrderService.getById(parseInt(rentalOrderId)).subscribe({
+          this.rentalOrderId = parseInt(rentalOrderId);
+          this.rentalOrderService.getById(this.rentalOrderId).subscribe({
             next: (order) => {
               this.selectedCustomerId = order.customerId;
               // Populate items from order
@@ -930,6 +932,7 @@ export class NewBillComponent implements OnInit {
       depositMethod: this.depositMethod(),
       depositChequeNumber: this.depositChequeNumber(),
       remarks: this.remarks,
+      rentalOrderId: this.rentalOrderId || undefined,
       items: billItems
     };
 

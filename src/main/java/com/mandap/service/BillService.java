@@ -33,6 +33,9 @@ public class BillService {
         @Autowired
         private PaymentRepository paymentRepository;
 
+        @Autowired
+        private RentalOrderRepository rentalOrderRepository;
+
         public List<BillDTO> getAllBills() {
                 return billRepository.findAllWithDetails().stream()
                                 .map(this::toDTO)
@@ -177,6 +180,19 @@ public class BillService {
                         bill = billRepository.save(bill);
                 }
 
+                // Link bill to rental order if rentalOrderId is provided
+                if (dto.getRentalOrderId() != null) {
+                        RentalOrder rentalOrder = rentalOrderRepository.findById(dto.getRentalOrderId())
+                                        .orElse(null);
+                        if (rentalOrder != null) {
+                                rentalOrder.setBill(bill);
+                                rentalOrder.setBillOutOfSync(false);
+                                rentalOrderRepository.save(rentalOrder);
+                                log.info("Linked bill {} to rental order {}", bill.getBillNumber(),
+                                                rentalOrder.getOrderNumber());
+                        }
+                }
+
                 return toDTO(bill);
         }
 
@@ -282,6 +298,12 @@ public class BillService {
 
                 bill.calculateTotals();
                 bill = billRepository.save(bill);
+
+                // Clear out-of-sync flag on linked rental order
+                rentalOrderRepository.findByBillId(bill.getId()).ifPresent(rentalOrder -> {
+                        rentalOrder.setBillOutOfSync(false);
+                        rentalOrderRepository.save(rentalOrder);
+                });
 
                 return toDTO(bill);
         }

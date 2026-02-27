@@ -28,6 +28,7 @@ export interface RentalOrder {
     actualReturnDate?: string;
     status?: RentalOrderStatus;
     billId?: number;
+    billOutOfSync?: boolean;
     remarks?: string;
     items: RentalOrderItem[];
     transactions?: RentalOrderTransaction[];

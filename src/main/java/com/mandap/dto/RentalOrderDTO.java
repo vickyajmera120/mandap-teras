@@ -25,6 +25,7 @@ public class RentalOrderDTO {
     private LocalDate actualReturnDate;
     private String status;
     private Long billId;
+    private boolean billOutOfSync;
     private String remarks;
     private List<RentalOrderItemDTO> items;
     private List<RentalOrderTransactionDTO> transactions;
