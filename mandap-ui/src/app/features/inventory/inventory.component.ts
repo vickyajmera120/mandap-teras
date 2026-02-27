@@ -221,17 +221,38 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
              <table class="w-full text-sm">
                  <thead class="bg-[var(--color-bg-hover)]/30">
                      <tr>
-                         <th class="py-3 px-4 text-left text-[var(--color-text-secondary)]">Customer</th>
-                         <th class="py-3 px-4 text-left text-[var(--color-text-secondary)]">Order #</th>
-                         <th class="py-3 px-4 text-center text-[var(--color-text-secondary)]">Booked</th>
-                         <th class="py-3 px-4 text-center text-[var(--color-text-secondary)]">Disp.</th>
-                         <th class="py-3 px-4 text-center text-[var(--color-text-secondary)]">Ret.</th>
-                         <th class="py-3 px-4 text-center text-orange-400">Pending Disp.</th>
-                         <th class="py-3 px-4 text-center text-red-400">Pending Ret.</th>
+                         <th (click)="onUsageSort('customerName')" class="py-3 px-4 text-left text-[var(--color-text-secondary)] font-medium cursor-pointer group select-none">
+                            Customer
+                            <i class="fas ml-1" [class]="usageSortConfig().column === 'customerName' ? (usageSortConfig().direction === 'asc' ? 'fa-sort-up text-indigo-400' : 'fa-sort-down text-indigo-400') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
+                          </th>
+                          <th (click)="onUsageSort('orderNumber')" class="py-3 px-4 text-left text-[var(--color-text-secondary)] font-medium cursor-pointer group select-none">
+                            Order #
+                            <i class="fas ml-1" [class]="usageSortConfig().column === 'orderNumber' ? (usageSortConfig().direction === 'asc' ? 'fa-sort-up text-indigo-400' : 'fa-sort-down text-indigo-400') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
+                          </th>
+                          <th (click)="onUsageSort('bookedQty')" class="py-3 px-4 text-center text-[var(--color-text-secondary)] font-medium cursor-pointer group select-none">
+                            Booked
+                            <i class="fas ml-1" [class]="usageSortConfig().column === 'bookedQty' ? (usageSortConfig().direction === 'asc' ? 'fa-sort-up text-indigo-400' : 'fa-sort-down text-indigo-400') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
+                          </th>
+                          <th (click)="onUsageSort('dispatchedQty')" class="py-3 px-4 text-center text-[var(--color-text-secondary)] font-medium cursor-pointer group select-none">
+                            Disp.
+                            <i class="fas ml-1" [class]="usageSortConfig().column === 'dispatchedQty' ? (usageSortConfig().direction === 'asc' ? 'fa-sort-up text-indigo-400' : 'fa-sort-down text-indigo-400') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
+                          </th>
+                          <th (click)="onUsageSort('returnedQty')" class="py-3 px-4 text-center text-[var(--color-text-secondary)] font-medium cursor-pointer group select-none">
+                            Ret.
+                            <i class="fas ml-1" [class]="usageSortConfig().column === 'returnedQty' ? (usageSortConfig().direction === 'asc' ? 'fa-sort-up text-indigo-400' : 'fa-sort-down text-indigo-400') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
+                          </th>
+                          <th (click)="onUsageSort('pendingDispatchQty')" class="py-3 px-4 text-center text-orange-400 font-medium cursor-pointer group select-none">
+                            Pending Disp.
+                            <i class="fas ml-1" [class]="usageSortConfig().column === 'pendingDispatchQty' ? (usageSortConfig().direction === 'asc' ? 'fa-sort-up text-orange-400' : 'fa-sort-down text-orange-400') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
+                          </th>
+                          <th (click)="onUsageSort('pendingReturnQty')" class="py-3 px-4 text-center text-red-400 font-medium cursor-pointer group select-none">
+                            Pending Ret.
+                            <i class="fas ml-1" [class]="usageSortConfig().column === 'pendingReturnQty' ? (usageSortConfig().direction === 'asc' ? 'fa-sort-up text-red-400' : 'fa-sort-down text-red-400') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
+                          </th>
                      </tr>
                  </thead>
                  <tbody class="divide-y divide-[var(--color-border)]/50">
-                     @for (usage of usageItems(); track usage.orderNumber) {
+                     @for (usage of sortedUsageItems(); track usage.orderNumber) {
                          <tr class="hover:bg-[var(--color-bg-hover)]/20">
                              <td class="py-3 px-4 text-[var(--color-text-primary)] font-medium">{{ usage.customerName }}</td>
                              <td class="py-3 px-4 text-[var(--color-text-secondary)] font-mono text-xs">{{ usage.orderNumber }}</td>
@@ -493,6 +514,30 @@ export class InventoryComponent implements OnInit {
   usageItems = signal<any[]>([]);
   isLoadingUsage = signal(false);
   usageItemName = signal('');
+  usageSortConfig = signal<{ column: string, direction: 'asc' | 'desc' }>({
+    column: 'customerName',
+    direction: 'asc'
+  });
+
+  sortedUsageItems = computed(() => {
+    const items = [...this.usageItems()];
+    const sort = this.usageSortConfig();
+
+    if (!sort.column) return items;
+
+    return items.sort((a, b) => {
+      const direction = sort.direction === 'asc' ? 1 : -1;
+      let valA = a[sort.column];
+      let valB = b[sort.column];
+
+      if (typeof valA === 'string') valA = valA.toLowerCase();
+      if (typeof valB === 'string') valB = valB.toLowerCase();
+
+      if (valA < valB) return -1 * direction;
+      if (valA > valB) return 1 * direction;
+      return 0;
+    });
+  });
 
   usageTotals = computed(() => {
     return this.usageItems().reduce((acc, curr) => ({
@@ -519,5 +564,14 @@ export class InventoryComponent implements OnInit {
         this.isLoadingUsage.set(false);
       }
     });
+  }
+
+  onUsageSort(column: string) {
+    const current = this.usageSortConfig();
+    if (current.column === column) {
+      this.usageSortConfig.set({ column, direction: current.direction === 'asc' ? 'desc' : 'asc' });
+    } else {
+      this.usageSortConfig.set({ column, direction: 'asc' });
+    }
   }
 }
