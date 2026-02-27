@@ -34,4 +34,7 @@ public interface RentalOrderRepository extends JpaRepository<RentalOrder, Long> 
 
     @Query("SELECT DISTINCT ro.customer.id FROM RentalOrder ro WHERE ro.bill IS NOT NULL")
     List<Long> findCustomerIdsWithBilledOrders();
+
+    @Query("SELECT DISTINCT ro.customer.id FROM RentalOrder ro")
+    List<Long> findCustomerIdsWithAnyOrders();
 }

@@ -33,14 +33,14 @@ import { NgSelectModule } from '@ng-select/ng-select';
         <button 
           (click)="billingFilter.set('ALL')"
           class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
-          [ngClass]="billingFilter() === 'ALL' ? 'bg-teal-600 text-white shadow-lg shadow-teal-500/20' : 'text-[var(--color-text-secondary)] hover:text-white'"
+          [ngClass]="billingFilter() === 'ALL' ? 'bg-teal-600 text-white shadow-lg shadow-teal-500/20' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'"
         >
           All Customers
         </button>
         <button 
           (click)="billingFilter.set('UNBILLED')"
           class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
-          [ngClass]="billingFilter() === 'UNBILLED' ? 'bg-amber-600 text-white shadow-lg shadow-amber-500/20' : 'text-[var(--color-text-secondary)] hover:text-white'"
+          [ngClass]="billingFilter() === 'UNBILLED' ? 'bg-amber-600 text-white shadow-lg shadow-amber-500/20' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'"
         >
           Unbilled
           @if (unbilledCount() > 0) {
@@ -50,11 +50,21 @@ import { NgSelectModule } from '@ng-select/ng-select';
         <button 
           (click)="billingFilter.set('BILLED')"
           class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
-          [ngClass]="billingFilter() === 'BILLED' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'text-[var(--color-text-secondary)] hover:text-white'"
+          [ngClass]="billingFilter() === 'BILLED' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'"
         >
           Billed
           @if (billedCount() > 0) {
             <span class="ml-1.5 px-1.5 py-0.5 bg-white/20 rounded text-[10px]">{{ billedCount() }}</span>
+          }
+        </button>
+        <button 
+          (click)="billingFilter.set('NO_ORDERS')"
+          class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+          [ngClass]="billingFilter() === 'NO_ORDERS' ? 'bg-slate-600 text-white shadow-lg shadow-slate-500/20' : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'"
+        >
+          No Orders
+          @if (noOrdersCount() > 0) {
+            <span class="ml-1.5 px-1.5 py-0.5 bg-white/20 rounded text-[10px]">{{ noOrdersCount() }}</span>
           }
         </button>
       </div>
@@ -109,9 +119,17 @@ import { NgSelectModule } from '@ng-select/ng-select';
                     <td class="py-4 px-6">
                       <div class="flex items-center gap-2">
                         <span class="text-[var(--color-text-primary)] font-medium">{{ customer.name }}</span>
-                        @if (customer.hasUnbilledOrders) {
-                          <span class="w-2 h-2 bg-amber-500 rounded-full" title="Has pending unbilled orders"></span>
-                        }
+                        <div class="flex gap-1">
+                          @if (customer.hasUnbilledOrders) {
+                            <span class="w-2 h-2 bg-amber-500 rounded-full" title="Has pending unbilled orders"></span>
+                          }
+                          @if (customer.hasBilledOrders) {
+                            <span class="w-2 h-2 bg-purple-500 rounded-full" title="Has billed history"></span>
+                          }
+                          @if (!customer.hasRentalOrders) {
+                            <span class="px-2 py-0.5 bg-slate-700/50 text-[10px] text-slate-400 rounded uppercase font-bold tracking-wider" title="No rental orders yet">NEW</span>
+                          }
+                        </div>
                       </div>
                     </td>
                     <td class="py-4 px-6 text-[var(--color-text-secondary)]">{{ customer.mobile }}</td>
@@ -277,10 +295,11 @@ export class CustomersComponent implements OnInit {
   isSaving = signal(false);
   isEditing = signal(false);
   editingId = signal<number | null>(null);
-  billingFilter = signal<'ALL' | 'BILLED' | 'UNBILLED'>('ALL');
+  billingFilter = signal<'ALL' | 'BILLED' | 'UNBILLED' | 'NO_ORDERS'>('ALL');
 
   unbilledCount = computed(() => this.customers().filter(c => c.hasUnbilledOrders).length);
   billedCount = computed(() => this.customers().filter(c => c.hasBilledOrders).length);
+  noOrdersCount = computed(() => this.customers().filter(c => !c.hasRentalOrders).length);
 
   // Search & Sort State
   searchFilters = signal({
@@ -317,6 +336,8 @@ export class CustomersComponent implements OnInit {
       result = result.filter(c => c.hasUnbilledOrders);
     } else if (bFilter === 'BILLED') {
       result = result.filter(c => c.hasBilledOrders);
+    } else if (bFilter === 'NO_ORDERS') {
+      result = result.filter(c => !c.hasRentalOrders);
     }
 
     // 3. Sort

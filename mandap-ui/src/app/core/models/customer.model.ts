@@ -10,6 +10,7 @@ export interface Customer {
     updatedAt?: string;
     hasUnbilledOrders?: boolean;
     hasBilledOrders?: boolean;
+    hasRentalOrders?: boolean;
 }
 
 export interface CustomerRequest {
