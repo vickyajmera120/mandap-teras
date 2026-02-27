@@ -56,9 +56,25 @@ public class CustomerService {
                         if (previousState == null) {
                                 boolean isInsert = revision.getMetadata()
                                                 .getRevisionType() == org.springframework.data.history.RevisionMetadata.RevisionType.INSERT;
-                                String statusMsg = isInsert ? "Customer profile created"
-                                                : "Existing customer updated (First tracked change)";
-                                changes.put("Status", new com.mandap.dto.FieldChangeDTO(null, statusMsg));
+                                if (isInsert) {
+                                        changes.put("Status", new com.mandap.dto.FieldChangeDTO(null,
+                                                        "Customer profile created"));
+                                } else {
+                                        changes.put("Status", new com.mandap.dto.FieldChangeDTO(null,
+                                                        "Existing customer updated (First tracked change)"));
+                                        changes.put("Name", new com.mandap.dto.FieldChangeDTO(null,
+                                                        currentState.getName()));
+                                        changes.put("Mobile", new com.mandap.dto.FieldChangeDTO(null,
+                                                        currentState.getMobile()));
+                                        changes.put("Address", new com.mandap.dto.FieldChangeDTO(null,
+                                                        currentState.getAddress()));
+                                        changes.put("Alternate Contact", new com.mandap.dto.FieldChangeDTO(null,
+                                                        currentState.getAlternateContact()));
+                                        changes.put("Active Status", new com.mandap.dto.FieldChangeDTO(null,
+                                                        currentState.getActive() ? "Active" : "Inactive"));
+                                        changes.put("Pal Numbers", new com.mandap.dto.FieldChangeDTO(null,
+                                                        currentState.getPalNumbers()));
+                                }
                         } else {
                                 findChanges(previousState, currentState, changes);
                         }

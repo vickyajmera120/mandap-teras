@@ -41,9 +41,22 @@ public class InventoryService {
             if (previousState == null) {
                 boolean isInsert = revision.getMetadata()
                         .getRevisionType() == org.springframework.data.history.RevisionMetadata.RevisionType.INSERT;
-                String statusMsg = isInsert ? "Item created in inventory"
-                        : "Existing item updated (First tracked change)";
-                changes.put("Status", new com.mandap.dto.FieldChangeDTO(null, statusMsg));
+                if (isInsert) {
+                    changes.put("Status", new com.mandap.dto.FieldChangeDTO(null, "Item created in inventory"));
+                } else {
+                    changes.put("Status",
+                            new com.mandap.dto.FieldChangeDTO(null, "Existing item updated (First tracked change)"));
+                    changes.put("Name (Gujarati)",
+                            new com.mandap.dto.FieldChangeDTO(null, currentState.getNameGujarati()));
+                    changes.put("Name (English)",
+                            new com.mandap.dto.FieldChangeDTO(null, currentState.getNameEnglish()));
+                    changes.put("Default Rate", new com.mandap.dto.FieldChangeDTO(null, currentState.getDefaultRate()));
+                    changes.put("Category", new com.mandap.dto.FieldChangeDTO(null,
+                            currentState.getCategory() != null ? currentState.getCategory().name() : null));
+                    changes.put("Total Stock", new com.mandap.dto.FieldChangeDTO(null, currentState.getTotalStock()));
+                    changes.put("Active Status",
+                            new com.mandap.dto.FieldChangeDTO(null, currentState.getActive() ? "Active" : "Inactive"));
+                }
             } else {
                 findItemChanges(previousState, currentState, changes);
             }
