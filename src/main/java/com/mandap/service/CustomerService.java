@@ -42,6 +42,8 @@ public class CustomerService {
         }
 
         public List<com.mandap.dto.CustomerAuditDTO> getCustomerAuditHistory(Long id) {
+                if (id == null)
+                        return new java.util.ArrayList<>();
                 org.springframework.data.history.Revisions<Integer, Customer> revisions = customerRepository
                                 .findRevisions(id);
                 List<com.mandap.dto.CustomerAuditDTO> auditList = new java.util.ArrayList<>();

@@ -27,6 +27,8 @@ public class InventoryService {
     }
 
     public List<com.mandap.dto.InventoryAuditDTO> getInventoryAuditHistory(Long id) {
+        if (id == null)
+            return new java.util.ArrayList<>();
         org.springframework.data.history.Revisions<Integer, InventoryItem> revisions = inventoryItemRepository
                 .findRevisions(id);
         List<com.mandap.dto.InventoryAuditDTO> auditList = new java.util.ArrayList<>();
