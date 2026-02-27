@@ -77,7 +77,7 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
                     <th class="w-10 py-3"></th>
                     <th class="text-left py-3 px-4 text-[var(--color-text-secondary)] font-medium text-sm min-w-[220px]">Item (Gujarati)</th>
                     <th class="text-left py-3 px-4 text-slate-300 font-medium text-sm min-w-[200px]">Item (English)</th>
-                    <th class="text-right py-3 px-4 text-slate-300 font-medium text-sm">Rate (₹)</th>
+                    <th class="text-right py-3 px-4 text-slate-300 font-medium text-sm min-w-[120px]">Rate (₹)</th>
                     <th class="text-center py-3 px-4 text-slate-300 font-medium text-sm">Stock (Total)</th>
                     <th class="text-center py-3 px-4 text-purple-400 font-medium text-sm">Booked (Total)</th>
                     <th class="text-center py-3 px-4 text-orange-400 font-medium text-sm">Dispatched (Total)</th>
