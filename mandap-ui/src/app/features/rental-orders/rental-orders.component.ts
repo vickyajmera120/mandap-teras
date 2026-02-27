@@ -26,35 +26,70 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
         </button>
       </div>
 
-      <!-- Billing Status Filter -->
-      <div class="flex gap-2 p-1 bg-[var(--color-bg-input)] rounded-xl w-fit border border-[var(--color-border)]">
-        <button 
-          (click)="billingFilter.set('ALL')"
-          class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
-          [ngClass]="billingFilter() === 'ALL' ? 'bg-teal-600 text-white shadow-lg shadow-teal-500/20' : 'text-[var(--color-text-secondary)] hover:text-white'"
-        >
-          All Orders
-        </button>
-        <button 
-          (click)="billingFilter.set('UNBILLED')"
-          class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
-          [ngClass]="billingFilter() === 'UNBILLED' ? 'bg-amber-600 text-white shadow-lg shadow-amber-500/20' : 'text-[var(--color-text-secondary)] hover:text-white'"
-        >
-          Unbilled
-          @if (unbilledCount() > 0) {
-            <span class="ml-1.5 px-1.5 py-0.5 bg-white/20 rounded text-[10px]">{{ unbilledCount() }}</span>
-          }
-        </button>
-        <button 
-          (click)="billingFilter.set('BILLED')"
-          class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
-          [ngClass]="billingFilter() === 'BILLED' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'text-[var(--color-text-secondary)] hover:text-white'"
-        >
-          Billed
-          @if (billedCount() > 0) {
-            <span class="ml-1.5 px-1.5 py-0.5 bg-white/20 rounded text-[10px]">{{ billedCount() }}</span>
-          }
-        </button>
+      <div class="flex flex-wrap gap-4 mb-6">
+        <!-- Billing Filter -->
+        <div class="flex gap-2 p-1 bg-[var(--color-bg-input)] rounded-xl border border-[var(--color-border)]">
+          <button 
+            (click)="billingFilter.set('ALL')"
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+            [ngClass]="billingFilter() === 'ALL' ? 'bg-teal-600 text-white shadow-lg shadow-teal-500/20' : 'text-[var(--color-text-secondary)] hover:text-white'"
+          >
+            All
+          </button>
+          <button 
+            (click)="billingFilter.set('UNBILLED')"
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+            [ngClass]="billingFilter() === 'UNBILLED' ? 'bg-amber-600 text-white shadow-lg shadow-amber-500/20' : 'text-[var(--color-text-secondary)] hover:text-white'"
+          >
+            Unbilled
+            @if (unbilledCount() > 0) {
+              <span class="ml-1.5 px-1.5 py-0.5 bg-white/20 rounded text-[10px]">{{ unbilledCount() }}</span>
+            }
+          </button>
+          <button 
+            (click)="billingFilter.set('BILLED')"
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+            [ngClass]="billingFilter() === 'BILLED' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'text-[var(--color-text-secondary)] hover:text-white'"
+          >
+            Billed
+            @if (billedCount() > 0) {
+              <span class="ml-1.5 px-1.5 py-0.5 bg-white/20 rounded text-[10px]">{{ billedCount() }}</span>
+            }
+          </button>
+        </div>
+
+        <!-- Fulfillment Filter -->
+        <div class="flex gap-2 p-1 bg-[var(--color-bg-input)] rounded-xl border border-[var(--color-border)]">
+          <button 
+            (click)="fulfillmentFilter.set('ALL')"
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+            [ngClass]="fulfillmentFilter() === 'ALL' ? 'bg-slate-600 text-white shadow-lg shadow-slate-500/20' : 'text-[var(--color-text-secondary)] hover:text-white'"
+          >
+            Fulfillment
+          </button>
+          <button 
+            (click)="fulfillmentFilter.set('PENDING_DISPATCH')"
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2"
+            [ngClass]="fulfillmentFilter() === 'PENDING_DISPATCH' ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/20' : 'text-[var(--color-text-secondary)] hover:text-white'"
+          >
+            <i class="fas fa-truck text-xs"></i>
+            Pending Disp.
+            @if (pendingDispatchCount() > 0) {
+              <span class="ml-1.5 px-1.5 py-0.5 bg-white/20 rounded text-[10px]">{{ pendingDispatchCount() }}</span>
+            }
+          </button>
+          <button 
+            (click)="fulfillmentFilter.set('PENDING_RECEIVE')"
+            class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2"
+            [ngClass]="fulfillmentFilter() === 'PENDING_RECEIVE' ? 'bg-green-600 text-white shadow-lg shadow-green-500/20' : 'text-[var(--color-text-secondary)] hover:text-white'"
+          >
+            <i class="fas fa-hand-holding text-xs"></i>
+            Pending Rec.
+            @if (pendingReceiveCount() > 0) {
+              <span class="ml-1.5 px-1.5 py-0.5 bg-white/20 rounded text-[10px]">{{ pendingReceiveCount() }}</span>
+            }
+          </button>
+        </div>
       </div>
 
       @if (isLoading()) {
@@ -157,9 +192,19 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                     <td class="py-3 px-4 text-center text-[var(--color-text-secondary)]">{{ order.orderDate }}</td>
                     <td class="py-3 px-4 text-center text-[var(--color-text-secondary)]">{{ order.items.length || 0 }}</td>
                     <td class="py-3 px-4 text-center">
-                      <span [class]="getStatusClass(order.status!)" class="px-2.5 py-1 rounded-full text-xs font-medium">
-                        {{ order.status }}
-                      </span>
+                      <div class="flex flex-col items-center gap-1.5">
+                        <span [class]="getStatusClass(order.status!)" class="px-2.5 py-1 rounded-full text-xs font-medium">
+                          {{ order.status }}
+                        </span>
+                        <div class="flex gap-1.5">
+                          @if (canDispatch(order)) {
+                            <span class="w-1.5 h-1.5 bg-orange-500 rounded-full" title="Items pending dispatch"></span>
+                          }
+                          @if (canReceive(order)) {
+                            <span class="w-1.5 h-1.5 bg-green-500 rounded-full" title="Items pending return"></span>
+                          }
+                        </div>
+                      </div>
                     </td>
                     <td class="py-3 px-4 text-center">
                       <div class="flex justify-center gap-2">
@@ -389,7 +434,7 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
             </div>
             <div class="flex gap-3 mt-6">
               <button (click)="receiveModal.close()" class="flex-1 py-3 rounded-xl bg-[var(--color-bg-hover)] text-[var(--color-text-secondary)] border border-[var(--color-border)]">Cancel</button>
-              <button (click)="receiveOrder()" [disabled]="isSaving()" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold disabled:opacity-50">
+              <button (click)="receiveOrder()" [disabled]="isSaving() || !canReceiveAny()" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold disabled:opacity-50">
                 @if (isSaving()) { <i class="fas fa-spinner fa-spin mr-2"></i> }
                 Receive
               </button>
@@ -540,9 +585,12 @@ export class RentalOrdersComponent implements OnInit {
   statusFilter = signal<'ALL' | RentalOrderStatus>('ALL');
   palNumberFilter = signal('');
   billingFilter = signal<'ALL' | 'BILLED' | 'UNBILLED'>('ALL');
+  fulfillmentFilter = signal<'ALL' | 'PENDING_DISPATCH' | 'PENDING_RECEIVE'>('ALL');
 
   unbilledCount = computed(() => this.orders().filter(o => !o.billId).length);
   billedCount = computed(() => this.orders().filter(o => !!o.billId).length);
+  pendingDispatchCount = computed(() => this.orders().filter(o => this.canDispatch(o)).length);
+  pendingReceiveCount = computed(() => this.orders().filter(o => this.canReceive(o)).length);
   sortColumn = signal<string | null>(null);
   sortDirection = signal<'asc' | 'desc'>('asc');
 
@@ -584,6 +632,14 @@ export class RentalOrdersComponent implements OnInit {
       result = result.filter(o => !!o.billId);
     } else if (bFilter === 'UNBILLED') {
       result = result.filter(o => !o.billId);
+    }
+
+    // Fulfillment Filter
+    const fFilter = this.fulfillmentFilter();
+    if (fFilter === 'PENDING_DISPATCH') {
+      result = result.filter(o => this.canDispatch(o));
+    } else if (fFilter === 'PENDING_RECEIVE') {
+      result = result.filter(o => this.canReceive(o));
     }
 
     // Sorting
@@ -872,6 +928,10 @@ export class RentalOrdersComponent implements OnInit {
       }));
 
     this.receiveModal.open();
+  }
+
+  canReceiveAny(): boolean {
+    return this.receiveItems.some(i => (i.returnedQty || 0) > 0);
   }
 
   receiveOrder(): void {
