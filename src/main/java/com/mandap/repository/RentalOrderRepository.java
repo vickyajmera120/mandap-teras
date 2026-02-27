@@ -37,4 +37,10 @@ public interface RentalOrderRepository extends JpaRepository<RentalOrder, Long> 
 
     @Query("SELECT DISTINCT ro.customer.id FROM RentalOrder ro")
     List<Long> findCustomerIdsWithAnyOrders();
+
+    @Query("SELECT COUNT(ro) > 0 FROM RentalOrder ro WHERE ro.customer.id = :customerId AND ro.status NOT IN ('COMPLETED', 'CANCELLED')")
+    boolean hasActiveOrders(Long customerId);
+
+    @Query("SELECT DISTINCT ro.customer.id FROM RentalOrder ro WHERE ro.status NOT IN ('COMPLETED', 'CANCELLED')")
+    List<Long> findCustomerIdsWithActiveOrders();
 }

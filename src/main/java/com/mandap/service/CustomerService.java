@@ -30,10 +30,14 @@ public class CustomerService {
                                 rentalOrderRepository.findCustomerIdsWithBilledOrders());
                 java.util.Set<Long> anyOrderCustomerIds = new java.util.HashSet<>(
                                 rentalOrderRepository.findCustomerIdsWithAnyOrders());
+                java.util.Set<Long> pendingBillCustomerIds = new java.util.HashSet<>(
+                                billRepository.findCustomerIdsWithPendingBills());
+                java.util.Set<Long> activeOrderCustomerIds = new java.util.HashSet<>(
+                                rentalOrderRepository.findCustomerIdsWithActiveOrders());
 
                 return customerRepository.findAllActive().stream()
                                 .map(c -> toDTOWithFlags(c, unbilledCustomerIds, billedCustomerIds,
-                                                anyOrderCustomerIds))
+                                                anyOrderCustomerIds, pendingBillCustomerIds, activeOrderCustomerIds))
                                 .collect(Collectors.toList());
         }
 
@@ -50,10 +54,14 @@ public class CustomerService {
                                 rentalOrderRepository.findCustomerIdsWithBilledOrders());
                 java.util.Set<Long> anyOrderCustomerIds = new java.util.HashSet<>(
                                 rentalOrderRepository.findCustomerIdsWithAnyOrders());
+                java.util.Set<Long> pendingBillCustomerIds = new java.util.HashSet<>(
+                                billRepository.findCustomerIdsWithPendingBills());
+                java.util.Set<Long> activeOrderCustomerIds = new java.util.HashSet<>(
+                                rentalOrderRepository.findCustomerIdsWithActiveOrders());
 
                 return customerRepository.searchByNameOrMobile(query).stream()
                                 .map(c -> toDTOWithFlags(c, unbilledCustomerIds, billedCustomerIds,
-                                                anyOrderCustomerIds))
+                                                anyOrderCustomerIds, pendingBillCustomerIds, activeOrderCustomerIds))
                                 .collect(Collectors.toList());
         }
 
@@ -95,20 +103,36 @@ public class CustomerService {
                 return toDTO(customer);
         }
 
+        @Autowired
+        private com.mandap.repository.BillRepository billRepository;
+
         public void deleteCustomer(Long id) {
                 Customer customer = customerRepository.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Customer not found: " + id));
+
+                // Check for active orders (items in possession or reserved)
+                if (rentalOrderRepository.hasActiveOrders(id)) {
+                        throw new RuntimeException("Cannot delete customer because they have active rental orders.");
+                }
+
+                // Check for pending bills (money owed)
+                if (billRepository.hasPendingBills(id)) {
+                        throw new RuntimeException(
+                                        "Cannot delete customer because they have pending payments (Unpaid Bills).");
+                }
+
                 customer.setActive(false);
                 customerRepository.save(customer);
                 log.info("Customer soft-deleted: id={}", id);
         }
 
         private CustomerDTO toDTO(Customer customer) {
-                return toDTOWithFlags(customer, null, null, null);
+                return toDTOWithFlags(customer, null, null, null, null, null);
         }
 
         private CustomerDTO toDTOWithFlags(Customer customer, java.util.Set<Long> unbilledIds,
-                        java.util.Set<Long> billedIds, java.util.Set<Long> anyOrderIds) {
+                        java.util.Set<Long> billedIds, java.util.Set<Long> anyOrderIds,
+                        java.util.Set<Long> pendingBillIds, java.util.Set<Long> activeOrderIds) {
                 return CustomerDTO.builder()
                                 .id(customer.getId())
                                 .name(customer.getName())
@@ -123,6 +147,8 @@ public class CustomerService {
                                 .hasUnbilledOrders(unbilledIds != null && unbilledIds.contains(customer.getId()))
                                 .hasBilledOrders(billedIds != null && billedIds.contains(customer.getId()))
                                 .hasRentalOrders(anyOrderIds != null && anyOrderIds.contains(customer.getId()))
+                                .hasPendingBills(pendingBillIds != null && pendingBillIds.contains(customer.getId()))
+                                .hasActiveOrders(activeOrderIds != null && activeOrderIds.contains(customer.getId()))
                                 .build();
         }
 }

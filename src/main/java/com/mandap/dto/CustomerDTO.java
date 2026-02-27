@@ -21,4 +21,6 @@ public class CustomerDTO {
     private boolean hasUnbilledOrders;
     private boolean hasBilledOrders;
     private boolean hasRentalOrders;
+    private boolean hasPendingBills;
+    private boolean hasActiveOrders;
 }

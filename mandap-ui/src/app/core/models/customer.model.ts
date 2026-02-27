@@ -11,6 +11,8 @@ export interface Customer {
     hasUnbilledOrders?: boolean;
     hasBilledOrders?: boolean;
     hasRentalOrders?: boolean;
+    hasPendingBills?: boolean;
+    hasActiveOrders?: boolean;
 }
 
 export interface CustomerRequest {

@@ -171,7 +171,9 @@ import { NgSelectModule } from '@ng-select/ng-select';
                         </button>
                         <button 
                           (click)="deleteCustomer(customer)"
-                          class="w-9 h-9 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
+                          [disabled]="customer.hasActiveOrders || customer.hasPendingBills"
+                          class="w-9 h-9 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                          [title]="customer.hasActiveOrders ? 'Cannot delete because customer has active orders' : (customer.hasPendingBills ? 'Cannot delete because customer has pending payments' : 'Delete Customer')"
                         >
                           <i class="fas fa-trash"></i>
                         </button>
@@ -429,11 +431,23 @@ export class CustomersComponent implements OnInit {
   }
 
   deleteCustomer(customer: Customer): void {
+    if (customer.hasActiveOrders) {
+      this.toastService.error('Cannot delete customer because they have active orders');
+      return;
+    }
+    if (customer.hasPendingBills) {
+      this.toastService.error('Cannot delete customer because they have pending payments');
+      return;
+    }
+
     if (confirm(`Delete customer "${customer.name}"?`)) {
       this.customerService.delete(customer.id).subscribe({
         next: () => {
           this.toastService.success('Customer deleted successfully');
           this.loadCustomers();
+        },
+        error: (err: any) => {
+          // Error handled by interceptor
         }
       });
     }

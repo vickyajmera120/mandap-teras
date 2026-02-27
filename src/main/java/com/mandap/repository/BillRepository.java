@@ -27,4 +27,10 @@ public interface BillRepository extends JpaRepository<Bill, Long> {
 
     @Query("SELECT MAX(CAST(SUBSTRING(b.billNumber, LENGTH(:prefix) + 1) AS integer)) FROM Bill b WHERE b.billNumber LIKE CONCAT(:prefix, '%')")
     Integer findMaxBillNumberForPrefix(String prefix);
+
+    @Query("SELECT COUNT(b) > 0 FROM Bill b WHERE b.customer.id = :customerId AND b.paymentStatus IN ('DUE', 'PARTIAL')")
+    boolean hasPendingBills(Long customerId);
+
+    @Query("SELECT DISTINCT b.customer.id FROM Bill b WHERE b.paymentStatus IN ('DUE', 'PARTIAL')")
+    List<Long> findCustomerIdsWithPendingBills();
 }
