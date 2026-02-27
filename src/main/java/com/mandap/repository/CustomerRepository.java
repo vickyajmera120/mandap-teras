@@ -7,8 +7,10 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+import org.springframework.data.repository.history.RevisionRepository;
+
 @Repository
-public interface CustomerRepository extends JpaRepository<Customer, Long> {
+public interface CustomerRepository extends JpaRepository<Customer, Long>, RevisionRepository<Customer, Long, Integer> {
 
     @Query("SELECT c FROM Customer c WHERE c.active = true ORDER BY c.name")
     List<Customer> findAllActive();

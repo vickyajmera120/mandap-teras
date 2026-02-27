@@ -163,6 +163,13 @@ import { NgSelectModule } from '@ng-select/ng-select';
                           <i class="fas fa-history"></i>
                         </button>
                         <button 
+                          (click)="viewAudit(customer)" 
+                          class="w-9 h-9 rounded-lg bg-slate-500/20 text-slate-400 hover:bg-slate-500/30 transition-colors" 
+                          title="View Changes (Audit)"
+                        >
+                          <i class="fas fa-fingerprint"></i>
+                        </button>
+                        <button 
                           (click)="editCustomer(customer)"
                           class="w-9 h-9 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
                           title="Edit"
@@ -414,6 +421,10 @@ export class CustomersComponent implements OnInit {
 
   navigateToBillHistory(customer: Customer) {
     this.router.navigate(['/billing/history'], { queryParams: { customerName: customer.name } });
+  }
+
+  viewAudit(customer: Customer): void {
+    this.router.navigate(['/customers/audit', customer.id]);
   }
 
   openModal(): void {

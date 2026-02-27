@@ -30,7 +30,16 @@ export const routes: Routes = [
             },
             {
                 path: 'customers',
-                loadComponent: () => import('./features/customers/customers.component').then(m => m.CustomersComponent)
+                children: [
+                    {
+                        path: '',
+                        loadComponent: () => import('./features/customers/customers.component').then(m => m.CustomersComponent)
+                    },
+                    {
+                        path: 'audit/:id',
+                        loadComponent: () => import('./features/customers/customer-audit/customer-audit.component').then(m => m.CustomerAuditComponent)
+                    }
+                ]
             },
             {
                 path: 'billing',

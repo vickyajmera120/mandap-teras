@@ -41,6 +41,66 @@ public class CustomerService {
                                 .collect(Collectors.toList());
         }
 
+        public List<com.mandap.dto.CustomerAuditDTO> getCustomerAuditHistory(Long id) {
+                org.springframework.data.history.Revisions<Integer, Customer> revisions = customerRepository
+                                .findRevisions(id);
+                List<com.mandap.dto.CustomerAuditDTO> auditList = new java.util.ArrayList<>();
+                Customer previousState = null;
+
+                for (org.springframework.data.history.Revision<Integer, Customer> revision : revisions) {
+                        Customer currentState = revision.getEntity();
+                        java.util.Map<String, Object> changes = new java.util.HashMap<>();
+
+                        if (previousState == null) {
+                                changes.put("Initial Creation", "Customer created");
+                        } else {
+                                findChanges(previousState, currentState, changes);
+                        }
+
+                        auditList.add(com.mandap.dto.CustomerAuditDTO.builder()
+                                        .revisionNumber(revision.getRequiredRevisionNumber())
+                                        .revisionDate(java.time.LocalDateTime.ofInstant(
+                                                        revision.getRequiredRevisionInstant(),
+                                                        java.time.ZoneId.systemDefault()))
+                                        .action(previousState == null ? "CREATE" : "UPDATE")
+                                        .changedBy(((com.mandap.entity.AuditRevisionEntity) revision.getMetadata()
+                                                        .getDelegate()).getUsername())
+                                        .changes(changes)
+                                        .entity(toDTO(currentState))
+                                        .build());
+
+                        previousState = currentState;
+                }
+
+                // Return in reverse chronological order
+                java.util.Collections.reverse(auditList);
+                return auditList;
+        }
+
+        private void findChanges(Customer oldState, Customer newState, java.util.Map<String, Object> changes) {
+                if (!java.util.Objects.equals(oldState.getName(), newState.getName())) {
+                        changes.put("Name", newState.getName());
+                }
+                if (!java.util.Objects.equals(oldState.getMobile(), newState.getMobile())) {
+                        changes.put("Mobile", newState.getMobile());
+                }
+                if (!java.util.Objects.equals(oldState.getAddress(), newState.getAddress())) {
+                        changes.put("Address", newState.getAddress());
+                }
+                if (!java.util.Objects.equals(oldState.getAlternateContact(), newState.getAlternateContact())) {
+                        changes.put("Alternate Contact", newState.getAlternateContact());
+                }
+                if (!java.util.Objects.equals(oldState.getActive(), newState.getActive())) {
+                        changes.put("Active Status", newState.getActive() ? "Active" : "Inactive");
+                }
+                if (!java.util.Objects.equals(oldState.getPalNumbers(), newState.getPalNumbers())) {
+                        changes.put("Pal Numbers", newState.getPalNumbers());
+                }
+                if (!java.util.Objects.equals(oldState.getNotes(), newState.getNotes())) {
+                        changes.put("Notes", newState.getNotes());
+                }
+        }
+
         public CustomerDTO getCustomerById(Long id) {
                 Customer customer = customerRepository.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Customer not found: " + id));

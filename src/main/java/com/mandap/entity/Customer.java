@@ -13,6 +13,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@org.hibernate.envers.Audited
 public class Customer {
 
     @Id

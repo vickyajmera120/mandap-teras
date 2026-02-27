@@ -54,4 +54,9 @@ public class CustomerController {
         customerService.deleteCustomer(id);
         return ResponseEntity.ok(ApiResponse.success("Customer deleted successfully"));
     }
+
+    @GetMapping("/{id}/audit")
+    public ResponseEntity<List<com.mandap.dto.CustomerAuditDTO>> getCustomerAuditHistory(@PathVariable Long id) {
+        return ResponseEntity.ok(customerService.getCustomerAuditHistory(id));
+    }
 }
