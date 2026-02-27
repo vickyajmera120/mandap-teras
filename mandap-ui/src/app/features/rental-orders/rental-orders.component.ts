@@ -444,7 +444,7 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
       </app-modal>
 
       <!-- View Order Modal -->
-      <app-modal #viewModal title="Order Details" size="lg">
+      <app-modal #viewModal title="Order Details" size="xl">
         @if (selectedOrder()) {
           <div class="space-y-4">
             <div class="grid grid-cols-2 gap-4 text-sm">
@@ -485,16 +485,34 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                   <table class="w-full text-sm">
                     <thead class="bg-[var(--color-bg-hover)]/30">
                       <tr>
-                        <th class="text-left py-2 px-4 text-[var(--color-text-secondary)]">Item</th>
-                        <th class="text-center py-2 px-4 text-[var(--color-text-secondary)]">Booked</th>
-                        <th class="text-center py-2 px-4 text-[var(--color-text-secondary)]">Dispatched</th>
-                        <th class="text-center py-2 px-4 text-[var(--color-text-secondary)]">Pend. Dispatch</th>
-                        <th class="text-center py-2 px-4 text-[var(--color-text-secondary)]">Returned</th>
-                        <th class="text-center py-2 px-4 text-[var(--color-text-secondary)]">Pend. Return</th>
+                        <th (click)="onItemsSummarySort('itemNameGujarati')" class="text-left py-2 px-4 text-[var(--color-text-secondary)] font-medium cursor-pointer group select-none min-w-[200px]">
+                          Item
+                          <i class="fas ml-1" [class]="itemsSummarySortConfig().column === 'itemNameGujarati' ? (itemsSummarySortConfig().direction === 'asc' ? 'fa-sort-up text-teal-400' : 'fa-sort-down text-teal-400') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
+                        </th>
+                        <th (click)="onItemsSummarySort('bookedQty')" class="text-center py-2 px-4 text-[var(--color-text-secondary)] font-medium cursor-pointer group select-none">
+                          Booked
+                          <i class="fas ml-1" [class]="itemsSummarySortConfig().column === 'bookedQty' ? (itemsSummarySortConfig().direction === 'asc' ? 'fa-sort-up text-teal-400' : 'fa-sort-down text-teal-400') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
+                        </th>
+                        <th (click)="onItemsSummarySort('dispatchedQty')" class="text-center py-2 px-4 text-[var(--color-text-secondary)] font-medium cursor-pointer group select-none">
+                          Dispatched
+                          <i class="fas ml-1" [class]="itemsSummarySortConfig().column === 'dispatchedQty' ? (itemsSummarySortConfig().direction === 'asc' ? 'fa-sort-up text-teal-400' : 'fa-sort-down text-teal-400') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
+                        </th>
+                        <th (click)="onItemsSummarySort('pendingDispatch')" class="text-center py-2 px-4 text-[var(--color-text-secondary)] font-medium cursor-pointer group select-none">
+                          Pend. Dispatch
+                          <i class="fas ml-1" [class]="itemsSummarySortConfig().column === 'pendingDispatch' ? (itemsSummarySortConfig().direction === 'asc' ? 'fa-sort-up text-teal-400' : 'fa-sort-down text-teal-400') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
+                        </th>
+                        <th (click)="onItemsSummarySort('returnedQty')" class="text-center py-2 px-4 text-[var(--color-text-secondary)] font-medium cursor-pointer group select-none">
+                          Returned
+                          <i class="fas ml-1" [class]="itemsSummarySortConfig().column === 'returnedQty' ? (itemsSummarySortConfig().direction === 'asc' ? 'fa-sort-up text-teal-400' : 'fa-sort-down text-teal-400') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
+                        </th>
+                        <th (click)="onItemsSummarySort('outstandingQty')" class="text-center py-2 px-4 text-[var(--color-text-secondary)] font-medium cursor-pointer group select-none">
+                          Pend. Return
+                          <i class="fas ml-1" [class]="itemsSummarySortConfig().column === 'outstandingQty' ? (itemsSummarySortConfig().direction === 'asc' ? 'fa-sort-up text-teal-400' : 'fa-sort-down text-teal-400') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      @for (item of selectedOrder()!.items; track item.inventoryItemId) {
+                      @for (item of sortedItemsSummary(); track item.inventoryItemId) {
                         <tr class="border-t border-[var(--color-border)]/50">
                           <td class="py-2 px-4 text-[var(--color-text-primary)]">{{ item.itemNameGujarati }}</td>
                           <td class="py-2 px-4 text-center text-[var(--color-text-secondary)]">{{ item.bookedQty }}</td>
@@ -586,6 +604,36 @@ export class RentalOrdersComponent implements OnInit {
   palNumberFilter = signal('');
   billingFilter = signal<'ALL' | 'BILLED' | 'UNBILLED'>('ALL');
   fulfillmentFilter = signal<'ALL' | 'PENDING_DISPATCH' | 'PENDING_RECEIVE'>('ALL');
+
+  itemsSummarySortConfig = signal<{ column: string, direction: 'asc' | 'desc' }>({
+    column: 'itemNameGujarati',
+    direction: 'asc'
+  });
+
+  sortedItemsSummary = computed(() => {
+    const order = this.selectedOrder();
+    if (!order) return [];
+
+    const items = [...order.items].map(item => ({
+      ...item,
+      pendingDispatch: (item.bookedQty || 0) - (item.dispatchedQty || 0)
+    }));
+
+    const sort = this.itemsSummarySortConfig();
+
+    return items.sort((a: any, b: any) => {
+      const direction = sort.direction === 'asc' ? 1 : -1;
+      let valA = a[sort.column];
+      let valB = b[sort.column];
+
+      if (typeof valA === 'string') valA = valA.toLowerCase();
+      if (typeof valB === 'string') valB = valB.toLowerCase();
+
+      if (valA < valB) return -1 * direction;
+      if (valA > valB) return 1 * direction;
+      return 0;
+    });
+  });
 
   unbilledCount = computed(() => this.orders().filter(o => !o.billId).length);
   billedCount = computed(() => this.orders().filter(o => !!o.billId).length);
@@ -977,5 +1025,14 @@ export class RentalOrdersComponent implements OnInit {
         // Handled by interceptor
       }
     });
+  }
+
+  onItemsSummarySort(column: string) {
+    const current = this.itemsSummarySortConfig();
+    if (current.column === column) {
+      this.itemsSummarySortConfig.set({ column, direction: current.direction === 'asc' ? 'desc' : 'asc' });
+    } else {
+      this.itemsSummarySortConfig.set({ column, direction: 'asc' });
+    }
   }
 }
