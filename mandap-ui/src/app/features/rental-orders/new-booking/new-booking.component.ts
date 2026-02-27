@@ -197,7 +197,9 @@ import { NgSelectModule } from '@ng-select/ng-select';
             @if (isEditMode()) {
               <button
                 (click)="deleteBooking()"
-                class="px-6 py-3 rounded-xl bg-red-500/10 text-red-500 font-semibold hover:bg-red-500/20 transition-all border border-red-500/20"
+                [disabled]="isSaving() || !!newOrder.billId || hasDispatchedItems()"
+                class="px-6 py-3 rounded-xl bg-red-500/10 text-red-500 font-semibold hover:bg-red-500/20 transition-all border border-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                [title]="!!newOrder.billId ? 'Cannot delete because bill is generated' : (hasDispatchedItems() ? 'Cannot delete because items were dispatched' : '')"
               >
                 <i class="fas fa-trash mr-2"></i>Delete
               </button>

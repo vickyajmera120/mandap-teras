@@ -281,8 +281,9 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                         </button>
                         <button 
                           (click)="deleteOrder(order)"
-                          class="w-8 h-8 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
-                          title="Delete Order"
+                          [disabled]="!!order.billId || hasDispatchedItems(order)"
+                          class="w-8 h-8 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                          [title]="!!order.billId ? 'Cannot delete because bill is generated' : (hasDispatchedItems(order) ? 'Cannot delete because items were dispatched' : 'Delete Order')"
                         >
                           <i class="fas fa-trash text-xs"></i>
                         </button>
@@ -827,6 +828,10 @@ export class RentalOrdersComponent implements OnInit {
     return order.items?.some(i => (i.dispatchedQty || 0) > (i.returnedQty || 0)) || false;
   }
 
+  hasDispatchedItems(order: RentalOrder): boolean {
+    return order.items?.some(i => (i.dispatchedQty || 0) > 0) || false;
+  }
+
   // Dispatch/Receive items
   dispatchUIItems: any[] = [];
   receiveItems: RentalOrderItem[] = [];
@@ -1014,6 +1019,16 @@ export class RentalOrdersComponent implements OnInit {
   }
 
   deleteOrder(order: RentalOrder): void {
+    if (order.billId) {
+      this.toastService.error('Cannot delete order because a bill is already generated');
+      return;
+    }
+
+    if (this.hasDispatchedItems(order)) {
+      this.toastService.error('Cannot delete order because items were dispatched');
+      return;
+    }
+
     if (!confirm(`Are you sure you want to delete order ${order.orderNumber}?`)) return;
 
     this.rentalOrderService.delete(order.id!).subscribe({

@@ -551,16 +551,14 @@ public class RentalOrderService {
                 RentalOrder order = rentalOrderRepository.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Rental order not found: " + id));
 
-                // Validation: Verify no outstanding items
-                for (RentalOrderItem item : order.getItems()) {
-                        int outstanding = item.getDispatchedQty()
-                                        - (item.getReturnedQty() != null ? item.getReturnedQty() : 0);
-                        if (outstanding > 0) {
-                                throw new RuntimeException(
-                                                "Cannot delete order with outstanding items ("
-                                                                + item.getInventoryItem().getNameEnglish()
-                                                                + "). Please return the items first.");
-                        }
+                if (order.getBill() != null) {
+                        throw new RuntimeException("Cannot delete order because a bill has already been generated. Delete the bill first.");
+                }
+
+                boolean anyDispatched = order.getItems().stream()
+                                .anyMatch(item -> item.getDispatchedQty() != null && item.getDispatchedQty() > 0);
+                if (anyDispatched) {
+                        throw new RuntimeException("Cannot delete order because items were dispatched. Please use 'Cancel' for record keeping.");
                 }
 
                 log.warn("Deleting rental order id={}, orderNumber={}", id, order.getOrderNumber());
