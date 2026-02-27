@@ -37,7 +37,11 @@ public class InventoryService {
             java.util.Map<String, com.mandap.dto.FieldChangeDTO> changes = new java.util.HashMap<>();
 
             if (previousState == null) {
-                changes.put("Status", new com.mandap.dto.FieldChangeDTO(null, "Item created in inventory"));
+                boolean isInsert = revision.getMetadata()
+                        .getRevisionType() == org.springframework.data.history.RevisionMetadata.RevisionType.INSERT;
+                String statusMsg = isInsert ? "Item created in inventory"
+                        : "Existing item updated (First tracked change)";
+                changes.put("Status", new com.mandap.dto.FieldChangeDTO(null, statusMsg));
             } else {
                 findItemChanges(previousState, currentState, changes);
             }
@@ -46,7 +50,10 @@ public class InventoryService {
                     .revisionNumber(revision.getRequiredRevisionNumber())
                     .revisionDate(java.time.LocalDateTime.ofInstant(revision.getRequiredRevisionInstant(),
                             java.time.ZoneId.systemDefault()))
-                    .action(previousState == null ? "CREATE" : "UPDATE")
+                    .action(revision.getMetadata()
+                            .getRevisionType() == org.springframework.data.history.RevisionMetadata.RevisionType.INSERT
+                                    ? "CREATE"
+                                    : "UPDATE")
                     .changedBy(((com.mandap.entity.AuditRevisionEntity) revision.getMetadata().getDelegate())
                             .getUsername())
                     .changes(changes)

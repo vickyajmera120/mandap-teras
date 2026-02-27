@@ -52,8 +52,11 @@ public class CustomerService {
                         java.util.Map<String, Object> changes = new java.util.HashMap<>();
 
                         if (previousState == null) {
-                                changes.put("Status",
-                                                new com.mandap.dto.FieldChangeDTO(null, "Customer profile created"));
+                                boolean isInsert = revision.getMetadata()
+                                                .getRevisionType() == org.springframework.data.history.RevisionMetadata.RevisionType.INSERT;
+                                String statusMsg = isInsert ? "Customer profile created"
+                                                : "Existing customer updated (First tracked change)";
+                                changes.put("Status", new com.mandap.dto.FieldChangeDTO(null, statusMsg));
                         } else {
                                 findChanges(previousState, currentState, changes);
                         }
@@ -63,7 +66,10 @@ public class CustomerService {
                                         .revisionDate(java.time.LocalDateTime.ofInstant(
                                                         revision.getRequiredRevisionInstant(),
                                                         java.time.ZoneId.systemDefault()))
-                                        .action(previousState == null ? "CREATE" : "UPDATE")
+                                        .action(revision.getMetadata()
+                                                        .getRevisionType() == org.springframework.data.history.RevisionMetadata.RevisionType.INSERT
+                                                                        ? "CREATE"
+                                                                        : "UPDATE")
                                         .changedBy(((com.mandap.entity.AuditRevisionEntity) revision.getMetadata()
                                                         .getDelegate()).getUsername())
                                         .changes(changes)
