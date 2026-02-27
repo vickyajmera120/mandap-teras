@@ -38,6 +38,10 @@ export class InventoryService {
     getItemUsage(id: number): Observable<ItemUsage[]> {
         return this.http.get<ItemUsage[]>(`${this.API_URL}/${id}/usage`);
     }
+
+    getAuditHistory(id: number): Observable<any[]> {
+        return this.http.get<any[]>(`${this.API_URL}/${id}/audit`);
+    }
 }
 
 export interface ItemUsage {

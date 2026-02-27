@@ -7,8 +7,11 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+import org.springframework.data.repository.history.RevisionRepository;
+
 @Repository
-public interface InventoryItemRepository extends JpaRepository<InventoryItem, Long> {
+public interface InventoryItemRepository
+        extends JpaRepository<InventoryItem, Long>, RevisionRepository<InventoryItem, Long, Integer> {
 
     @Query("SELECT i FROM InventoryItem i WHERE i.active = true ORDER BY i.displayOrder")
     List<InventoryItem> findAllActiveOrdered();

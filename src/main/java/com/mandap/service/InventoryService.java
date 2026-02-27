@@ -26,6 +26,70 @@ public class InventoryService {
         return items;
     }
 
+    public List<com.mandap.dto.InventoryAuditDTO> getInventoryAuditHistory(Long id) {
+        org.springframework.data.history.Revisions<Integer, InventoryItem> revisions = inventoryItemRepository
+                .findRevisions(id);
+        List<com.mandap.dto.InventoryAuditDTO> auditList = new java.util.ArrayList<>();
+        InventoryItem previousState = null;
+
+        for (org.springframework.data.history.Revision<Integer, InventoryItem> revision : revisions) {
+            InventoryItem currentState = revision.getEntity();
+            java.util.Map<String, com.mandap.dto.FieldChangeDTO> changes = new java.util.HashMap<>();
+
+            if (previousState == null) {
+                changes.put("Status", new com.mandap.dto.FieldChangeDTO(null, "Item created in inventory"));
+            } else {
+                findItemChanges(previousState, currentState, changes);
+            }
+
+            auditList.add(com.mandap.dto.InventoryAuditDTO.builder()
+                    .revisionNumber(revision.getRequiredRevisionNumber())
+                    .revisionDate(java.time.LocalDateTime.ofInstant(revision.getRequiredRevisionInstant(),
+                            java.time.ZoneId.systemDefault()))
+                    .action(previousState == null ? "CREATE" : "UPDATE")
+                    .changedBy(((com.mandap.entity.AuditRevisionEntity) revision.getMetadata().getDelegate())
+                            .getUsername())
+                    .changes(changes)
+                    .entity(toDTO(currentState))
+                    .build());
+
+            previousState = currentState;
+        }
+
+        java.util.Collections.reverse(auditList);
+        return auditList;
+    }
+
+    private void findItemChanges(InventoryItem oldState, InventoryItem newState,
+            java.util.Map<String, com.mandap.dto.FieldChangeDTO> changes) {
+        if (!java.util.Objects.equals(oldState.getNameGujarati(), newState.getNameGujarati())) {
+            changes.put("Name (Gujarati)",
+                    new com.mandap.dto.FieldChangeDTO(oldState.getNameGujarati(), newState.getNameGujarati()));
+        }
+        if (!java.util.Objects.equals(oldState.getNameEnglish(), newState.getNameEnglish())) {
+            changes.put("Name (English)",
+                    new com.mandap.dto.FieldChangeDTO(oldState.getNameEnglish(), newState.getNameEnglish()));
+        }
+        if (!java.util.Objects.equals(oldState.getDefaultRate(), newState.getDefaultRate())) {
+            changes.put("Default Rate",
+                    new com.mandap.dto.FieldChangeDTO(oldState.getDefaultRate(), newState.getDefaultRate()));
+        }
+        if (!java.util.Objects.equals(oldState.getCategory(), newState.getCategory())) {
+            changes.put("Category", new com.mandap.dto.FieldChangeDTO(
+                    oldState.getCategory() != null ? oldState.getCategory().name() : null,
+                    newState.getCategory() != null ? newState.getCategory().name() : null));
+        }
+        if (!java.util.Objects.equals(oldState.getTotalStock(), newState.getTotalStock())) {
+            changes.put("Total Stock",
+                    new com.mandap.dto.FieldChangeDTO(oldState.getTotalStock(), newState.getTotalStock()));
+        }
+        if (!java.util.Objects.equals(oldState.getActive(), newState.getActive())) {
+            changes.put("Active Status", new com.mandap.dto.FieldChangeDTO(
+                    oldState.getActive() ? "Active" : "Inactive",
+                    newState.getActive() ? "Active" : "Inactive"));
+        }
+    }
+
     private void populateTotals(List<InventoryItemDTO> items) {
         if (items.isEmpty())
             return;

@@ -58,4 +58,9 @@ public class InventoryController {
     public ResponseEntity<List<com.mandap.dto.ItemUsageDTO>> getItemUsage(@PathVariable Long id) {
         return ResponseEntity.ok(inventoryService.getItemUsage(id));
     }
+
+    @GetMapping("/{id}/audit")
+    public ResponseEntity<List<com.mandap.dto.InventoryAuditDTO>> getInventoryAuditHistory(@PathVariable Long id) {
+        return ResponseEntity.ok(inventoryService.getInventoryAuditHistory(id));
+    }
 }

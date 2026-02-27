@@ -61,7 +61,16 @@ export const routes: Routes = [
             },
             {
                 path: 'inventory',
-                loadComponent: () => import('./features/inventory/inventory.component').then(m => m.InventoryComponent)
+                children: [
+                    {
+                        path: '',
+                        loadComponent: () => import('./features/inventory/inventory.component').then(m => m.InventoryComponent)
+                    },
+                    {
+                        path: 'audit/:id',
+                        loadComponent: () => import('./features/inventory/inventory-audit/inventory-audit.component').then(m => m.InventoryAuditComponent)
+                    }
+                ]
             },
             {
                 path: 'rental-orders',

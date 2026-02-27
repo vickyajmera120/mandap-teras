@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal, ViewChild, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { InventoryService, ToastService } from '@core/services';
 import { InventoryItem } from '@core/models';
@@ -165,6 +166,13 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
                               title="View Usage"
                             >
                               <i class="fas fa-history text-xs"></i>
+                            </button>
+                            <button 
+                              (click)="viewAudit(item)"
+                              class="w-8 h-8 rounded-lg bg-slate-500/20 text-slate-400 hover:bg-slate-500/30 transition-colors"
+                              title="View Changes (Audit)"
+                            >
+                              <i class="fas fa-fingerprint text-xs"></i>
                             </button>
                             <button 
                               (click)="editItem(item)"
@@ -347,6 +355,7 @@ export class InventoryComponent implements OnInit {
 
   private inventoryService = inject(InventoryService);
   private toastService = inject(ToastService);
+  private router = inject(Router);
 
   items = signal<InventoryItem[]>([]);
   filterStatus = signal<'ACTIVE' | 'INACTIVE' | 'ALL'>('ACTIVE');
@@ -616,6 +625,10 @@ export class InventoryComponent implements OnInit {
         this.isLoadingUsage.set(false);
       }
     });
+  }
+
+  viewAudit(item: InventoryItem): void {
+    this.router.navigate(['/inventory/audit', item.id]);
   }
 
   onUsageSort(column: string) {
