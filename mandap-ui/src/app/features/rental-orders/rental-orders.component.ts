@@ -211,96 +211,6 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
         </div>
       }
 
-      <!-- Print Template (Hidden by default, visible on print) -->
-      @if (selectedPrintOrder()) {
-        <div id="print-section" class="hidden print:block print:static print:w-full print:bg-white print:z-[9999]">
-          <div class="w-full px-6 py-6 bg-white">
-            <!-- Header -->
-            <div class="text-center border-b-2 border-gray-800 pb-2 mb-4">
-              <h1 class="text-2xl font-bold uppercase tracking-wider mb-1">Mandap Decoration</h1>
-            </div>
-
-            <!-- Order Info -->
-            <div class="flex justify-between mb-6 text-sm">
-              <div>
-                <p class="text-gray-500 text-xs">Order No:</p>
-                <p class="font-bold text-base">{{ selectedPrintOrder()?.orderNumber }}</p>
-              </div>
-              <div class="text-right">
-                <p class="text-gray-500 text-xs">Date:</p>
-                <p class="font-bold">{{ selectedPrintOrder()?.orderDate }}</p>
-              </div>
-            </div>
-
-            <!-- Customer Info -->
-            <div class="mb-6 p-3 border border-gray-200 rounded-lg text-sm">
-              <h3 class="font-bold border-b border-gray-200 pb-1 mb-2 text-xs uppercase text-gray-500">Customer Details</h3>
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <p class="text-gray-500 text-xs">Name:</p>
-                  <p class="font-medium">{{ selectedPrintOrder()?.customerName }}</p>
-                </div>
-                <div>
-                  <p class="text-gray-500 text-xs">Mobile:</p>
-                  <p class="font-medium">{{ selectedPrintOrder()?.customerMobile }}</p>
-                </div>
-                @if (selectedPrintOrder()?.remarks) {
-                  <div class="col-span-2">
-                     <p class="text-gray-500 text-xs">Remarks/Address:</p>
-                     <p class="font-medium">{{ selectedPrintOrder()?.remarks }}</p>
-                  </div>
-                }
-              </div>
-            </div>
-
-            <!-- Items Table -->
-            <table class="w-full mb-8 text-xs">
-              <thead>
-                <tr class="border-b-2 border-gray-800">
-                  <th class="text-left py-1 w-8">#</th>
-                  <th class="text-left py-1">Item Name</th>
-                  <th class="text-center py-1 w-12">Total</th>
-                  <th class="text-center py-1 w-12">Disp.</th>
-                  <th class="text-center py-1 w-12">Pend.</th>
-                  <th class="text-center py-1 w-12">Ret.</th>
-                  <th class="text-center py-1 w-12">Out.</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (item of selectedPrintOrder()?.items; track item.id; let i = $index) {
-                  <tr class="border-b border-gray-200">
-                    <td class="py-1 text-gray-600">{{ i + 1 }}</td>
-                    <td class="py-1 font-medium pr-2">{{ item.itemNameGujarati || item.itemNameEnglish }}</td>
-                    <td class="py-1 text-center">{{ item.bookedQty }}</td>
-                    <td class="py-1 text-center text-gray-600">{{ item.dispatchedQty || 0 }}</td>
-                    <td class="py-1 text-center text-gray-600" [class.font-bold]="(item.bookedQty - (item.dispatchedQty || 0)) > 0">{{ item.bookedQty - (item.dispatchedQty || 0) }}</td>
-                    <td class="py-1 text-center text-gray-600">{{ item.returnedQty || 0 }}</td>
-                    <td class="py-1 text-center font-bold" [class.text-red-600]="(item.outstandingQty || 0) > 0">{{ item.outstandingQty || 0 }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-
-          <!-- Footer -->
-          <div class="mt-12 pt-4 border-t-2 border-gray-800 flex justify-between items-end">
-            <div class="text-center">
-              <p class="h-12"></p> <!-- Space for sign -->
-              <p class="text-sm font-bold border-t border-gray-400 pt-1 px-8">Customer Signature</p>
-            </div>
-            <div class="text-center">
-              <p class="h-12"></p> <!-- Space for sign -->
-              <p class="text-sm font-bold border-t border-gray-400 pt-1 px-8">Authorized Signature</p>
-            </div>
-          </div>
-          
-          <div class="text-center text-xs text-gray-400 mt-8">
-            <p>Thank you for your business!</p>
-          </div>
-          </div>
-        </div>
-      }
-
-
       <!-- Dispatch Modal -->
       <app-modal #dispatchModal title="Dispatch Items" size="lg">
         @if (selectedOrder()) {
@@ -452,6 +362,9 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
               <div><span class="text-[var(--color-text-muted)]">Order #:</span> <span class="text-[var(--color-text-primary)] font-mono">{{ selectedOrder()!.orderNumber }}</span></div>
               <div><span class="text-[var(--color-text-muted)]">Status:</span> <span [class]="getStatusClass(selectedOrder()!.status!)" class="px-2 py-0.5 rounded-full text-xs">{{ selectedOrder()!.status }}</span></div>
               <div><span class="text-[var(--color-text-muted)]">Customer:</span> <span class="text-[var(--color-text-primary)]">{{ selectedOrder()!.customerName }}</span></div>
+              @if (selectedOrder()?.customerPalNumbers?.length) {
+                <div><span class="text-[var(--color-text-muted)]">Pal No(s):</span> <span class="text-[var(--color-text-primary)]">{{ selectedOrder()!.customerPalNumbers!.join(', ') }}</span></div>
+              }
             </div>
             <div class="flex border-b border-[var(--color-border)] mb-4">
                <button 
@@ -561,7 +474,7 @@ export class RentalOrdersComponent implements OnInit {
   isLoading = signal(true);
   isSaving = signal(false);
   selectedOrder = signal<RentalOrder | null>(null);
-  selectedPrintOrder = signal<RentalOrder | null>(null);
+
 
   statusOptions = [
     { label: 'Booked', value: 'BOOKED' },
@@ -641,18 +554,90 @@ export class RentalOrdersComponent implements OnInit {
   });
 
   printOrder(order: RentalOrder) {
-    this.selectedPrintOrder.set(order);
-    // Determine title for browser print dialog
-    const originalTitle = document.title;
-    document.title = `RentalOrder_${order.orderNumber}`;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
 
-    // Tiny delay to ensure template renders before printing
-    setTimeout(() => {
-      window.print();
-      // Reset after print dialog closes
-      document.title = originalTitle;
-      this.selectedPrintOrder.set(null);
-    }, 100);
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Order - ${order.orderNumber}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          .header { text-align: center; border-bottom: 2px solid #008080; padding-bottom: 10px; margin-bottom: 20px; }
+          .header h1 { color: #008080; margin: 0; }
+          .info { display: flex; justify-content: space-between; margin-bottom: 20px; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px; }
+          th { background: #008080; color: white; padding: 10px; text-align: left; }
+          td { border-bottom: 1px solid #ddd; padding: 8px; }
+          @media print { body { padding: 0; } }
+          
+          .signature-section { display: flex; justify-content: space-between; margin-top: 60px; border-top: 1px solid #ccc; padding-top: 20px; }
+          .signature-box { text-align: center; width: 200px; }
+          .signature-line { border-top: 1px solid #555; margin-top: 60px; padding-top: 5px; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>ફાગણ સુદ ૧૩</h1>
+          <p>Mandap Contractor - Rental Challan</p>
+        </div>
+        <div class="info">
+          <div>
+            <p><strong>Order No:</strong> ${order.orderNumber}</p>
+            <p><strong>Customer:</strong> ${order.customerName}</p>
+            <p><strong>Mobile:</strong> ${order.customerMobile}</p>
+            ${order.customerPalNumbers && order.customerPalNumbers.length > 0 ? `<p><strong>Pal No(s):</strong> ${order.customerPalNumbers.join(', ')}</p>` : ''}
+            ${order.remarks ? `<p><strong>Remarks:</strong> ${order.remarks}</p>` : ''}
+          </div>
+          <div>
+            <p><strong>Order Date:</strong> ${order.orderDate ? new Date(order.orderDate).toLocaleDateString('en-IN') : '-'}</p>
+            <p><strong>Expected Return:</strong> ${order.expectedReturnDate ? new Date(order.expectedReturnDate).toLocaleDateString('en-IN') : '-'}</p>
+            <p><strong>Status:</strong> ${order.status}</p>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 30px; text-align: left;">#</th>
+              <th style="text-align: left;">Item</th>
+              <th style="text-align: center; width: 60px;">Booked</th>
+              <th style="text-align: center; width: 80px;">Dispatched</th>
+              <th style="text-align: center; width: 80px;">Pending</th>
+              <th style="text-align: center; width: 80px;">Returned</th>
+              <th style="text-align: center; width: 90px;">Outstanding</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${order.items.map((item, i) => `
+              <tr>
+                <td>${i + 1}</td>
+                <td style="font-weight: bold;">${item.itemNameGujarati || item.itemNameEnglish}</td>
+                <td style="text-align: center;">${item.bookedQty}</td>
+                <td style="text-align: center; color: #555;">${item.dispatchedQty || 0}</td>
+                <td style="text-align: center; ${((item.bookedQty - (item.dispatchedQty || 0)) > 0) ? 'font-weight: bold;' : ''}">${item.bookedQty - (item.dispatchedQty || 0)}</td>
+                <td style="text-align: center; color: #555;">${item.returnedQty || 0}</td>
+                <td style="text-align: center; border-right: none; ${((item.outstandingQty || 0) > 0) ? 'font-weight: bold; color: #dc2626;' : ''}">${item.outstandingQty || 0}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <div class="signature-section">
+          <div class="signature-box">
+            <div class="signature-line">Customer Signature</div>
+          </div>
+          <div class="signature-box">
+            <div class="signature-line">Authorized Signature</div>
+          </div>
+        </div>
+
+        <script>window.print();</script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
   }
 
   onSort(column: string) {

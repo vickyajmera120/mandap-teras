@@ -593,7 +593,7 @@ export class BillHistoryComponent implements OnInit {
       <body>
         <div class="header">
           <h1>ફાગણ સુદ ૧૩</h1>
-          <p>Mandap Contractor</p>
+          <p>Mandap Contractor - Bill</p>
         </div>
         <div class="info">
           <div>
