@@ -205,8 +205,9 @@ import { NgSelectModule } from '@ng-select/ng-select';
             @if (isEditMode() && newOrder.status === 'BOOKED') {
               <button
                 (click)="cancelBooking()"
-                [disabled]="isSaving()"
-                class="px-6 py-3 rounded-xl bg-orange-500/10 text-orange-500 font-semibold hover:bg-orange-500/20 transition-all border border-orange-500/20"
+                [disabled]="isSaving() || !!newOrder.billId || hasDispatchedItems()"
+                class="px-6 py-3 rounded-xl bg-orange-500/10 text-orange-500 font-semibold hover:bg-orange-500/20 transition-all border border-orange-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                [title]="!!newOrder.billId ? 'Cannot cancel because bill is generated' : (hasDispatchedItems() ? 'Cannot cancel because items are dispatched' : '')"
               >
                 <i class="fas fa-ban mr-2"></i>Cancel Booking
               </button>
@@ -291,7 +292,9 @@ export class NewBookingComponent implements OnInit {
                   inventoryItemId: item.inventoryItemId,
                   itemNameGujarati: item.itemNameGujarati,
                   itemNameEnglish: item.itemNameEnglish,
-                  bookedQty: item.bookedQty
+                  bookedQty: item.bookedQty,
+                  dispatchedQty: item.dispatchedQty,
+                  returnedQty: item.returnedQty
                 })) || []
               };
               this.isLoading.set(false);
@@ -404,6 +407,10 @@ export class NewBookingComponent implements OnInit {
         this.isSaving.set(false);
       }
     });
+  }
+
+  hasDispatchedItems(): boolean {
+    return this.newOrder.items?.some(item => (item.dispatchedQty || 0) > 0) ?? false;
   }
 
   goBack(): void {

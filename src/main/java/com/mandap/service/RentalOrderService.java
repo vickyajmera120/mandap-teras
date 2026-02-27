@@ -575,6 +575,18 @@ public class RentalOrderService {
                 RentalOrder order = rentalOrderRepository.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Rental order not found: " + id));
 
+                // Check if bill is generated
+                if (order.getBill() != null) {
+                        throw new RuntimeException("Cannot cancel booking because a bill has already been generated.");
+                }
+
+                // Check if any items have been dispatched
+                boolean anyDispatched = order.getItems().stream()
+                                .anyMatch(item -> item.getDispatchedQty() != null && item.getDispatchedQty() > 0);
+                if (anyDispatched) {
+                        throw new RuntimeException("Cannot cancel booking because items have already been dispatched.");
+                }
+
                 if (order.getStatus() != RentalOrder.RentalOrderStatus.BOOKED) {
                         throw new RuntimeException(
                                         "Cannot cancel order with status: " + order.getStatus()
