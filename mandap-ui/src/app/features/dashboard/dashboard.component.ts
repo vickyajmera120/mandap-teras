@@ -1,8 +1,8 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { CustomerService, BillService } from '@core/services';
-import { Bill } from '@core/models';
+import { CustomerService, BillService, RentalOrderService } from '@core/services';
+import { Bill, RentalOrder } from '@core/models';
 import { CurrencyInrPipe, DateFormatPipe, StatusBadgeComponent, LoadingSpinnerComponent } from '@shared';
 import { NgxEchartsDirective } from 'ngx-echarts';
 import { EChartsOption } from 'echarts';
@@ -79,7 +79,13 @@ interface DashboardStats {
         </div>
 
         <!-- Charts Row -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Fulfillment Pulse Chart -->
+          <div class="bg-[var(--color-bg-card)] backdrop-blur-xl rounded-2xl border border-[var(--color-border)] p-6">
+              <h3 class="text-lg font-semibold text-[var(--color-text-primary)] mb-4">Fulfillment Pulse</h3>
+              <div echarts [options]="fulfillmentOptions()" class="h-80 w-full"></div>
+          </div>
+
           <!-- Bill Status Chart -->
           <div class="bg-[var(--color-bg-card)] backdrop-blur-xl rounded-2xl border border-[var(--color-border)] p-6">
               <h3 class="text-lg font-semibold text-[var(--color-text-primary)] mb-4">Bill Status Distribution</h3>
@@ -148,6 +154,7 @@ interface DashboardStats {
 export class DashboardComponent implements OnInit {
   private customerService = inject(CustomerService);
   private billService = inject(BillService);
+  private rentalOrderService = inject(RentalOrderService);
 
   isLoading = signal(true);
   stats = signal<DashboardStats>({
@@ -159,6 +166,7 @@ export class DashboardComponent implements OnInit {
 
   billStatusOptions = signal<EChartsOption>({});
   financialOptions = signal<EChartsOption>({});
+  fulfillmentOptions = signal<EChartsOption>({});
 
   ngOnInit(): void {
     this.loadDashboardData();
@@ -172,8 +180,10 @@ export class DashboardComponent implements OnInit {
       }
     });
 
-    // Load bills
+    // Load bills & orders
     const currentYear = new Date().getFullYear();
+
+    // Using forkJoin would be cleaner but following existing pattern for consistency
     this.billService.getAll().subscribe({
       next: (bills) => {
         const yearBills = bills.filter(b => new Date(b.billDate).getFullYear() === currentYear);
@@ -185,22 +195,25 @@ export class DashboardComponent implements OnInit {
           totalRevenue
         }));
 
-        this.generateCharts(bills);
+        this.generateBillCharts(bills);
 
         // Get 5 most recent bills
         this.recentBills.set(
           bills.sort((a, b) => new Date(b.billDate).getTime() - new Date(a.billDate).getTime()).slice(0, 5)
         );
+      }
+    });
 
+    this.rentalOrderService.getAll().subscribe({
+      next: (orders) => {
+        this.generateFulfillmentCharts(orders);
         this.isLoading.set(false);
       },
-      error: () => {
-        this.isLoading.set(false);
-      }
+      error: () => this.isLoading.set(false)
     });
   }
 
-  private generateCharts(bills: Bill[]): void {
+  private generateBillCharts(bills: Bill[]): void {
     // 1. Bill Status Counts
     const paid = bills.filter(b => b.paymentStatus === 'PAID').length;
     const partial = bills.filter(b => b.paymentStatus === 'PARTIAL').length;
@@ -295,6 +308,53 @@ export class DashboardComponent implements OnInit {
             color: '#fff',
             formatter: '{b}: {c}'
           }
+        }
+      ]
+    });
+  }
+
+  private generateFulfillmentCharts(orders: RentalOrder[]): void {
+    const active = orders.filter(o => o.status !== 'CANCELLED' && o.status !== 'COMPLETED');
+
+    // Categorize
+    const pendingDispatch = active.filter(o =>
+      o.items?.some(i => (i.bookedQty || 0) > (i.dispatchedQty || 0))
+    ).length;
+
+    const pendingReturn = active.filter(o =>
+      o.items?.some(i => (i.dispatchedQty || 0) > (i.returnedQty || 0))
+    ).length;
+
+    const completed = orders.filter(o => o.status === 'COMPLETED' || o.status === 'RETURNED').length;
+    const bookedOnly = orders.filter(o => o.status === 'BOOKED' && !o.items?.some(i => (i.dispatchedQty || 0) > 0)).length;
+
+    this.fulfillmentOptions.set({
+      tooltip: { trigger: 'item' },
+      legend: {
+        bottom: '0%',
+        left: 'center',
+        textStyle: { color: '#ffffff', fontSize: 10 },
+        itemWidth: 10,
+        itemHeight: 10
+      },
+      series: [
+        {
+          name: 'Fulfillment',
+          type: 'pie',
+          radius: ['40%', '70%'],
+          avoidLabelOverlap: false,
+          itemStyle: {
+            borderRadius: 8,
+            borderColor: '#1e293b',
+            borderWidth: 2
+          },
+          label: { show: false },
+          data: [
+            { value: pendingDispatch, name: 'To Dispatch', itemStyle: { color: '#f97316' } }, // orange-500
+            { value: pendingReturn, name: 'Pending Return', itemStyle: { color: '#22c55e' } }, // green-500
+            { value: bookedOnly, name: 'Upcoming', itemStyle: { color: '#3b82f6' } }, // blue-500
+            { value: completed, name: 'Completed', itemStyle: { color: '#94a3b8' } } // slate-400
+          ]
         }
       ]
     });
