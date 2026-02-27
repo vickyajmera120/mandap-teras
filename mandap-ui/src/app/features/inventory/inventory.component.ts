@@ -70,9 +70,9 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
         <app-loading-spinner></app-loading-spinner>
       } @else {
         <div class="bg-[var(--color-bg-card)] backdrop-blur-xl rounded-2xl border border-[var(--color-border)] overflow-hidden transition-colors">
-            <div class="overflow-x-auto">
+            <div class="overflow-auto max-h-[calc(100vh-280px)]">
               <table class="w-full">
-                <thead class="sticky top-0 z-10 bg-[var(--color-bg-card)] border-b border-[var(--color-border)] shadow-sm">
+                <thead class="sticky top-0 z-20 bg-[var(--color-bg-hover)] border-b border-[var(--color-border)] shadow-md">
                   <tr>
                     <th class="w-10 py-3"></th>
                     <th class="text-left py-3 px-4 text-[var(--color-text-secondary)] font-medium text-sm">Item (Gujarati)</th>
@@ -217,35 +217,35 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
             <app-loading-spinner></app-loading-spinner>
           </div>
         } @else {
-          <div class="overflow-hidden border border-[var(--color-border)] rounded-xl">
-             <table class="w-full text-sm">
-                 <thead class="sticky top-0 z-10 bg-[var(--color-bg-card)] border-b border-[var(--color-border)] shadow-sm">
+          <div class="border border-[var(--color-border)] rounded-xl overflow-x-auto">
+             <table class="w-full text-sm border-collapse">
+                 <thead>
                      <tr>
-                         <th (click)="onUsageSort('customerName')" class="py-3 px-4 text-left text-[var(--color-text-secondary)] font-medium cursor-pointer group select-none">
+                         <th (click)="onUsageSort('customerName')" class="py-3 px-4 text-left text-[var(--color-text-secondary)] font-medium cursor-pointer group select-none sticky top-0 z-20 bg-[var(--color-bg-hover)] border-b border-[var(--color-border)]">
                             Customer
                             <i class="fas ml-1" [class]="usageSortConfig().column === 'customerName' ? (usageSortConfig().direction === 'asc' ? 'fa-sort-up text-indigo-400' : 'fa-sort-down text-indigo-400') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
                           </th>
-                          <th (click)="onUsageSort('orderNumber')" class="py-3 px-4 text-left text-[var(--color-text-secondary)] font-medium cursor-pointer group select-none">
+                          <th (click)="onUsageSort('orderNumber')" class="py-3 px-4 text-left text-[var(--color-text-secondary)] font-medium cursor-pointer group select-none sticky top-0 z-20 bg-[var(--color-bg-hover)] border-b border-[var(--color-border)]">
                             Order #
                             <i class="fas ml-1" [class]="usageSortConfig().column === 'orderNumber' ? (usageSortConfig().direction === 'asc' ? 'fa-sort-up text-indigo-400' : 'fa-sort-down text-indigo-400') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
                           </th>
-                          <th (click)="onUsageSort('bookedQty')" class="py-3 px-4 text-center text-[var(--color-text-secondary)] font-medium cursor-pointer group select-none">
+                          <th (click)="onUsageSort('bookedQty')" class="py-3 px-4 text-center text-[var(--color-text-secondary)] font-medium cursor-pointer group select-none sticky top-0 z-20 bg-[var(--color-bg-hover)] border-b border-[var(--color-border)]">
                             Booked
                             <i class="fas ml-1" [class]="usageSortConfig().column === 'bookedQty' ? (usageSortConfig().direction === 'asc' ? 'fa-sort-up text-indigo-400' : 'fa-sort-down text-indigo-400') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
                           </th>
-                          <th (click)="onUsageSort('dispatchedQty')" class="py-3 px-4 text-center text-[var(--color-text-secondary)] font-medium cursor-pointer group select-none">
+                          <th (click)="onUsageSort('dispatchedQty')" class="py-3 px-4 text-center text-[var(--color-text-secondary)] font-medium cursor-pointer group select-none sticky top-0 z-20 bg-[var(--color-bg-hover)] border-b border-[var(--color-border)]">
                             Disp.
                             <i class="fas ml-1" [class]="usageSortConfig().column === 'dispatchedQty' ? (usageSortConfig().direction === 'asc' ? 'fa-sort-up text-indigo-400' : 'fa-sort-down text-indigo-400') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
                           </th>
-                          <th (click)="onUsageSort('returnedQty')" class="py-3 px-4 text-center text-[var(--color-text-secondary)] font-medium cursor-pointer group select-none">
+                          <th (click)="onUsageSort('returnedQty')" class="py-3 px-4 text-center text-[var(--color-text-secondary)] font-medium cursor-pointer group select-none sticky top-0 z-20 bg-[var(--color-bg-hover)] border-b border-[var(--color-border)]">
                             Ret.
                             <i class="fas ml-1" [class]="usageSortConfig().column === 'returnedQty' ? (usageSortConfig().direction === 'asc' ? 'fa-sort-up text-indigo-400' : 'fa-sort-down text-indigo-400') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
                           </th>
-                          <th (click)="onUsageSort('pendingDispatchQty')" class="py-3 px-4 text-center text-orange-400 font-medium cursor-pointer group select-none">
+                          <th (click)="onUsageSort('pendingDispatchQty')" class="py-3 px-4 text-center text-orange-400 font-medium cursor-pointer group select-none sticky top-0 z-20 bg-[var(--color-bg-hover)] border-b border-[var(--color-border)]">
                             Pending Disp.
                             <i class="fas ml-1" [class]="usageSortConfig().column === 'pendingDispatchQty' ? (usageSortConfig().direction === 'asc' ? 'fa-sort-up text-orange-400' : 'fa-sort-down text-orange-400') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
                           </th>
-                          <th (click)="onUsageSort('pendingReturnQty')" class="py-3 px-4 text-center text-red-400 font-medium cursor-pointer group select-none">
+                          <th (click)="onUsageSort('pendingReturnQty')" class="py-3 px-4 text-center text-red-400 font-medium cursor-pointer group select-none sticky top-0 z-20 bg-[var(--color-bg-hover)] border-b border-[var(--color-border)]">
                             Pending Ret.
                             <i class="fas ml-1" [class]="usageSortConfig().column === 'pendingReturnQty' ? (usageSortConfig().direction === 'asc' ? 'fa-sort-up text-red-400' : 'fa-sort-down text-red-400') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
                           </th>
