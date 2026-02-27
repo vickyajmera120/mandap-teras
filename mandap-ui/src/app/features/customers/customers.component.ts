@@ -27,6 +27,37 @@ import { NgSelectModule } from '@ng-select/ng-select';
           <i class="fas fa-plus mr-2"></i>Add Customer
         </button>
       </div>
+
+      <!-- Billing Status Filter -->
+      <div class="flex gap-2 p-1 bg-[var(--color-bg-input)] rounded-xl w-fit border border-[var(--color-border)] mb-6">
+        <button 
+          (click)="billingFilter.set('ALL')"
+          class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+          [ngClass]="billingFilter() === 'ALL' ? 'bg-teal-600 text-white shadow-lg shadow-teal-500/20' : 'text-[var(--color-text-secondary)] hover:text-white'"
+        >
+          All Customers
+        </button>
+        <button 
+          (click)="billingFilter.set('UNBILLED')"
+          class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+          [ngClass]="billingFilter() === 'UNBILLED' ? 'bg-amber-600 text-white shadow-lg shadow-amber-500/20' : 'text-[var(--color-text-secondary)] hover:text-white'"
+        >
+          Unbilled
+          @if (unbilledCount() > 0) {
+            <span class="ml-1.5 px-1.5 py-0.5 bg-white/20 rounded text-[10px]">{{ unbilledCount() }}</span>
+          }
+        </button>
+        <button 
+          (click)="billingFilter.set('BILLED')"
+          class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+          [ngClass]="billingFilter() === 'BILLED' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'text-[var(--color-text-secondary)] hover:text-white'"
+        >
+          Billed
+          @if (billedCount() > 0) {
+            <span class="ml-1.5 px-1.5 py-0.5 bg-white/20 rounded text-[10px]">{{ billedCount() }}</span>
+          }
+        </button>
+      </div>
       
       @if (isLoading()) {
         <app-loading-spinner></app-loading-spinner>
@@ -75,7 +106,14 @@ import { NgSelectModule } from '@ng-select/ng-select';
               <tbody>
                 @for (customer of filteredCustomers(); track customer.id) {
                   <tr class="border-t border-[var(--color-border)] hover:bg-[var(--color-bg-hover)] transition-colors">
-                    <td class="py-4 px-6 text-[var(--color-text-primary)] font-medium">{{ customer.name }}</td>
+                    <td class="py-4 px-6">
+                      <div class="flex items-center gap-2">
+                        <span class="text-[var(--color-text-primary)] font-medium">{{ customer.name }}</span>
+                        @if (customer.hasUnbilledOrders) {
+                          <span class="w-2 h-2 bg-amber-500 rounded-full" title="Has pending unbilled orders"></span>
+                        }
+                      </div>
+                    </td>
                     <td class="py-4 px-6 text-[var(--color-text-secondary)]">{{ customer.mobile }}</td>
                     <td class="py-4 px-6 text-[var(--color-text-muted)]">
                       @if (customer.palNumbers?.length) {
@@ -215,7 +253,16 @@ import { NgSelectModule } from '@ng-select/ng-select';
         </form>
       </app-modal>
     </div>
-  `
+  `,
+  styles: [`
+    .custom-select ::ng-deep .ng-select-container {
+      background-color: var(--color-bg-input);
+      border-color: var(--color-border);
+      color: var(--color-text-primary);
+      border-radius: 0.75rem;
+      padding: 4px;
+    }
+  `]
 })
 export class CustomersComponent implements OnInit {
   @ViewChild('modal') modal!: ModalComponent;
@@ -230,6 +277,10 @@ export class CustomersComponent implements OnInit {
   isSaving = signal(false);
   isEditing = signal(false);
   editingId = signal<number | null>(null);
+  billingFilter = signal<'ALL' | 'BILLED' | 'UNBILLED'>('ALL');
+
+  unbilledCount = computed(() => this.customers().filter(c => c.hasUnbilledOrders).length);
+  billedCount = computed(() => this.customers().filter(c => c.hasBilledOrders).length);
 
   // Search & Sort State
   searchFilters = signal({
@@ -249,8 +300,9 @@ export class CustomersComponent implements OnInit {
     let result = this.customers();
     const filters = this.searchFilters();
     const sort = this.sortConfig();
+    const bFilter = this.billingFilter();
 
-    // 1. Filter
+    // 1. Text Filters
     if (filters.name) result = result.filter(c => c.name.toLowerCase().includes(filters.name.toLowerCase()));
     if (filters.mobile) result = result.filter(c => c.mobile.includes(filters.mobile));
     if (filters.address) result = result.filter(c => c.address?.toLowerCase().includes(filters.address.toLowerCase()));
@@ -260,7 +312,14 @@ export class CustomersComponent implements OnInit {
       result = result.filter(c => c.palNumbers?.some(p => p.toLowerCase().includes(term)));
     }
 
-    // 2. Sort
+    // 2. Billing Filter
+    if (bFilter === 'UNBILLED') {
+      result = result.filter(c => c.hasUnbilledOrders);
+    } else if (bFilter === 'BILLED') {
+      result = result.filter(c => c.hasBilledOrders);
+    }
+
+    // 3. Sort
     return result.sort((a, b) => {
       const direction = sort.direction === 'asc' ? 1 : -1;
       let valA: any = '';
@@ -272,10 +331,8 @@ export class CustomersComponent implements OnInit {
           valB = b.name.toLowerCase();
           break;
         case 'palNumbers':
-          // Sort by first pal number
           valA = a.palNumbers?.[0] || '';
           valB = b.palNumbers?.[0] || '';
-          // If empty, push to bottom? usually empty string is fine
           break;
         default:
           return 0;
@@ -286,31 +343,6 @@ export class CustomersComponent implements OnInit {
       return 0;
     });
   });
-
-  // ... rest of methods like ngOnInit ...
-
-  onSort(column: string) {
-    const current = this.sortConfig();
-    if (current.column === column) {
-      this.sortConfig.set({ column, direction: current.direction === 'asc' ? 'desc' : 'asc' });
-    } else {
-      this.sortConfig.set({ column, direction: 'asc' });
-    }
-  }
-
-  updateFilter(column: string, value: string) {
-    this.searchFilters.update(filters => ({ ...filters, [column]: value }));
-  }
-
-  // Remove old onSearch if it exists or keep blank
-  navigateToRentalOrders(customer: Customer) {
-    this.router.navigate(['/rental-orders'], { queryParams: { customerName: customer.name } });
-  }
-
-  navigateToBillHistory(customer: Customer) {
-    this.router.navigate(['/billing/history'], { queryParams: { customerName: customer.name } });
-  }
-
 
   customerForm: FormGroup;
 
@@ -323,8 +355,6 @@ export class CustomersComponent implements OnInit {
       alternateContact: ['']
     });
   }
-
-  // ... existing constructor ...
 
   ngOnInit(): void {
     this.loadCustomers();
@@ -340,6 +370,27 @@ export class CustomersComponent implements OnInit {
         this.isLoading.set(false);
       }
     });
+  }
+
+  onSort(column: string) {
+    const current = this.sortConfig();
+    if (current.column === column) {
+      this.sortConfig.set({ column, direction: current.direction === 'asc' ? 'desc' : 'asc' });
+    } else {
+      this.sortConfig.set({ column, direction: 'asc' });
+    }
+  }
+
+  updateFilter(column: string, value: string) {
+    this.searchFilters.update(filters => ({ ...filters, [column]: value }));
+  }
+
+  navigateToRentalOrders(customer: Customer) {
+    this.router.navigate(['/rental-orders'], { queryParams: { customerName: customer.name } });
+  }
+
+  navigateToBillHistory(customer: Customer) {
+    this.router.navigate(['/billing/history'], { queryParams: { customerName: customer.name } });
   }
 
   openModal(): void {
@@ -390,4 +441,3 @@ export class CustomersComponent implements OnInit {
     });
   }
 }
-

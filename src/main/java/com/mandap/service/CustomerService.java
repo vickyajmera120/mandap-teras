@@ -3,6 +3,7 @@ package com.mandap.service;
 import com.mandap.dto.CustomerDTO;
 import com.mandap.entity.Customer;
 import com.mandap.repository.CustomerRepository;
+import com.mandap.repository.RentalOrderRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,9 +20,17 @@ public class CustomerService {
     @Autowired
     private CustomerRepository customerRepository;
 
+    @Autowired
+    private RentalOrderRepository rentalOrderRepository;
+
     public List<CustomerDTO> getAllCustomers() {
+        java.util.Set<Long> unbilledCustomerIds = new java.util.HashSet<>(
+                rentalOrderRepository.findCustomerIdsWithUnbilledOrders());
+        java.util.Set<Long> billedCustomerIds = new java.util.HashSet<>(
+                rentalOrderRepository.findCustomerIdsWithBilledOrders());
+
         return customerRepository.findAllActive().stream()
-                .map(this::toDTO)
+                .map(c -> toDTOWithFlags(c, unbilledCustomerIds, billedCustomerIds))
                 .collect(Collectors.toList());
     }
 
@@ -32,8 +41,13 @@ public class CustomerService {
     }
 
     public List<CustomerDTO> searchCustomers(String query) {
+        java.util.Set<Long> unbilledCustomerIds = new java.util.HashSet<>(
+                rentalOrderRepository.findCustomerIdsWithUnbilledOrders());
+        java.util.Set<Long> billedCustomerIds = new java.util.HashSet<>(
+                rentalOrderRepository.findCustomerIdsWithBilledOrders());
+
         return customerRepository.searchByNameOrMobile(query).stream()
-                .map(this::toDTO)
+                .map(c -> toDTOWithFlags(c, unbilledCustomerIds, billedCustomerIds))
                 .collect(Collectors.toList());
     }
 
@@ -84,6 +98,11 @@ public class CustomerService {
     }
 
     private CustomerDTO toDTO(Customer customer) {
+        return toDTOWithFlags(customer, null, null);
+    }
+
+    private CustomerDTO toDTOWithFlags(Customer customer, java.util.Set<Long> unbilledIds,
+            java.util.Set<Long> billedIds) {
         return CustomerDTO.builder()
                 .id(customer.getId())
                 .name(customer.getName())
@@ -94,6 +113,8 @@ public class CustomerService {
                 .address(customer.getAddress())
                 .notes(customer.getNotes())
                 .active(customer.getActive())
+                .hasUnbilledOrders(unbilledIds != null && unbilledIds.contains(customer.getId()))
+                .hasBilledOrders(billedIds != null && billedIds.contains(customer.getId()))
                 .build();
     }
 }

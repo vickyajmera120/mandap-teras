@@ -26,8 +26,36 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
         </button>
       </div>
 
-      <!-- Status Filter Tabs -->
-      <!-- Filters moved to table headers -->
+      <!-- Billing Status Filter -->
+      <div class="flex gap-2 p-1 bg-[var(--color-bg-input)] rounded-xl w-fit border border-[var(--color-border)]">
+        <button 
+          (click)="billingFilter.set('ALL')"
+          class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+          [ngClass]="billingFilter() === 'ALL' ? 'bg-teal-600 text-white shadow-lg shadow-teal-500/20' : 'text-[var(--color-text-secondary)] hover:text-white'"
+        >
+          All Orders
+        </button>
+        <button 
+          (click)="billingFilter.set('UNBILLED')"
+          class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+          [ngClass]="billingFilter() === 'UNBILLED' ? 'bg-amber-600 text-white shadow-lg shadow-amber-500/20' : 'text-[var(--color-text-secondary)] hover:text-white'"
+        >
+          Unbilled
+          @if (unbilledCount() > 0) {
+            <span class="ml-1.5 px-1.5 py-0.5 bg-white/20 rounded text-[10px]">{{ unbilledCount() }}</span>
+          }
+        </button>
+        <button 
+          (click)="billingFilter.set('BILLED')"
+          class="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200"
+          [ngClass]="billingFilter() === 'BILLED' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'text-[var(--color-text-secondary)] hover:text-white'"
+        >
+          Billed
+          @if (billedCount() > 0) {
+            <span class="ml-1.5 px-1.5 py-0.5 bg-white/20 rounded text-[10px]">{{ billedCount() }}</span>
+          }
+        </button>
+      </div>
 
       @if (isLoading()) {
         <app-loading-spinner></app-loading-spinner>
@@ -174,11 +202,11 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                             <i class="fas fa-hand-holding text-xs"></i>
                           </button>
                         }
-                        @if (order.billId) {
+                         @if (order.billId) {
                           <div class="relative">
                             <button 
                               (click)="viewBill(order)"
-                              class="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 transition-colors"
+                              class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 transition-colors"
                               title="View Bill"
                             >
                               <i class="fas fa-file-invoice-dollar text-xs"></i>
@@ -196,7 +224,7 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                             class="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 transition-colors"
                             title="Generate Bill"
                           >
-                            <i class="fas fa-file-invoice-dollar text-xs"></i>
+                            <i class="fas fa-file-medical text-xs"></i>
                           </button>
                         }
                         <button 
@@ -511,6 +539,10 @@ export class RentalOrdersComponent implements OnInit {
   customerFilter = signal('');
   statusFilter = signal<'ALL' | RentalOrderStatus>('ALL');
   palNumberFilter = signal('');
+  billingFilter = signal<'ALL' | 'BILLED' | 'UNBILLED'>('ALL');
+
+  unbilledCount = computed(() => this.orders().filter(o => !o.billId).length);
+  billedCount = computed(() => this.orders().filter(o => !!o.billId).length);
   sortColumn = signal<string | null>(null);
   sortDirection = signal<'asc' | 'desc'>('asc');
 
@@ -544,6 +576,14 @@ export class RentalOrdersComponent implements OnInit {
       result = result.filter(o =>
         o.customerPalNumbers?.some(p => p.toLowerCase().includes(pFilter))
       );
+    }
+
+    // Billing Filter
+    const bFilter = this.billingFilter();
+    if (bFilter === 'BILLED') {
+      result = result.filter(o => !!o.billId);
+    } else if (bFilter === 'UNBILLED') {
+      result = result.filter(o => !o.billId);
     }
 
     // Sorting

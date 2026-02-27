@@ -8,6 +8,8 @@ export interface Customer {
     alternateContact?: string;
     createdAt?: string;
     updatedAt?: string;
+    hasUnbilledOrders?: boolean;
+    hasBilledOrders?: boolean;
 }
 
 export interface CustomerRequest {

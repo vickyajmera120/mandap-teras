@@ -28,4 +28,10 @@ public interface RentalOrderRepository extends JpaRepository<RentalOrder, Long> 
     Optional<RentalOrder> findFirstByOrderNumberStartingWithOrderByIdDesc(String prefix);
 
     Optional<RentalOrder> findByBillId(Long billId);
+
+    @Query("SELECT DISTINCT ro.customer.id FROM RentalOrder ro WHERE ro.bill IS NULL AND ro.status <> 'CANCELLED'")
+    List<Long> findCustomerIdsWithUnbilledOrders();
+
+    @Query("SELECT DISTINCT ro.customer.id FROM RentalOrder ro WHERE ro.bill IS NOT NULL")
+    List<Long> findCustomerIdsWithBilledOrders();
 }

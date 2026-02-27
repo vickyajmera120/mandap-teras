@@ -18,4 +18,6 @@ public class CustomerDTO {
     private String address;
     private String notes;
     private Boolean active;
+    private boolean hasUnbilledOrders;
+    private boolean hasBilledOrders;
 }
