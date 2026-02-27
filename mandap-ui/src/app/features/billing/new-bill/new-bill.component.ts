@@ -12,6 +12,7 @@ interface ItemEntry {
   quantity: number;
   rate: number;
   total: number;
+  orderQty?: number; // Quantity from linked rental order
 }
 
 interface CustomItemEntry {
@@ -155,20 +156,29 @@ interface CustomItemEntry {
                 @for (entry of leftItems(); track entry.item.id) {
                   <div class="flex items-center gap-3 rounded-lg p-3 border transition-colors duration-200"
                        [ngClass]="{
-                         'bg-[var(--color-bg-input)] border-[var(--color-border)]': entry.quantity === 0,
-                         'bg-teal-900/20 border-teal-500/50': entry.quantity > 0
+                         'bg-[var(--color-bg-input)] border-[var(--color-border)]': entry.quantity === 0 && !(entry.orderQty != null && entry.orderQty !== entry.quantity),
+                         'bg-teal-900/20 border-teal-500/50': entry.quantity > 0 && !(entry.orderQty != null && entry.orderQty !== entry.quantity),
+                         'bg-amber-900/20 border-amber-500/50': entry.orderQty != null && entry.orderQty !== entry.quantity
                        }">
                     <span class="flex-1 text-[var(--color-text-primary)] font-medium"
-                          [class.text-teal-300]="entry.quantity > 0">{{ entry.item.nameGujarati }}</span>
-                    <input 
-                      type="number"
-                      [value]="entry.quantity"
-                      (input)="updateQuantity(entry, $event)"
-                      min="0"
-                      class="w-20 px-3 py-2 bg-[var(--color-bg-hover)]/50 border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] text-center focus:outline-none focus:border-teal-500 transition-colors"
-                      [class.border-teal-500]="entry.quantity > 0"
-                      placeholder="Qty"
-                    >
+                          [class.text-teal-300]="entry.quantity > 0 && !(entry.orderQty != null && entry.orderQty !== entry.quantity)"
+                          [class.text-amber-300]="entry.orderQty != null && entry.orderQty !== entry.quantity">{{ entry.item.nameGujarati }}</span>
+                    <div class="relative">
+                      <input 
+                        type="number"
+                        [value]="entry.quantity"
+                        (input)="updateQuantity(entry, $event)"
+                        min="0"
+                        class="w-20 px-3 py-2 bg-[var(--color-bg-hover)]/50 border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] text-center focus:outline-none focus:border-teal-500 transition-colors"
+                        [class.border-teal-500]="entry.quantity > 0 && !(entry.orderQty != null && entry.orderQty !== entry.quantity)"
+                        [class.border-amber-500]="entry.orderQty != null && entry.orderQty !== entry.quantity"
+                        placeholder="Qty"
+                      >
+                      @if (entry.orderQty != null && entry.orderQty !== entry.quantity) {
+                        <span class="absolute -top-2 -right-2 px-1.5 py-0.5 bg-amber-500 text-black text-[10px] font-bold rounded-full leading-none" 
+                              [title]="'Order qty: ' + entry.orderQty">{{ entry.orderQty }}</span>
+                      }
+                    </div>
                     <input 
                       type="number"
                       [value]="entry.rate"
@@ -195,20 +205,29 @@ interface CustomItemEntry {
                 @for (entry of rightItems(); track entry.item.id) {
                   <div class="flex items-center gap-3 rounded-lg p-3 border transition-colors duration-200"
                        [ngClass]="{
-                         'bg-[var(--color-bg-input)] border-[var(--color-border)]': entry.quantity === 0,
-                         'bg-teal-900/20 border-teal-500/50': entry.quantity > 0
+                         'bg-[var(--color-bg-input)] border-[var(--color-border)]': entry.quantity === 0 && !(entry.orderQty != null && entry.orderQty !== entry.quantity),
+                         'bg-teal-900/20 border-teal-500/50': entry.quantity > 0 && !(entry.orderQty != null && entry.orderQty !== entry.quantity),
+                         'bg-amber-900/20 border-amber-500/50': entry.orderQty != null && entry.orderQty !== entry.quantity
                        }">
                     <span class="flex-1 text-[var(--color-text-primary)] font-medium"
-                          [class.text-teal-300]="entry.quantity > 0">{{ entry.item.nameGujarati }}</span>
-                    <input 
-                      type="number"
-                      [value]="entry.quantity"
-                      (input)="updateQuantity(entry, $event)"
-                      min="0"
-                      class="w-20 px-3 py-2 bg-[var(--color-bg-hover)]/50 border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] text-center focus:outline-none focus:border-teal-500 transition-colors"
-                      [class.border-teal-500]="entry.quantity > 0"
-                      placeholder="Qty"
-                    >
+                          [class.text-teal-300]="entry.quantity > 0 && !(entry.orderQty != null && entry.orderQty !== entry.quantity)"
+                          [class.text-amber-300]="entry.orderQty != null && entry.orderQty !== entry.quantity">{{ entry.item.nameGujarati }}</span>
+                    <div class="relative">
+                      <input 
+                        type="number"
+                        [value]="entry.quantity"
+                        (input)="updateQuantity(entry, $event)"
+                        min="0"
+                        class="w-20 px-3 py-2 bg-[var(--color-bg-hover)]/50 border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] text-center focus:outline-none focus:border-teal-500 transition-colors"
+                        [class.border-teal-500]="entry.quantity > 0 && !(entry.orderQty != null && entry.orderQty !== entry.quantity)"
+                        [class.border-amber-500]="entry.orderQty != null && entry.orderQty !== entry.quantity"
+                        placeholder="Qty"
+                      >
+                      @if (entry.orderQty != null && entry.orderQty !== entry.quantity) {
+                        <span class="absolute -top-2 -right-2 px-1.5 py-0.5 bg-amber-500 text-black text-[10px] font-bold rounded-full leading-none" 
+                              [title]="'Order qty: ' + entry.orderQty">{{ entry.orderQty }}</span>
+                      }
+                    </div>
                     <input 
                       type="number"
                       [value]="entry.rate"
@@ -538,6 +557,7 @@ export class NewBillComponent implements OnInit {
 
   billId = signal<number | null>(null);
   existingBill = signal<Bill | null>(null);
+  orderItemQuantities: { [itemId: number]: number } = {};
 
   customers = signal<Customer[]>([]);
   inventoryItems = signal<InventoryItem[]>([]);
@@ -676,6 +696,7 @@ export class NewBillComponent implements OnInit {
 
   private patchForm(bill: Bill): void {
     this.selectedCustomerId = bill.customerId;
+    this.orderItemQuantities = bill.orderItemQuantities || {};
     // Format date properly if needed (assuming YYYY-MM-DD from string or array)
     if (Array.isArray(bill.billDate)) {
       const d = bill.billDate;
@@ -745,13 +766,19 @@ export class NewBillComponent implements OnInit {
     this.lostItems.set(lostItemList);
     this.customItems.set(customItemList);
 
+    const orderQtyMap = this.orderItemQuantities;
+    const hasLinkedOrder = Object.keys(orderQtyMap).length > 0;
+
     const mapToEntry = (item: InventoryItem) => {
       const existing = itemMap.get(item.id);
+      const oQty = orderQtyMap[item.id];
       return {
         item,
         quantity: existing ? existing.quantity : 0,
         rate: existing ? existing.rate : item.defaultRate,
-        total: existing ? (existing.quantity * existing.rate) : 0
+        total: existing ? (existing.quantity * existing.rate) : 0,
+        // If linked order exists: show order qty (0 if item not in order). If no linked order: undefined (no discrepancy).
+        orderQty: hasLinkedOrder ? (oQty !== undefined ? oQty : 0) : undefined
       };
     };
 

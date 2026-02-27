@@ -33,4 +33,5 @@ public class BillDTO {
     private String depositChequeNumber;
     private List<BillItemDTO> items;
     private List<PaymentDTO> payments;
+    private java.util.Map<Long, Integer> orderItemQuantities; // itemId -> bookedQty from linked rental order
 }

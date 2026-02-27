@@ -22,4 +22,5 @@ public class BillItemDTO {
     private Boolean isLostItem;
     private String customItemName;
     private Boolean isCustomItem;
+    private Integer orderQty; // Quantity from linked rental order (null if no order linked)
 }

@@ -406,6 +406,19 @@ public class BillService {
         }
 
         private BillDTO toDTO(Bill bill) {
+                // Build a map of itemId -> bookedQty from the linked rental order (if any)
+                java.util.Map<Long, Integer> orderQtyMap = new java.util.HashMap<>();
+                Long linkedRentalOrderId = null;
+                RentalOrder linkedOrder = rentalOrderRepository.findByBillId(bill.getId()).orElse(null);
+                if (linkedOrder != null) {
+                        linkedRentalOrderId = linkedOrder.getId();
+                        for (RentalOrderItem roi : linkedOrder.getItems()) {
+                                orderQtyMap.put(roi.getInventoryItem().getId(), roi.getBookedQty());
+                        }
+                }
+
+                final Long finalRentalOrderId = linkedRentalOrderId;
+
                 List<BillItemDTO> itemDTOs = bill.getItems().stream()
                                 .map(item -> {
                                         BillItemDTO.BillItemDTOBuilder builder = BillItemDTO.builder()
@@ -421,6 +434,11 @@ public class BillService {
                                                 builder.itemId(item.getItem().getId())
                                                                 .itemNameGujarati(item.getItem().getNameGujarati())
                                                                 .itemNameEnglish(item.getItem().getNameEnglish());
+                                                // Set order quantity if this item exists in the linked rental order
+                                                Integer oQty = orderQtyMap.get(item.getItem().getId());
+                                                if (oQty != null) {
+                                                        builder.orderQty(oQty);
+                                                }
                                         } else if (item.getCustomItemName() != null) {
                                                 builder.itemNameGujarati(item.getCustomItemName())
                                                                 .itemNameEnglish(item.getCustomItemName());
@@ -447,6 +465,8 @@ public class BillService {
                                 .netPayable(bill.getNetPayable())
                                 .billDate(bill.getBillDate())
                                 .remarks(bill.getRemarks())
+                                .rentalOrderId(finalRentalOrderId)
+                                .orderItemQuantities(orderQtyMap.isEmpty() ? null : orderQtyMap)
                                 .items(itemDTOs)
                                 .payments(bill.getPayments().stream().map(this::toPaymentDTO)
                                                 .collect(Collectors.toList()))

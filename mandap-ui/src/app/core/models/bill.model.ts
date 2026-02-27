@@ -14,6 +14,7 @@ export interface BillItem {
     isLostItem?: boolean;
     customItemName?: string;
     isCustomItem?: boolean;
+    orderQty?: number;
 }
 
 export interface Bill {
@@ -35,6 +36,7 @@ export interface Bill {
     payments?: Payment[];
     createdAt?: string;
     updatedAt?: string;
+    orderItemQuantities?: { [itemId: number]: number }; // itemId -> order bookedQty
 }
 
 export interface BillRequest {
