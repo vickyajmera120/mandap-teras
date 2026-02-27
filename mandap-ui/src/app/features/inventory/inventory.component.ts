@@ -82,10 +82,30 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
                     <th class="text-center py-3 px-4 text-purple-400 font-medium text-sm">Booked (Total)</th>
                     <th class="text-center py-3 px-4 text-orange-400 font-medium text-sm">Dispatched (Total)</th>
                     <th class="text-center py-3 px-4 text-green-400 font-medium text-sm">Returned (Total)</th>
-                    <th class="text-center py-3 px-4 text-orange-400 font-medium text-sm" title="Booked but not yet Dispatched">Pending Dispatch (Total)</th>
-                    <th class="text-center py-3 px-4 text-red-400 font-medium text-sm" title="Dispatched but not yet Returned">Pending Return (Total)</th>
-                    <th class="text-center py-3 px-4 text-slate-300 font-medium text-sm">Available in stock now</th>
-                    <th class="text-center py-3 px-4 text-teal-400 font-medium text-sm" title="Available for New Bookings">Booking Available</th>
+                    <th class="text-center py-3 px-4 text-orange-400 font-medium text-sm">
+                      <div class="flex items-center justify-center gap-1">
+                        Pending Dispatch (Total)
+                        <i class="fas fa-info-circle text-[10px] opacity-60" title="Booked (Total) - Dispatched (Total)"></i>
+                      </div>
+                    </th>
+                    <th class="text-center py-3 px-4 text-red-400 font-medium text-sm">
+                      <div class="flex items-center justify-center gap-1">
+                        Pending Return (Total)
+                        <i class="fas fa-info-circle text-[10px] opacity-60" title="Dispatched (Total) - Returned (Total)"></i>
+                      </div>
+                    </th>
+                    <th class="text-center py-3 px-4 text-slate-300 font-medium text-sm">
+                      <div class="flex items-center justify-center gap-1">
+                        Available in stock now
+                        <i class="fas fa-info-circle text-[10px] opacity-60" title="Stock (Total) - Pending Return (Total)"></i>
+                      </div>
+                    </th>
+                    <th class="text-center py-3 px-4 text-teal-400 font-medium text-sm">
+                      <div class="flex items-center justify-center gap-1">
+                        Booking Available
+                        <i class="fas fa-info-circle text-[10px] opacity-60" title="Available in stock now - Pending Dispatch (Total)"></i>
+                      </div>
+                    </th>
                     <th class="text-center py-3 px-4 text-slate-300 font-medium text-sm">Actions</th>
                   </tr>
                 </thead>
