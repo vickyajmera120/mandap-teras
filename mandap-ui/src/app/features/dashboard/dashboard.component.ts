@@ -224,9 +224,11 @@ export class DashboardComponent implements OnInit {
         trigger: 'item'
       },
       legend: {
-        top: '5%',
+        bottom: '0%',
         left: 'center',
-        textStyle: { color: '#ffffff' }
+        textStyle: { color: '#ffffff', fontSize: 10 },
+        itemWidth: 10,
+        itemHeight: 10
       },
       series: [
         {
@@ -284,9 +286,11 @@ export class DashboardComponent implements OnInit {
         }
       },
       legend: {
-        top: '5%',
+        bottom: '0%',
         left: 'center',
-        textStyle: { color: '#ffffff' }
+        textStyle: { color: '#ffffff', fontSize: 10 },
+        itemWidth: 10,
+        itemHeight: 10
       },
       series: [
         {
@@ -348,7 +352,13 @@ export class DashboardComponent implements OnInit {
             borderColor: '#1e293b',
             borderWidth: 2
           },
-          label: { show: false },
+          label: {
+            show: true,
+            position: 'inside',
+            formatter: '{c}',
+            color: '#fff',
+            fontWeight: 'bold'
+          },
           data: [
             { value: pendingDispatch, name: 'To Dispatch', itemStyle: { color: '#f97316' } }, // orange-500
             { value: pendingReturn, name: 'Pending Return', itemStyle: { color: '#22c55e' } }, // green-500
