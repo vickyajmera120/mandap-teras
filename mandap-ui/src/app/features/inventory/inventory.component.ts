@@ -82,7 +82,8 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
                     <th class="text-center py-3 px-4 text-purple-400 font-medium text-sm">Booked (Total)</th>
                     <th class="text-center py-3 px-4 text-orange-400 font-medium text-sm">Dispatched (Total)</th>
                     <th class="text-center py-3 px-4 text-green-400 font-medium text-sm">Returned (Total)</th>
-                    <th class="text-center py-3 px-4 text-red-400 font-medium text-sm" title="Dispatched but not yet Returned">Pending Return</th>
+                    <th class="text-center py-3 px-4 text-orange-400 font-medium text-sm" title="Booked but not yet Dispatched">Pending Dispatch (Total)</th>
+                    <th class="text-center py-3 px-4 text-red-400 font-medium text-sm" title="Dispatched but not yet Returned">Pending Return (Total)</th>
                     <th class="text-center py-3 px-4 text-slate-300 font-medium text-sm">Available in stock now</th>
                     <th class="text-center py-3 px-4 text-teal-400 font-medium text-sm" title="Available for New Bookings">Booking Available</th>
                     <th class="text-center py-3 px-4 text-slate-300 font-medium text-sm">Actions</th>
@@ -106,6 +107,7 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
                       <td class="py-3 px-4 text-center text-purple-400 font-bold">{{ item.bookedQty || 0 }}</td>
                       <td class="py-3 px-4 text-center text-orange-500 font-bold">{{ item.dispatchedQty || 0 }}</td>
                       <td class="py-3 px-4 text-center text-green-500 font-bold">{{ item.returnedQty || 0 }}</td>
+                      <td class="py-3 px-4 text-center text-orange-500 font-bold">{{ item.pendingDispatchQty || 0 }}</td>
                       <td class="py-3 px-4 text-center text-red-500 font-bold">{{ item.pendingReturnQty || 0 }}</td>
                       <td class="py-3 px-4 text-center font-semibold" [class]="item.availableStock > 0 ? 'text-green-400' : 'text-red-400'">{{ item.availableStock }}</td>
                       <td class="py-3 px-4 text-center font-bold text-teal-400">
