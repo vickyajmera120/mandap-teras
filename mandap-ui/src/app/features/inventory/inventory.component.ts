@@ -83,27 +83,51 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
                     <th class="text-center py-3 px-4 text-orange-400 font-medium text-sm">Dispatched (Total)</th>
                     <th class="text-center py-3 px-4 text-green-400 font-medium text-sm">Returned (Total)</th>
                     <th class="text-center py-3 px-4 text-orange-400 font-medium text-sm">
-                      <div class="flex items-center justify-center gap-1">
+                      <div class="flex items-center justify-center gap-1 group relative">
                         Pending Dispatch (Total)
-                        <i class="fas fa-info-circle text-[10px] opacity-60" title="Booked (Total) - Dispatched (Total)"></i>
+                        <i class="fas fa-info-circle text-[10px] opacity-60"></i>
+                        <!-- Fancy Tooltip -->
+                        <div class="invisible group-hover:visible absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-2 bg-slate-800/95 backdrop-blur-md border border-white/10 rounded-lg shadow-2xl z-50 pointer-events-none transition-all duration-200 opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100">
+                           <div class="text-[10px] text-slate-400 mb-1 font-semibold uppercase tracking-wider">Calculation</div>
+                           <div class="text-xs text-white leading-relaxed">Booked (Total) - Dispatched (Total)</div>
+                           <div class="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-800/95"></div>
+                        </div>
                       </div>
                     </th>
                     <th class="text-center py-3 px-4 text-red-400 font-medium text-sm">
-                      <div class="flex items-center justify-center gap-1">
+                      <div class="flex items-center justify-center gap-1 group relative">
                         Pending Return (Total)
-                        <i class="fas fa-info-circle text-[10px] opacity-60" title="Dispatched (Total) - Returned (Total)"></i>
+                        <i class="fas fa-info-circle text-[10px] opacity-60"></i>
+                        <!-- Fancy Tooltip -->
+                        <div class="invisible group-hover:visible absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-48 p-2 bg-slate-800/95 backdrop-blur-md border border-white/10 rounded-lg shadow-2xl z-50 pointer-events-none transition-all duration-200 opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100">
+                           <div class="text-[10px] text-slate-400 mb-1 font-semibold uppercase tracking-wider">Calculation</div>
+                           <div class="text-xs text-white leading-relaxed">Dispatched (Total) - Returned (Total)</div>
+                           <div class="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-800/95"></div>
+                        </div>
                       </div>
                     </th>
                     <th class="text-center py-3 px-4 text-slate-300 font-medium text-sm">
-                      <div class="flex items-center justify-center gap-1">
+                      <div class="flex items-center justify-center gap-1 group relative">
                         Available in stock now
-                        <i class="fas fa-info-circle text-[10px] opacity-60" title="Stock (Total) - Pending Return (Total)"></i>
+                        <i class="fas fa-info-circle text-[10px] opacity-60"></i>
+                         <!-- Fancy Tooltip -->
+                        <div class="invisible group-hover:visible absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-52 p-2 bg-slate-800/95 backdrop-blur-md border border-white/10 rounded-lg shadow-2xl z-50 pointer-events-none transition-all duration-200 opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100">
+                           <div class="text-[10px] text-slate-400 mb-1 font-semibold uppercase tracking-wider">Calculation</div>
+                           <div class="text-xs text-white leading-relaxed">Stock (Total) - Pending Return (Total)</div>
+                           <div class="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-800/95"></div>
+                        </div>
                       </div>
                     </th>
                     <th class="text-center py-3 px-4 text-teal-400 font-medium text-sm">
-                      <div class="flex items-center justify-center gap-1">
+                      <div class="flex items-center justify-center gap-1 group relative">
                         Booking Available
-                        <i class="fas fa-info-circle text-[10px] opacity-60" title="Available in stock now - Pending Dispatch (Total)"></i>
+                        <i class="fas fa-info-circle text-[10px] opacity-60"></i>
+                         <!-- Fancy Tooltip -->
+                        <div class="invisible group-hover:visible absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-56 p-2 bg-slate-800/95 backdrop-blur-md border border-white/10 rounded-lg shadow-2xl z-50 pointer-events-none transition-all duration-200 opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100">
+                           <div class="text-[10px] text-slate-400 mb-1 font-semibold uppercase tracking-wider">Calculation</div>
+                           <div class="text-xs text-white leading-relaxed">Available in stock now - Pending Dispatch (Total)</div>
+                           <div class="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-800/95"></div>
+                        </div>
                       </div>
                     </th>
                     <th class="text-center py-3 px-4 text-slate-300 font-medium text-sm">Actions</th>
