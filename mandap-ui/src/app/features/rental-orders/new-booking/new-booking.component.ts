@@ -50,9 +50,18 @@ import { NgSelectModule } from '@ng-select/ng-select';
                 class="custom-select"
               >
                 <ng-template ng-option-tmp let-item="item">
-                  <div class="flex flex-col">
-                    <span class="font-medium text-[var(--color-text-primary)]">{{ item.name }}</span>
-                    <span class="text-xs text-[var(--color-text-muted)]">{{ item.mobile }}</span>
+                  <div class="flex items-center justify-between w-full">
+                    <div class="flex flex-col">
+                      <span class="font-medium text-[var(--color-text-primary)]">{{ item.name }}</span>
+                      <span class="text-xs text-[var(--color-text-muted)]">{{ item.mobile }}</span>
+                    </div>
+                    <div class="flex gap-1">
+                      @if (item.hasUnbilledOrders) {
+                        <span class="px-1.5 py-0.5 bg-amber-500/20 text-amber-500 text-[10px] font-bold rounded uppercase">Active</span>
+                      } @else if (item.hasBilledOrders) {
+                        <span class="px-1.5 py-0.5 bg-purple-500/20 text-purple-400 text-[10px] font-bold rounded uppercase">History</span>
+                      }
+                    </div>
                   </div>
                 </ng-template>
                 <ng-template ng-label-tmp let-item="item">
