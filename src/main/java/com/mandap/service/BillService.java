@@ -201,6 +201,10 @@ public class BillService {
                 Bill bill = billRepository.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Bill not found: " + id));
 
+                if (dto.getCustomerId() != null && !dto.getCustomerId().equals(bill.getCustomer().getId())) {
+                        throw new RuntimeException("Cannot change customer on an existing bill.");
+                }
+
                 bill.setPalNumbers(dto.getPalNumbers());
                 // bill.setDeposit(dto.getDeposit() != null ? dto.getDeposit() :
                 // BigDecimal.ZERO); // Deposit is now calculated from payments

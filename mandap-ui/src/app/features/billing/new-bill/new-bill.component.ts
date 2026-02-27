@@ -51,6 +51,7 @@ interface CustomItemEntry {
                 [(ngModel)]="selectedCustomerId"
               (change)="onCustomerChange($event)"
                 placeholder="Select Customer"
+                [readonly]="!!billId()"
                 class="custom-select"
               >
                  <ng-template ng-option-tmp let-item="item">
