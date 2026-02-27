@@ -5,10 +5,10 @@ import { CustomerService } from '@core/services';
 import { DateFormatPipe } from '@shared';
 
 @Component({
-    selector: 'app-customer-audit',
-    standalone: true,
-    imports: [CommonModule, DateFormatPipe],
-    template: `
+  selector: 'app-customer-audit',
+  standalone: true,
+  imports: [CommonModule, DateFormatPipe],
+  template: `
     <div class="space-y-6">
       <!-- Header -->
       <div class="flex items-center justify-between">
@@ -72,9 +72,15 @@ import { DateFormatPipe } from '@shared';
                       <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Changes Summary</p>
                       <div class="space-y-2">
                         @for (change of audit.changes | keyvalue; track change.key) {
-                          <div class="flex items-start gap-2 bg-slate-900/50 p-2 rounded-lg border border-slate-800/50">
-                            <span class="text-teal-500 whitespace-nowrap text-xs font-medium">{{ change.key }}:</span>
-                            <span class="text-slate-300 text-xs">{{ formatValue(change.value) }}</span>
+                          <div class="flex flex-col bg-slate-900/50 p-2.5 rounded-lg border border-slate-800/50">
+                            <span class="text-teal-500 text-[10px] font-bold uppercase tracking-wider mb-1">{{ change.key }}</span>
+                            <div class="flex items-center gap-2">
+                              @if (change.value.oldValue !== null) {
+                                <span class="text-slate-500 line-through text-xs">{{ formatValue(change.value.oldValue) }}</span>
+                                <i class="fas fa-long-arrow-alt-right text-slate-600"></i>
+                              }
+                              <span class="text-slate-200 text-xs font-medium">{{ formatValue(change.value.newValue) }}</span>
+                            </div>
                           </div>
                         }
                       </div>
@@ -95,66 +101,66 @@ import { DateFormatPipe } from '@shared';
       }
     </div>
   `,
-    styles: [`
+  styles: [`
     :host { display: block; }
   `]
 })
 export class CustomerAuditComponent implements OnInit {
-    private route = inject(ActivatedRoute);
-    private router = inject(Router);
-    private customerService = inject(CustomerService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private customerService = inject(CustomerService);
 
-    auditHistory = signal<any[]>([]);
-    isLoading = signal(true);
-    customerName = signal('Customer');
+  auditHistory = signal<any[]>([]);
+  isLoading = signal(true);
+  customerName = signal('Customer');
 
-    ngOnInit(): void {
-        const id = this.route.snapshot.paramMap.get('id');
-        if (id) {
-            this.loadAudit(parseInt(id));
-        }
+  ngOnInit(): void {
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.loadAudit(parseInt(id));
     }
+  }
 
-    loadAudit(id: number): void {
-        // Also fetch customer info for name display
-        this.customerService.getById(id).subscribe(c => this.customerName.set(c.name));
+  loadAudit(id: number): void {
+    // Also fetch customer info for name display
+    this.customerService.getById(id).subscribe(c => this.customerName.set(c.name));
 
-        this.customerService.getAuditHistory(id).subscribe({
-            next: (data) => {
-                this.auditHistory.set(data);
-                this.isLoading.set(false);
-            },
-            error: () => {
-                this.isLoading.set(false);
-            }
-        });
+    this.customerService.getAuditHistory(id).subscribe({
+      next: (data) => {
+        this.auditHistory.set(data);
+        this.isLoading.set(false);
+      },
+      error: () => {
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  goBack(): void {
+    this.router.navigate(['/customers']);
+  }
+
+  getActionIcon(action: string): string {
+    switch (action) {
+      case 'CREATE': return 'fas fa-plus-circle';
+      case 'UPDATE': return 'fas fa-pen';
+      case 'DELETE': return 'fas fa-trash-alt';
+      default: return 'fas fa-info-circle';
     }
+  }
 
-    goBack(): void {
-        this.router.navigate(['/customers']);
+  getActionClass(action: string): string {
+    switch (action) {
+      case 'CREATE': return 'bg-green-500/20 text-green-400 border border-green-500/20';
+      case 'UPDATE': return 'bg-blue-500/20 text-blue-400 border border-blue-500/20';
+      case 'DELETE': return 'bg-red-500/20 text-red-400 border border-red-500/20';
+      default: return 'bg-slate-500/20 text-slate-400 border border-slate-500/20';
     }
+  }
 
-    getActionIcon(action: string): string {
-        switch (action) {
-            case 'CREATE': return 'fas fa-plus-circle';
-            case 'UPDATE': return 'fas fa-pen';
-            case 'DELETE': return 'fas fa-trash-alt';
-            default: return 'fas fa-info-circle';
-        }
-    }
-
-    getActionClass(action: string): string {
-        switch (action) {
-            case 'CREATE': return 'bg-green-500/20 text-green-400 border border-green-500/20';
-            case 'UPDATE': return 'bg-blue-500/20 text-blue-400 border border-blue-500/20';
-            case 'DELETE': return 'bg-red-500/20 text-red-400 border border-red-500/20';
-            default: return 'bg-slate-500/20 text-slate-400 border border-slate-500/20';
-        }
-    }
-
-    formatValue(value: any): string {
-        if (value === null || value === undefined) return '-';
-        if (typeof value === 'object') return JSON.stringify(value);
-        return value.toString();
-    }
+  formatValue(value: any): string {
+    if (value === null || value === undefined) return '-';
+    if (typeof value === 'object') return JSON.stringify(value);
+    return value.toString();
+  }
 }

@@ -52,7 +52,8 @@ public class CustomerService {
                         java.util.Map<String, Object> changes = new java.util.HashMap<>();
 
                         if (previousState == null) {
-                                changes.put("Initial Creation", "Customer created");
+                                changes.put("Status",
+                                                new com.mandap.dto.FieldChangeDTO(null, "Customer profile created"));
                         } else {
                                 findChanges(previousState, currentState, changes);
                         }
@@ -79,25 +80,32 @@ public class CustomerService {
 
         private void findChanges(Customer oldState, Customer newState, java.util.Map<String, Object> changes) {
                 if (!java.util.Objects.equals(oldState.getName(), newState.getName())) {
-                        changes.put("Name", newState.getName());
+                        changes.put("Name", new com.mandap.dto.FieldChangeDTO(oldState.getName(), newState.getName()));
                 }
                 if (!java.util.Objects.equals(oldState.getMobile(), newState.getMobile())) {
-                        changes.put("Mobile", newState.getMobile());
+                        changes.put("Mobile",
+                                        new com.mandap.dto.FieldChangeDTO(oldState.getMobile(), newState.getMobile()));
                 }
                 if (!java.util.Objects.equals(oldState.getAddress(), newState.getAddress())) {
-                        changes.put("Address", newState.getAddress());
+                        changes.put("Address", new com.mandap.dto.FieldChangeDTO(oldState.getAddress(),
+                                        newState.getAddress()));
                 }
                 if (!java.util.Objects.equals(oldState.getAlternateContact(), newState.getAlternateContact())) {
-                        changes.put("Alternate Contact", newState.getAlternateContact());
+                        changes.put("Alternate Contact", new com.mandap.dto.FieldChangeDTO(
+                                        oldState.getAlternateContact(), newState.getAlternateContact()));
                 }
                 if (!java.util.Objects.equals(oldState.getActive(), newState.getActive())) {
-                        changes.put("Active Status", newState.getActive() ? "Active" : "Inactive");
+                        changes.put("Active Status", new com.mandap.dto.FieldChangeDTO(
+                                        oldState.getActive() ? "Active" : "Inactive",
+                                        newState.getActive() ? "Active" : "Inactive"));
                 }
                 if (!java.util.Objects.equals(oldState.getPalNumbers(), newState.getPalNumbers())) {
-                        changes.put("Pal Numbers", newState.getPalNumbers());
+                        changes.put("Pal Numbers", new com.mandap.dto.FieldChangeDTO(oldState.getPalNumbers(),
+                                        newState.getPalNumbers()));
                 }
                 if (!java.util.Objects.equals(oldState.getNotes(), newState.getNotes())) {
-                        changes.put("Notes", newState.getNotes());
+                        changes.put("Notes",
+                                        new com.mandap.dto.FieldChangeDTO(oldState.getNotes(), newState.getNotes()));
                 }
         }
 
