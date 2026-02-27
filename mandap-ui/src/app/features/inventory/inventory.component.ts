@@ -72,9 +72,9 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
         <div class="bg-[var(--color-bg-card)] backdrop-blur-xl rounded-2xl border border-[var(--color-border)] overflow-hidden transition-colors">
             <div class="overflow-x-auto">
               <table class="w-full">
-                <thead class="bg-[var(--color-bg-hover)]/30">
+                <thead class="sticky top-0 z-10 bg-[var(--color-bg-card)] border-b border-[var(--color-border)] shadow-sm">
                   <tr>
-                    <th class="w-10"></th>
+                    <th class="w-10 py-3"></th>
                     <th class="text-left py-3 px-4 text-[var(--color-text-secondary)] font-medium text-sm">Item (Gujarati)</th>
                     <th class="text-left py-3 px-4 text-slate-300 font-medium text-sm">Item (English)</th>
                     <th class="text-right py-3 px-4 text-slate-300 font-medium text-sm">Rate (₹)</th>
@@ -219,7 +219,7 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
         } @else {
           <div class="overflow-hidden border border-[var(--color-border)] rounded-xl">
              <table class="w-full text-sm">
-                 <thead class="bg-[var(--color-bg-hover)]/30">
+                 <thead class="sticky top-0 z-10 bg-[var(--color-bg-card)] border-b border-[var(--color-border)] shadow-sm">
                      <tr>
                          <th (click)="onUsageSort('customerName')" class="py-3 px-4 text-left text-[var(--color-text-secondary)] font-medium cursor-pointer group select-none">
                             Customer
