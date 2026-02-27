@@ -309,11 +309,37 @@ public class BillService {
         }
 
         public void deleteBill(Long id) {
-                log.warn("Deleting bill id={}", id);
+                log.warn("Attempting to delete bill id={}", id);
                 Bill bill = billRepository.findById(id)
                                 .orElseThrow(() -> new RuntimeException("Bill not found: " + id));
+
+                // Check for payments
+                if (bill.getPayments() != null && !bill.getPayments().isEmpty()) {
+                        long paymentCount = bill.getPayments().stream()
+                                        .filter(p -> p.getAmount() != null
+                                                        && p.getAmount().compareTo(java.math.BigDecimal.ZERO) > 0)
+                                        .count();
+                        if (paymentCount > 0) {
+                                throw new RuntimeException(
+                                                "Cannot delete bill because payments have been recorded. Delete the payments first.");
+                        }
+                }
+
+                // Clean up linked rental order
+                rentalOrderRepository.findByBillId(id).ifPresent(order -> {
+                        log.info("Unlinking bill {} from rental order {}", bill.getBillNumber(),
+                                        order.getOrderNumber());
+                        order.setBill(null);
+                        order.setBillOutOfSync(false);
+                        // If order was completed because of this bill, revert status
+                        if (order.getStatus() == RentalOrder.RentalOrderStatus.COMPLETED) {
+                                order.setStatus(RentalOrder.RentalOrderStatus.RETURNED);
+                        }
+                        rentalOrderRepository.save(order);
+                });
+
                 billRepository.delete(bill);
-                log.info("Bill deleted: number={}", bill.getBillNumber());
+                log.info("Bill deleted successfully: number={}", bill.getBillNumber());
         }
 
         public List<PaymentDTO> getPaymentsByBillId(Long billId) {

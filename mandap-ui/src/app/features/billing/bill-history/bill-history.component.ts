@@ -173,8 +173,9 @@ import { PaymentHistoryModalComponent } from '../payment-history-modal/payment-h
                         </button>
                         <button 
                           (click)="deleteBill(bill)"
-                          class="w-8 h-8 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors"
-                          title="Delete"
+                          [disabled]="hasPayments(bill)"
+                          class="w-8 h-8 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                          [title]="hasPayments(bill) ? 'Cannot delete bill because payments are recorded' : 'Delete'"
                         >
                           <i class="fas fa-trash text-xs"></i>
                         </button>
@@ -484,11 +485,20 @@ export class BillHistoryComponent implements OnInit {
     return bill.items.some(i => i.isLostItem);
   }
 
+  hasPayments(bill: Bill): boolean {
+    return (bill.payments?.some(p => (p.amount || 0) > 0)) || (bill.deposit > 0);
+  }
+
   editBill(bill: Bill): void {
     this.router.navigate(['/billing/edit', bill.id]);
   }
 
   deleteBill(bill: Bill): void {
+    if (this.hasPayments(bill)) {
+      this.toastService.error('Cannot delete bill because payments have been recorded. Void payments first.');
+      return;
+    }
+
     if (confirm(`Are you sure you want to delete bill ${bill.billNumber}? This cannot be undone.`)) {
       this.isLoading.set(true);
       this.billService.delete(bill.id).subscribe({
