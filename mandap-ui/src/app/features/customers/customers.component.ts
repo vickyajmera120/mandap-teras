@@ -115,7 +115,7 @@ import { NgSelectModule } from '@ng-select/ng-select';
               </thead>
               <tbody>
                 @for (customer of filteredCustomers(); track customer.id) {
-                  <tr class="border-t border-[var(--color-border)] hover:bg-[var(--color-bg-hover)] transition-colors">
+                  <tr class="border-t border-[var(--color-border)] hover:bg-[var(--color-bg-hover)] transition-colors bg-[var(--color-bg-input)]">
                     <td class="py-4 px-6">
                       <div class="flex items-center gap-2">
                         <span class="text-[var(--color-text-primary)] font-medium">{{ customer.name }}</span>

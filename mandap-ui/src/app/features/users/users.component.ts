@@ -42,7 +42,7 @@ import { ModalComponent, LoadingSpinnerComponent, StatusBadgeComponent } from '@
               </thead>
               <tbody>
                 @for (user of users(); track user.id) {
-                  <tr class="border-t border-[var(--color-border)] hover:bg-[var(--color-bg-hover)] transition-colors">
+                  <tr class="border-t border-[var(--color-border)] hover:bg-[var(--color-bg-hover)] transition-colors bg-[var(--color-bg-input)]">
                     <td class="py-4 px-6 text-[var(--color-text-primary)] font-medium">{{ user.username }}</td>
                     <td class="py-4 px-6 text-[var(--color-text-secondary)]">{{ user.fullName }}</td>
                     <td class="py-4 px-6 text-[var(--color-text-muted)]">{{ user.email || '-' }}</td>

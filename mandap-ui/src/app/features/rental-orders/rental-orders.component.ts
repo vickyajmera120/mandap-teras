@@ -172,7 +172,7 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
               </thead>
               <tbody>
                 @for (order of filteredOrders(); track order.id) {
-                  <tr class="border-t border-[var(--color-border)]/50 hover:bg-[var(--color-bg-hover)]/50 transition-colors">
+                  <tr class="border-t border-[var(--color-border)]/50 hover:bg-[var(--color-bg-hover)]/50 transition-colors bg-[var(--color-bg-input)]">
                     <td class="py-3 px-4 text-[var(--color-text-primary)] font-mono font-medium">{{ order.orderNumber }}</td>
                     <td class="py-3 px-4">
                       <div class="text-[var(--color-text-primary)]">{{ order.customerName }}</div>
