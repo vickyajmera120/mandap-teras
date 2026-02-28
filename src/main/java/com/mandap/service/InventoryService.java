@@ -246,6 +246,7 @@ public class InventoryService {
                                 item.getBookedQty() - (item.getDispatchedQty() != null ? item.getDispatchedQty() : 0))
                         .pendingReturnQty((item.getDispatchedQty() != null ? item.getDispatchedQty() : 0)
                                 - (item.getReturnedQty() != null ? item.getReturnedQty() : 0))
+                        .palNumbers(String.join(", ", item.getRentalOrder().getCustomer().getPalNumbers()))
                         .build())
                 .collect(Collectors.toList());
     }

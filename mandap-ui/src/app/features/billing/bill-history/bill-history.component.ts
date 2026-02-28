@@ -323,8 +323,13 @@ import { PaymentHistoryModalComponent } from '../payment-history-modal/payment-h
                 <span class="text-slate-300">{{ selectedBill()!.deposit | currencyInr }}</span>
               </div>
               <div class="flex justify-between border-t border-slate-600 pt-2">
-                <span class="text-white font-medium">Net Payable:</span>
-                <span class="text-xl text-teal-400 font-bold">{{ selectedBill()!.netPayable | currencyInr }}</span>
+                @if ((selectedBill()!.toBeReturned || 0) > 0) {
+                  <span class="text-white font-medium font-bold text-red-400">To be Returned:</span>
+                  <span class="text-xl text-red-500 font-bold">{{ selectedBill()!.toBeReturned | currencyInr }}</span>
+                } @else {
+                  <span class="text-white font-medium">Net Payable:</span>
+                  <span class="text-xl text-teal-400 font-bold">{{ selectedBill()!.netPayable | currencyInr }}</span>
+                }
               </div>
             </div>
             
@@ -595,6 +600,8 @@ export class BillHistoryComponent implements OnInit {
           .info { display: flex; justify-content: space-between; margin-bottom: 20px; }
           table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
           th { background: #008080; color: white; padding: 10px; text-align: left; }
+          td { padding: 8px; border-bottom: 1px solid #eee; }
+          tbody tr:nth-child(even) { background-color: #f8fcfc; }
           .total { text-align: right; font-size: 18px; }
           .net { font-size: 24px; color: #008080; font-weight: bold; }
           @media print { body { padding: 0; } }
@@ -617,28 +624,6 @@ export class BillHistoryComponent implements OnInit {
           </div>
         </div>
 
-        ${bill.paymentStatus === 'PAID' ? `
-        <div style="
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-30deg);
-            border: 5px solid rgba(16, 185, 129, 0.4);
-            color: rgba(16, 185, 129, 0.4);
-            font-size: 80px;
-            font-weight: bold;
-            padding: 20px 60px;
-            border-radius: 15px;
-            user-select: none;
-            pointer-events: none;
-            z-index: 0;
-            text-transform: uppercase;
-            letter-spacing: 10px;
-        ">
-            PAID
-        </div>
-        ` : ''}
-
         <table>
           <thead>
             <tr>
@@ -649,8 +634,8 @@ export class BillHistoryComponent implements OnInit {
             </tr>
           </thead>
           <tbody>
-            ${bill.items.filter(i => !i.isLostItem && !i.isCustomItem).map(item => `
-              <tr>
+            ${bill.items.filter(i => !i.isLostItem && !i.isCustomItem).map((item, idx) => `
+              <tr style="background-color: ${idx % 2 === 0 ? '#ffffff' : '#f8fcfc'};">
                 <td style="text-align: left;">${item.itemNameGujarati}</td>
                 <td style="text-align: center;">${item.quantity}</td>
                 <td style="text-align: right;">${this.formatCurrency(item.rate)}</td>
@@ -662,8 +647,8 @@ export class BillHistoryComponent implements OnInit {
               <tr class="section-header">
                 <td colspan="4" style="text-align: left; background-color: #fca5a5; color: #7f1d1d; font-weight: bold; padding: 5px 10px;">Lost / Damaged Items</td>
               </tr>
-              ${bill.items.filter(i => i.isLostItem).map(item => `
-              <tr style="background-color: #fef2f2;">
+              ${bill.items.filter(i => i.isLostItem).map((item, idx) => `
+              <tr style="background-color: ${idx % 2 === 0 ? '#fef2f2' : '#fee2e2'};">
                 <td style="text-align: left; color: #991b1b;">${item.itemNameGujarati}</td>
                 <td style="text-align: center; color: #991b1b;">${item.quantity}</td>
                 <td style="text-align: right; color: #991b1b;">${this.formatCurrency(item.rate)}</td>
@@ -676,8 +661,8 @@ export class BillHistoryComponent implements OnInit {
               <tr class="section-header">
                 <td colspan="4" style="text-align: left; background-color: #bfdbfe; color: #1e3a5f; font-weight: bold; padding: 5px 10px;">Custom / Other Items</td>
               </tr>
-              ${bill.items.filter(i => i.isCustomItem).map(item => `
-              <tr style="background-color: #eff6ff;">
+              ${bill.items.filter(i => i.isCustomItem).map((item, idx) => `
+              <tr style="background-color: ${idx % 2 === 0 ? '#eff6ff' : '#dbeafe'};">
                 <td style="text-align: left; color: #1e40af;">${item.customItemName || item.itemNameGujarati}</td>
                 <td style="text-align: center; color: #1e40af;">${item.quantity}</td>
                 <td style="text-align: right; color: #1e40af;">${this.formatCurrency(item.rate)}</td>
@@ -699,7 +684,10 @@ export class BillHistoryComponent implements OnInit {
         ${paymentsHtml}
 
         <div class="total" style="margin-top: 30px; border-top: 2px solid #008080; padding-top: 10px;">
-          <p class="net">Net Payable: ₹${bill.netPayable?.toLocaleString('en-IN')}</p>
+          ${(bill.toBeReturned || 0) > 0
+        ? `<p class="net" style="color: #dc2626;">Amount to Return: ₹${bill.toBeReturned?.toLocaleString('en-IN')}</p>`
+        : `<p class="net">Net Payable: ₹${bill.netPayable?.toLocaleString('en-IN')}</p>`
+      }
         </div>
         <script>window.print();</script>
       </body>

@@ -26,6 +26,7 @@ public class BillDTO {
     private BigDecimal deposit;
     private BigDecimal settlementDiscount;
     private BigDecimal netPayable;
+    private BigDecimal toBeReturned;
     private LocalDate billDate;
     private String remarks;
     private Long rentalOrderId;

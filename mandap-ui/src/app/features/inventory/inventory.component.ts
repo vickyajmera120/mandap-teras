@@ -285,6 +285,10 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
                             Customer
                             <i class="fas ml-1" [class]="usageSortConfig().column === 'customerName' ? (usageSortConfig().direction === 'asc' ? 'fa-sort-up text-indigo-400' : 'fa-sort-down text-indigo-400') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
                           </th>
+                          <th (click)="onUsageSort('palNumbers')" class="py-3 px-4 text-left text-[var(--color-text-secondary)] font-medium cursor-pointer group select-none sticky top-0 z-20 bg-[var(--color-bg-hover)] border-b border-[var(--color-border)]">
+                            Pal #
+                            <i class="fas ml-1" [class]="usageSortConfig().column === 'palNumbers' ? (usageSortConfig().direction === 'asc' ? 'fa-sort-up text-indigo-400' : 'fa-sort-down text-indigo-400') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
+                          </th>
                           <th (click)="onUsageSort('orderNumber')" class="py-3 px-4 text-left text-[var(--color-text-secondary)] font-medium cursor-pointer group select-none sticky top-0 z-20 bg-[var(--color-bg-hover)] border-b border-[var(--color-border)]">
                             Order #
                             <i class="fas ml-1" [class]="usageSortConfig().column === 'orderNumber' ? (usageSortConfig().direction === 'asc' ? 'fa-sort-up text-indigo-400' : 'fa-sort-down text-indigo-400') : 'fa-sort text-[var(--color-text-muted)] opacity-30 group-hover:opacity-100'"></i>
@@ -315,6 +319,7 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
                      @for (usage of sortedUsageItems(); track usage.orderNumber) {
                          <tr class="hover:bg-[var(--color-bg-hover)]/20">
                              <td class="py-3 px-4 text-[var(--color-text-primary)] font-medium">{{ usage.customerName }}</td>
+                             <td class="py-3 px-4 text-[var(--color-text-secondary)] text-xs">{{ usage.palNumbers || '-' }}</td>
                              <td class="py-3 px-4 text-[var(--color-text-secondary)] font-mono text-xs">{{ usage.orderNumber }}</td>
                              <td class="py-2 px-4 text-center text-[var(--color-text-secondary)]">{{ usage.bookedQty }}</td>
                              <td class="py-2 px-4 text-center text-[var(--color-text-secondary)]">{{ usage.dispatchedQty }}</td>
@@ -324,14 +329,14 @@ import { CurrencyInrPipe, LoadingSpinnerComponent, ModalComponent } from '@share
                          </tr>
                      } @empty {
                          <tr>
-                             <td colspan="7" class="py-8 text-center text-[var(--color-text-muted)]">No active usage found</td>
+                             <td colspan="8" class="py-8 text-center text-[var(--color-text-muted)]">No active usage found</td>
                          </tr>
                      }
                  </tbody>
                  @if (usageItems().length > 0) {
                     <tfoot class="bg-[var(--color-bg-hover)]/30 font-bold border-t-2 border-[var(--color-border)]">
                         <tr>
-                            <td colspan="2" class="py-3 px-4 text-right text-[var(--color-text-primary)]">Total:</td>
+                            <td colspan="3" class="py-3 px-4 text-right text-[var(--color-text-primary)]">Total:</td>
                             <td class="py-3 px-4 text-center text-[var(--color-text-primary)]">{{ usageTotals().booked }}</td>
                             <td class="py-3 px-4 text-center text-[var(--color-text-primary)]">{{ usageTotals().dispatched }}</td>
                             <td class="py-3 px-4 text-center text-[var(--color-text-primary)]">{{ usageTotals().returned }}</td>

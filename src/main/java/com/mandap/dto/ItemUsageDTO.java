@@ -18,4 +18,5 @@ public class ItemUsageDTO {
     private int returnedQty;
     private int pendingDispatchQty; // Booked - Dispatched
     private int pendingReturnQty; // Dispatched - Returned
+    private String palNumbers;
 }

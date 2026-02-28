@@ -466,10 +466,17 @@ interface CustomItemEntry {
                     </div>
                   }
                 }
-                <div class="border-t border-slate-600 pt-3 flex justify-between items-center">
-                  <span class="text-slate-300 font-medium">Net Payable:</span>
-                  <span class="text-2xl font-bold text-teal-400">{{ netPayable() | currencyInr }}</span>
-                </div>
+                @if (toBeReturned() > 0) {
+                  <div class="border-t border-slate-600 pt-3 flex justify-between items-center">
+                    <span class="text-slate-300 font-medium font-bold text-red-400">To be Returned:</span>
+                    <span class="text-2xl font-bold text-red-500">{{ toBeReturned() | currencyInr }}</span>
+                  </div>
+                } @else {
+                  <div class="border-t border-slate-600 pt-3 flex justify-between items-center">
+                    <span class="text-slate-300 font-medium">Net Payable:</span>
+                    <span class="text-2xl font-bold text-teal-400">{{ netPayable() | currencyInr }}</span>
+                  </div>
+                }
               </div>
             </div>
           </div>
@@ -607,7 +614,13 @@ export class NewBillComponent implements OnInit {
   });
 
   netPayable = computed(() => {
-    return Math.max(0, this.totalAmount() - this.deposit() - this.settlementDiscount());
+    const diff = this.totalAmount() - this.deposit() - this.settlementDiscount();
+    return diff > 0 ? diff : 0;
+  });
+
+  toBeReturned = computed(() => {
+    const diff = this.totalAmount() - this.deposit() - this.settlementDiscount();
+    return diff < 0 ? Math.abs(diff) : 0;
   });
 
   ngOnInit(): void {

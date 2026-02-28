@@ -30,6 +30,7 @@ export interface Bill {
     deposit: number;
     settlementDiscount: number;
     netPayable: number;
+    toBeReturned: number;
     billDate: string;
     remarks?: string;
     items: BillItem[];

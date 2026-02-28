@@ -493,6 +493,9 @@ public class BillService {
                                 .deposit(bill.getDeposit())
                                 .settlementDiscount(bill.getSettlementDiscount())
                                 .netPayable(bill.getNetPayable())
+                                .toBeReturned(bill.getNetPayable().compareTo(BigDecimal.ZERO) < 0
+                                                ? bill.getNetPayable().negate()
+                                                : BigDecimal.ZERO)
                                 .billDate(bill.getBillDate())
                                 .remarks(bill.getRemarks())
                                 .rentalOrderId(finalRentalOrderId)
