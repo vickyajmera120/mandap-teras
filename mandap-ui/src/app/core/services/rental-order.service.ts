@@ -54,4 +54,8 @@ export class RentalOrderService {
     delete(id: number): Observable<void> {
         return this.http.delete<void>(`${this.API_URL}/${id}`);
     }
+
+    getAuditHistory(id: number): Observable<any[]> {
+        return this.http.get<any[]>(`${this.API_URL}/${id}/audit`);
+    }
 }

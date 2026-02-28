@@ -62,7 +62,8 @@ public class RentalOrderService {
          */
         public RentalOrderDTO getOrderById(Long id) {
                 RentalOrder order = rentalOrderRepository.findById(id)
-                                .orElseThrow(() -> new RuntimeException("Rental order not found: " + id));
+                                .orElseThrow(() -> new RuntimeException(
+                                                "Rental order not found: " + (id != null ? id : "null")));
                 return toDTO(order);
         }
 
@@ -74,7 +75,8 @@ public class RentalOrderService {
                 log.info("Creating booking for customerId={}, items={}", dto.getCustomerId(),
                                 dto.getItems() != null ? dto.getItems().size() : 0);
                 Customer customer = customerRepository.findById(dto.getCustomerId())
-                                .orElseThrow(() -> new RuntimeException("Customer not found: " + dto.getCustomerId()));
+                                .orElseThrow(() -> new RuntimeException("Customer not found: "
+                                                + (dto.getCustomerId() != null ? dto.getCustomerId() : "null")));
 
                 // Check if customer already has an active rental order
                 List<RentalOrder> existingOrders = rentalOrderRepository
@@ -89,7 +91,9 @@ public class RentalOrderService {
                         InventoryItem invItem = inventoryItemRepository.findById(itemDto.getInventoryItemId())
                                         .orElseThrow(
                                                         () -> new RuntimeException("Inventory item not found: "
-                                                                        + itemDto.getInventoryItemId()));
+                                                                        + (itemDto.getInventoryItemId() != null
+                                                                                        ? itemDto.getInventoryItemId()
+                                                                                        : "null")));
 
                         // ATP Calculation:
                         // Real Available = Total Stock - (Sum of (Booked - Returned) for all active
@@ -151,7 +155,8 @@ public class RentalOrderService {
          */
         public RentalOrderDTO updateOrder(Long id, RentalOrderDTO dto) {
                 RentalOrder order = rentalOrderRepository.findById(id)
-                                .orElseThrow(() -> new RuntimeException("Rental order not found: " + id));
+                                .orElseThrow(() -> new RuntimeException(
+                                                "Rental order not found: " + (id != null ? id : "null")));
 
                 if (order.getStatus() == RentalOrder.RentalOrderStatus.COMPLETED ||
                                 order.getStatus() == RentalOrder.RentalOrderStatus.CANCELLED) {
@@ -170,7 +175,9 @@ public class RentalOrderService {
                                 InventoryItem invItem = inventoryItemRepository.findById(itemDto.getInventoryItemId())
                                                 .orElseThrow(() -> new RuntimeException(
                                                                 "Inventory item not found: "
-                                                                                + itemDto.getInventoryItemId()));
+                                                                                + (itemDto.getInventoryItemId() != null
+                                                                                                ? itemDto.getInventoryItemId()
+                                                                                                : "null")));
 
                                 RentalOrderItem existingItem = order.getItems().stream()
                                                 .filter(i -> i.getInventoryItem().getId().equals(invItem.getId()))
@@ -209,12 +216,6 @@ public class RentalOrderService {
                                         int myReturned = existingItem.getReturnedQty() != null
                                                         ? existingItem.getReturnedQty()
                                                         : 0;
-                                        int maxBookable = invItem.getTotalStock() - committedByOthers + myReturned; // Actually,
-                                                                                                                    // strictly
-                                                                                                                    // committedByOthers
-                                                                                                                    // =
-                                                                                                                    // booked-returned.
-                                        // Let's stick to base formula:
                                         // Committed_New = CommittedByOthers + (NewBooked - MyReturned)
                                         // if Committed_New > TotalStock -> Error.
 
@@ -288,6 +289,7 @@ public class RentalOrderService {
                         order.setBillOutOfSync(true);
                 }
 
+                order.setUpdatedAt(java.time.LocalDateTime.now()); // Force Envers revision
                 order = rentalOrderRepository.save(order);
                 return toDTO(order);
         }
@@ -364,6 +366,7 @@ public class RentalOrderService {
 
                 order.setDispatchDate(dispatchDate);
                 order.setStatus(RentalOrder.RentalOrderStatus.DISPATCHED);
+                order.setUpdatedAt(java.time.LocalDateTime.now()); // Force Envers revision
                 order = rentalOrderRepository.save(order);
 
                 return toDTO(order);
@@ -446,6 +449,7 @@ public class RentalOrderService {
                 order.setActualReturnDate(returnDate);
                 order.setStatus(allReturned ? RentalOrder.RentalOrderStatus.RETURNED
                                 : RentalOrder.RentalOrderStatus.PARTIALLY_RETURNED);
+                order.setUpdatedAt(java.time.LocalDateTime.now()); // Force Envers revision
                 order = rentalOrderRepository.save(order);
 
                 log.info("Receive complete for orderId={}, status={}", orderId, order.getStatus());
@@ -552,13 +556,15 @@ public class RentalOrderService {
                                 .orElseThrow(() -> new RuntimeException("Rental order not found: " + id));
 
                 if (order.getBill() != null) {
-                        throw new RuntimeException("Cannot delete order because a bill has already been generated. Delete the bill first.");
+                        throw new RuntimeException(
+                                        "Cannot delete order because a bill has already been generated. Delete the bill first.");
                 }
 
                 boolean anyDispatched = order.getItems().stream()
                                 .anyMatch(item -> item.getDispatchedQty() != null && item.getDispatchedQty() > 0);
                 if (anyDispatched) {
-                        throw new RuntimeException("Cannot delete order because items were dispatched. Please use 'Cancel' for record keeping.");
+                        throw new RuntimeException(
+                                        "Cannot delete order because items were dispatched. Please use 'Cancel' for record keeping.");
                 }
 
                 log.warn("Deleting rental order id={}, orderNumber={}", id, order.getOrderNumber());
@@ -595,5 +601,139 @@ public class RentalOrderService {
                 order = rentalOrderRepository.save(order);
                 log.info("Rental order cancelled: orderNumber={}", order.getOrderNumber());
                 return toDTO(order);
+        }
+
+        public List<com.mandap.dto.RentalOrderAuditDTO> getRentalOrderAuditHistory(Long id) {
+                if (id == null)
+                        return new java.util.ArrayList<>();
+
+                org.springframework.data.history.Revisions<Integer, RentalOrder> revisions = rentalOrderRepository
+                                .findRevisions(id);
+                List<com.mandap.dto.RentalOrderAuditDTO> auditList = new java.util.ArrayList<>();
+                RentalOrder previousState = null;
+
+                for (org.springframework.data.history.Revision<Integer, RentalOrder> revision : revisions) {
+                        RentalOrder currentState = revision.getEntity();
+                        java.util.Map<String, com.mandap.dto.FieldChangeDTO> changes = new java.util.HashMap<>();
+
+                        if (previousState == null) {
+                                boolean isInsert = revision.getMetadata()
+                                                .getRevisionType() == org.springframework.data.history.RevisionMetadata.RevisionType.INSERT;
+                                if (isInsert) {
+                                        changes.put("Status", new com.mandap.dto.FieldChangeDTO(null, "Order created"));
+                                } else {
+                                        changes.put("Status", new com.mandap.dto.FieldChangeDTO(null,
+                                                        "Existing order updated (First tracked change)"));
+                                        addOrderHeaderSnapshot(currentState, changes);
+                                }
+                        } else {
+                                findOrderHeaderChanges(previousState, currentState, changes);
+                        }
+
+                        // Track items added/removed/updated
+                        findOrderItemChanges(previousState, currentState, changes);
+
+                        auditList.add(com.mandap.dto.RentalOrderAuditDTO.builder()
+                                        .revisionNumber(revision.getRequiredRevisionNumber())
+                                        .revisionDate(java.time.LocalDateTime.ofInstant(
+                                                        revision.getRequiredRevisionInstant(),
+                                                        java.time.ZoneId.systemDefault()))
+                                        .action(revision.getMetadata()
+                                                        .getRevisionType() == org.springframework.data.history.RevisionMetadata.RevisionType.INSERT
+                                                                        ? "CREATE"
+                                                                        : "UPDATE")
+                                        .changedBy(((com.mandap.entity.AuditRevisionEntity) revision.getMetadata()
+                                                        .getDelegate()).getUsername())
+                                        .changes(changes)
+                                        .entity(toDTO(currentState))
+                                        .build());
+
+                        previousState = currentState;
+                }
+
+                java.util.Collections.reverse(auditList);
+                return auditList;
+        }
+
+        private void addOrderHeaderSnapshot(RentalOrder order,
+                        java.util.Map<String, com.mandap.dto.FieldChangeDTO> changes) {
+                changes.put("Order Date", new com.mandap.dto.FieldChangeDTO(null, order.getOrderDate()));
+                changes.put("Expected Return", new com.mandap.dto.FieldChangeDTO(null, order.getExpectedReturnDate()));
+                changes.put("Status", new com.mandap.dto.FieldChangeDTO(null, order.getStatus().name()));
+                changes.put("Remarks", new com.mandap.dto.FieldChangeDTO(null, order.getRemarks()));
+        }
+
+        private void findOrderHeaderChanges(RentalOrder oldOrder, RentalOrder newOrder,
+                        java.util.Map<String, com.mandap.dto.FieldChangeDTO> changes) {
+                if (!java.util.Objects.equals(oldOrder.getOrderDate(), newOrder.getOrderDate())) {
+                        changes.put("Order Date", new com.mandap.dto.FieldChangeDTO(oldOrder.getOrderDate(),
+                                        newOrder.getOrderDate()));
+                }
+                if (!java.util.Objects.equals(oldOrder.getExpectedReturnDate(), newOrder.getExpectedReturnDate())) {
+                        changes.put("Expected Return",
+                                        new com.mandap.dto.FieldChangeDTO(oldOrder.getExpectedReturnDate(),
+                                                        newOrder.getExpectedReturnDate()));
+                }
+                if (!java.util.Objects.equals(oldOrder.getStatus(), newOrder.getStatus())) {
+                        changes.put("Status", new com.mandap.dto.FieldChangeDTO(oldOrder.getStatus().name(),
+                                        newOrder.getStatus().name()));
+                }
+                if (!java.util.Objects.equals(oldOrder.getRemarks(), newOrder.getRemarks())) {
+                        changes.put("Remarks", new com.mandap.dto.FieldChangeDTO(oldOrder.getRemarks(),
+                                        newOrder.getRemarks()));
+                }
+        }
+
+        private void findOrderItemChanges(RentalOrder oldOrder, RentalOrder newOrder,
+                        java.util.Map<String, com.mandap.dto.FieldChangeDTO> changes) {
+                java.util.Map<Long, RentalOrderItem> oldItems = oldOrder == null ? new java.util.HashMap<>()
+                                : oldOrder.getItems().stream()
+                                                .collect(java.util.stream.Collectors.toMap(
+                                                                i -> i.getInventoryItem().getId(), i -> i));
+
+                java.util.Map<Long, RentalOrderItem> newItems = newOrder.getItems().stream()
+                                .collect(java.util.stream.Collectors.toMap(i -> i.getInventoryItem().getId(), i -> i));
+
+                // Added items
+                for (java.util.Map.Entry<Long, RentalOrderItem> entry : newItems.entrySet()) {
+                        RentalOrderItem newItem = entry.getValue();
+                        RentalOrderItem oldItem = oldItems.get(entry.getKey());
+
+                        if (oldItem == null) {
+                                changes.put("Item Added: " + newItem.getInventoryItem().getNameEnglish(),
+                                                new com.mandap.dto.FieldChangeDTO(null,
+                                                                "Booked: " + newItem.getBookedQty()));
+                        } else {
+                                // Check for quantity changes
+                                if (!java.util.Objects.equals(oldItem.getBookedQty(), newItem.getBookedQty())) {
+                                        changes.put("Qty Changed: " + newItem.getInventoryItem().getNameEnglish(),
+                                                        new com.mandap.dto.FieldChangeDTO(oldItem.getBookedQty(),
+                                                                        newItem.getBookedQty()));
+                                }
+                                if (!java.util.Objects.equals(oldItem.getDispatchedQty(), newItem.getDispatchedQty())) {
+                                        changes.put("Disp Qty: " + newItem.getInventoryItem().getNameEnglish(),
+                                                        new com.mandap.dto.FieldChangeDTO(oldItem.getDispatchedQty(),
+                                                                        newItem.getDispatchedQty()));
+                                }
+                                if (!java.util.Objects.equals(oldItem.getReturnedQty(), newItem.getReturnedQty())) {
+                                        changes.put("Ret Qty: " + newItem.getInventoryItem().getNameEnglish(),
+                                                        new com.mandap.dto.FieldChangeDTO(oldItem.getReturnedQty(),
+                                                                        newItem.getReturnedQty()));
+                                }
+                        }
+                }
+
+                // Removed items
+                if (oldOrder != null) {
+                        for (java.util.Map.Entry<Long, RentalOrderItem> entry : oldItems.entrySet()) {
+                                if (!newItems.containsKey(entry.getKey())) {
+                                        changes.put("Item Removed: "
+                                                        + entry.getValue().getInventoryItem().getNameEnglish(),
+                                                        new com.mandap.dto.FieldChangeDTO(
+                                                                        entry.getValue().getBookedQty(),
+                                                                        null));
+                                }
+                        }
+                }
         }
 }

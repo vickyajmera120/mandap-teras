@@ -94,4 +94,9 @@ public class RentalOrderController {
         log.warn("Cancelling rental order id={}", id);
         return ResponseEntity.ok(rentalOrderService.cancelOrder(id));
     }
+
+    @GetMapping("/{id}/audit")
+    public ResponseEntity<List<com.mandap.dto.RentalOrderAuditDTO>> getRentalOrderAuditHistory(@PathVariable Long id) {
+        return ResponseEntity.ok(rentalOrderService.getRentalOrderAuditHistory(id));
+    }
 }

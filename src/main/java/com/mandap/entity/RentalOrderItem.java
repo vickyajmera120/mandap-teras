@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@org.hibernate.envers.Audited
 public class RentalOrderItem {
 
     @Id
@@ -28,6 +29,7 @@ public class RentalOrderItem {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "inventory_item_id", nullable = false)
+    @org.hibernate.envers.Audited(targetAuditMode = org.hibernate.envers.RelationTargetAuditMode.NOT_AUDITED)
     private InventoryItem inventoryItem;
 
     @Column(name = "booked_qty", nullable = false)

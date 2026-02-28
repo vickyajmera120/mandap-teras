@@ -8,8 +8,11 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.repository.history.RevisionRepository;
+
 @Repository
-public interface RentalOrderRepository extends JpaRepository<RentalOrder, Long> {
+public interface RentalOrderRepository
+        extends JpaRepository<RentalOrder, Long>, RevisionRepository<RentalOrder, Long, Integer> {
 
     Optional<RentalOrder> findByOrderNumber(String orderNumber);
 

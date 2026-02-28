@@ -209,18 +209,18 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                     <td class="py-3 px-4 text-center">
                       <div class="flex justify-center gap-2">
                         <button 
-                          (click)="viewOrder(order)"
-                          class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
-                          title="View Details"
-                        >
-                          <i class="fas fa-eye text-xs"></i>
-                        </button>
-                        <button 
                           (click)="viewHistory(order)"
                           class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 hover:bg-indigo-500/30 transition-colors"
-                          title="View History"
+                          title="View Transactions"
                         >
                           <i class="fas fa-history text-xs"></i>
+                        </button>
+                        <button 
+                          (click)="viewAudit(order)"
+                          class="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 transition-colors"
+                          title="View Audit Log"
+                        >
+                          <i class="fas fa-fingerprint text-xs"></i>
                         </button>
                         <button 
                           (click)="navigateToEdit(order)"
@@ -893,11 +893,13 @@ export class RentalOrdersComponent implements OnInit {
   }
 
   viewHistory(order: RentalOrder): void {
-    console.log('Viewing history for order:', order);
-    console.log('Transactions:', order.transactions);
     this.selectedOrder.set(order);
     this.showHistory.set(true);
     this.viewModal.open();
+  }
+
+  viewAudit(order: RentalOrder): void {
+    this.router.navigate(['/rental-orders/audit', order.id]);
   }
 
   generateBill(order: RentalOrder): void {

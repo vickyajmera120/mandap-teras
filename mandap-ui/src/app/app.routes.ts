@@ -86,6 +86,10 @@ export const routes: Routes = [
                     {
                         path: 'edit/:id',
                         loadComponent: () => import('./features/rental-orders/new-booking/new-booking.component').then(m => m.NewBookingComponent)
+                    },
+                    {
+                        path: 'audit/:id',
+                        loadComponent: () => import('./features/rental-orders/rental-order-audit/rental-order-audit.component').then(m => m.RentalOrderAuditComponent)
                     }
                 ]
             },

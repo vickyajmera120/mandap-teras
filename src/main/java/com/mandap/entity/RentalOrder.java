@@ -19,6 +19,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@org.hibernate.envers.Audited
 public class RentalOrder {
 
     public enum RentalOrderStatus {
@@ -39,6 +40,7 @@ public class RentalOrder {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "customer_id", nullable = false)
+    @org.hibernate.envers.Audited(targetAuditMode = org.hibernate.envers.RelationTargetAuditMode.NOT_AUDITED)
     private Customer customer;
 
     @Column(name = "order_date", nullable = false)
@@ -64,6 +66,7 @@ public class RentalOrder {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bill_id")
+    @org.hibernate.envers.Audited(targetAuditMode = org.hibernate.envers.RelationTargetAuditMode.NOT_AUDITED)
     private Bill bill;
 
     @Column(name = "bill_out_of_sync")
