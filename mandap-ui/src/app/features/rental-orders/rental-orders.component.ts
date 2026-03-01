@@ -731,17 +731,19 @@ export class RentalOrdersComponent implements OnInit {
         <title>Order - ${order.orderNumber}</title>
         <style>
           body { font-family: Arial, sans-serif; padding: 20px; }
-          .header { text-align: center; border-bottom: 2px solid #008080; padding-bottom: 10px; margin-bottom: 20px; }
-          .header h1 { color: #008080; margin: 0; }
-          .info { display: flex; justify-content: space-between; margin-bottom: 20px; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px; }
-          th { background: #008080; color: white; padding: 10px; text-align: left; }
-          td { border-bottom: 1px solid #ddd; padding: 8px; }
+          .header { text-align: center; border-bottom: 2px solid #008080; padding-bottom: 5px; margin-bottom: 10px; }
+          .header h1 { color: #008080; margin: 0; font-size: 24px; }
+          .header p, .info p { margin: 2px 0; }
+          .info { display: flex; justify-content: space-between; margin-bottom: 10px; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 13px; }
+          th { background: #008080; color: white; padding: 4px 8px; text-align: left; }
+          td { padding: 4px 8px; border-bottom: 1px solid #eee; }
+          tbody tr:nth-child(even) { background-color: #f8fcfc; }
           @media print { body { padding: 0; } }
           
-          .signature-section { display: flex; justify-content: space-between; margin-top: 60px; border-top: 1px solid #ccc; padding-top: 20px; }
+          .signature-section { display: flex; justify-content: space-between; margin-top: 40px; border-top: 1px solid #ccc; padding-top: 10px; }
           .signature-box { text-align: center; width: 200px; }
-          .signature-line { border-top: 1px solid #555; margin-top: 60px; padding-top: 5px; font-weight: bold; }
+          .signature-line { border-top: 1px solid #555; margin-top: 40px; padding-top: 5px; font-weight: bold; }
         </style>
       </head>
       <body>
@@ -753,14 +755,11 @@ export class RentalOrdersComponent implements OnInit {
           <div>
             <p><strong>Order No:</strong> ${order.orderNumber}</p>
             <p><strong>Customer:</strong> ${order.customerName}</p>
-            <p><strong>Mobile:</strong> ${order.customerMobile}</p>
             ${order.customerPalNumbers && order.customerPalNumbers.length > 0 ? `<p><strong>Pal No(s):</strong> ${order.customerPalNumbers.join(', ')}</p>` : ''}
             ${order.remarks ? `<p><strong>Remarks:</strong> ${order.remarks}</p>` : ''}
           </div>
           <div>
             <p><strong>Order Date:</strong> ${order.orderDate ? new Date(order.orderDate).toLocaleDateString('en-IN') : '-'}</p>
-            <p><strong>Expected Return:</strong> ${order.expectedReturnDate ? new Date(order.expectedReturnDate).toLocaleDateString('en-IN') : '-'}</p>
-            <p><strong>Status:</strong> ${order.status}</p>
           </div>
         </div>
 

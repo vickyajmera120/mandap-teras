@@ -541,17 +541,6 @@ export class BillHistoryComponent implements OnInit {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const itemsHtml = bill.items?.map((item, index, arr) => {
-      const borderBottom = index === arr.length - 1 ? '' : 'border-bottom: 1px solid #ddd;';
-      return `
-      <tr>
-        <td style="padding: 8px; ${borderBottom}">${item.itemNameGujarati}</td>
-        <td style="padding: 8px; ${borderBottom} text-align: center;">${item.quantity}</td>
-        <td style="padding: 8px; ${borderBottom} text-align: right;">₹${item.rate}</td>
-        <td style="padding: 8px; ${borderBottom} text-align: right;">₹${item.total}</td>
-      </tr>
-    `}).join('') || '';
-
     let paymentsHtml = '';
     if (bill.payments && bill.payments.length > 0) {
       const rows = bill.payments.map(p => `
@@ -595,13 +584,15 @@ export class BillHistoryComponent implements OnInit {
         <title>Bill - ${bill.billNumber}</title>
         <style>
           body { font-family: Arial, sans-serif; padding: 20px; }
-          .header { text-align: center; border-bottom: 2px solid #008080; padding-bottom: 10px; margin-bottom: 20px; }
-          .header h1 { color: #008080; margin: 0; }
-          .info { display: flex; justify-content: space-between; margin-bottom: 20px; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-          th { background: #008080; color: white; padding: 10px; text-align: left; }
-          td { padding: 8px; border-bottom: 1px solid #eee; }
+          .header { text-align: center; border-bottom: 2px solid #008080; padding-bottom: 5px; margin-bottom: 10px; }
+          .header h1 { color: #008080; margin: 0; font-size: 24px; }
+          .header p, .info p { margin: 2px 0; }
+          .info { display: flex; justify-content: space-between; margin-bottom: 10px; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 13px; }
+          th { background: #008080; color: white; padding: 4px 8px; text-align: left; }
+          td { padding: 4px 8px; border-bottom: 1px solid #eee; }
           tbody tr:nth-child(even) { background-color: #f8fcfc; }
+          .section-header td { padding: 3px 8px !important; font-size: 13px; }
           .total { text-align: right; font-size: 18px; }
           .net { font-size: 24px; color: #008080; font-weight: bold; }
           @media print { body { padding: 0; } }
@@ -616,7 +607,6 @@ export class BillHistoryComponent implements OnInit {
           <div>
             <p><strong>Bill No:</strong> ${bill.billNumber}</p>
             <p><strong>Customer:</strong> ${bill.customerName}</p>
-            <p><strong>Mobile:</strong> ${bill.customerMobile}</p>
           </div>
           <div>
             <p><strong>Date:</strong> ${new Date(bill.billDate).toLocaleDateString('en-IN')}</p>
@@ -676,17 +666,17 @@ export class BillHistoryComponent implements OnInit {
           </tbody>
         </table>
         
-        <div style="text-align: right; font-size: 16px; margin-bottom: 20px; border-top: 1px solid #ccc; padding-top: 10px;">
+        <div style="text-align: right; font-size: 16px; margin-bottom: 5px; border-top: 1px solid #ccc; padding-top: 5px;">
             <strong>Total Amount: ₹${bill.totalAmount?.toLocaleString('en-IN')}</strong>
-            ${(bill.settlementDiscount || 0) > 0 ? `<p style="margin: 5px 0 0 0; color: #666; font-size: 14px;">Settlement Discount: -₹${bill.settlementDiscount?.toLocaleString('en-IN')}</p>` : ''}
+            ${(bill.settlementDiscount || 0) > 0 ? `<p style="margin: 2px 0 0 0; color: #666; font-size: 14px;">Settlement Discount: -₹${bill.settlementDiscount?.toLocaleString('en-IN')}</p>` : ''}
         </div>
 
         ${paymentsHtml}
 
-        <div class="total" style="margin-top: 30px; border-top: 2px solid #008080; padding-top: 10px;">
+        <div class="total" style="margin-top: 5px; border-top: 2px solid #008080; padding-top: 2px;">
           ${(bill.toBeReturned || 0) > 0
-        ? `<p class="net" style="color: #dc2626;">Amount to Return: ₹${bill.toBeReturned?.toLocaleString('en-IN')}</p>`
-        : `<p class="net">Net Payable: ₹${bill.netPayable?.toLocaleString('en-IN')}</p>`
+        ? `<p class="net" style="color: #dc2626; margin: 2px 0;">Amount to Return: ₹${bill.toBeReturned?.toLocaleString('en-IN')}</p>`
+        : `<p class="net" style="margin: 2px 0;">Net Payable: ₹${bill.netPayable?.toLocaleString('en-IN')}</p>`
       }
         </div>
         <script>window.print();</script>
