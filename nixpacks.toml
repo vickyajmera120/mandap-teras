@@ -1,0 +1,12 @@
+[phases.setup]
+nixPkgs = ["jdk17", "nodejs_20", "maven"]
+
+[phases.build]
+cmds = [
+    "cd mandap-ui && npm install && npm run build -- --configuration=production",
+    "cp -r mandap-ui/dist/mandap-ui/browser src/main/resources/static/",
+    "mvn clean package -DskipTests"
+]
+
+[start]
+cmd = "java -jar target/mandap-billing-1.0.0.jar"
