@@ -1,0 +1,16 @@
+[build]
+builder = "nixpacks"
+
+[build.nixpacksPlan.phases.setup]
+nixPkgs = ["jdk17", "nodejs_20", "maven"]
+
+[build.nixpacksPlan.phases.build]
+cmds = [
+    "cd mandap-ui && npm ci && npm run build -- --configuration=production",
+    "mkdir -p src/main/resources/static",
+    "cp -r mandap-ui/dist/mandap-ui/browser/* src/main/resources/static/",
+    "mvn clean package -DskipTests"
+]
+
+[deploy]
+startCommand = "java -jar target/mandap-billing-1.0.0.jar"
