@@ -55,12 +55,15 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:4200"));
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:4200",
+                "https://gallant-nourishment-production-8426.up.railway.app",
+                "https://mandap.vickyajmera.com"
+        ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept",
                 "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
-        configuration
-                .setExposedHeaders(Arrays.asList("Access-Control-Allow-Origin", "Access-Control-Allow-Credentials"));
+        configuration.setExposedHeaders(Arrays.asList("Access-Control-Allow-Origin", "Access-Control-Allow-Credentials"));
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
@@ -76,9 +79,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
                         .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/", "/index.html", "/login.html").permitAll()
-                        .requestMatchers("/css/**", "/js/**", "/images/**", "/pages/**").permitAll()
-                        .requestMatchers("/favicon.ico").permitAll()
+
+                        // Angular static assets - root level hashed files
+                        .requestMatchers("/", "/index.html").permitAll()
+                        .requestMatchers("/*.js", "/*.css", "/*.ico", "/*.txt", "/*.json").permitAll()
+                        .requestMatchers("/*.woff", "/*.woff2", "/*.ttf", "/*.eot").permitAll()
+                        .requestMatchers("/assets/**", "/media/**").permitAll()
 
                         // Admin only endpoints
                         .requestMatchers("/api/users/**").hasRole("ADMIN")
@@ -104,7 +110,7 @@ public class SecurityConfig {
                         .hasAnyAuthority("EVENT_WRITE", "ROLE_ADMIN", "ROLE_MANAGER")
                         .requestMatchers(HttpMethod.GET, "/api/events/**").authenticated()
 
-                        // Inventory - admin/manager only for modifications
+                        // Inventory
                         .requestMatchers(HttpMethod.PUT, "/api/inventory/**").hasAnyRole("ADMIN", "MANAGER")
                         .requestMatchers(HttpMethod.GET, "/api/inventory/**").authenticated()
 
