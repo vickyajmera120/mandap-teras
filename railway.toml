@@ -1,19 +1,5 @@
 [build]
-builder = "nixpacks"
-
-[build.nixpacksPlan.phases.setup]
-nixPkgs = ["jdk17", "nodejs_22", "maven"]
-
-[build.nixpacksPlan.phases.build]
-cmds = [
-    "node --version && npm --version",
-    "cd mandap-ui && npm ci --legacy-peer-deps && npm run build -- --configuration=production",
-    "echo '=== Angular dist output ===' && find mandap-ui/dist -type f | head -30",
-    "mkdir -p src/main/resources/static",
-    "cp -r mandap-ui/dist/mandap-ui/browser/* src/main/resources/static/",
-    "echo '=== Static folder contents ===' && ls src/main/resources/static/",
-    "mvn clean package -DskipTests"
-]
+builder = "RAILPACK"
 
 [deploy]
 startCommand = "java -jar target/mandap-billing-1.0.0.jar"

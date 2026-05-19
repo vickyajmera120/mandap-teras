@@ -1,0 +1,21 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "packages": {
+    "node": "22",
+    "java": "17",
+    "maven": "3.9"
+  },
+  "steps": {
+    "build": {
+      "commands": [
+        "cd mandap-ui && npm ci --legacy-peer-deps && npm run build -- --configuration=production",
+        "mkdir -p src/main/resources/static",
+        "cp -r mandap-ui/dist/mandap-ui/browser/* src/main/resources/static/",
+        "mvn clean package -DskipTests"
+      ]
+    }
+  },
+  "deploy": {
+    "startCommand": "java -jar target/mandap-billing-1.0.0.jar"
+  }
+}
