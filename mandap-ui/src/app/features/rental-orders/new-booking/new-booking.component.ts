@@ -133,6 +133,12 @@ import { NgSelectModule } from '@ng-select/ng-select';
                 placeholder="Qty"
                 class="w-24 px-4 py-3 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-xl text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
               >
+              <input
+                type="text"
+                [(ngModel)]="selectedNote"
+                placeholder="Note (optional)"
+                class="flex-1 px-4 py-3 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-xl text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
+              >
               <button
                 (click)="addItem()"
                 class="px-4 py-3 bg-teal-600 text-white rounded-xl hover:bg-teal-700 transition-colors"
@@ -152,6 +158,7 @@ import { NgSelectModule } from '@ng-select/ng-select';
                     <th class="text-left py-3 px-4 text-[var(--color-text-secondary)] text-sm font-medium">Item Name</th>
                     <th class="text-left py-3 px-4 text-[var(--color-text-secondary)] text-sm font-medium">English Name</th>
                     <th class="text-center py-3 px-4 text-[var(--color-text-secondary)] text-sm font-medium">Quantity</th>
+                    <th class="text-left py-3 px-4 text-[var(--color-text-secondary)] text-sm font-medium">Note</th>
                     <th class="text-center py-3 px-4 text-[var(--color-text-secondary)] text-sm font-medium"></th>
                   </tr>
                 </thead>
@@ -166,7 +173,15 @@ import { NgSelectModule } from '@ng-select/ng-select';
                           type="number"
                           [(ngModel)]="item.bookedQty"
                           min="1"
-                          class="w-24 px-3 py-2 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg text-center text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
+                          class="w-20 px-3 py-2 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg text-center text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
+                        >
+                      </td>
+                      <td class="py-3 px-4">
+                        <input
+                          type="text"
+                          [(ngModel)]="item.note"
+                          placeholder="Add note..."
+                          class="w-full px-3 py-2 bg-[var(--color-bg-input)] border border-[var(--color-border)] rounded-lg text-[var(--color-text-primary)] focus:outline-none focus:border-teal-500"
                         >
                       </td>
                       <td class="py-3 px-4 text-center">
@@ -251,6 +266,7 @@ export class NewBookingComponent implements OnInit {
   newOrder: RentalOrder = { customerId: 0, orderDate: new Date().toISOString().split('T')[0], items: [] };
   selectedInventoryItemId: number | null = null;
   selectedQty = 1;
+  selectedNote = '';
 
   // Custom search functions for ng-select (substring matching)
   customerSearchFn = (term: string, item: Customer) => {
@@ -296,7 +312,8 @@ export class NewBookingComponent implements OnInit {
                   itemNameEnglish: item.itemNameEnglish,
                   bookedQty: item.bookedQty,
                   dispatchedQty: item.dispatchedQty,
-                  returnedQty: item.returnedQty
+                  returnedQty: item.returnedQty,
+                  note: item.note
                 })) || []
               };
               this.isLoading.set(false);
@@ -338,11 +355,13 @@ export class NewBookingComponent implements OnInit {
       inventoryItemId: invItem.id,
       itemNameGujarati: invItem.nameGujarati,
       itemNameEnglish: invItem.nameEnglish,
-      bookedQty: this.selectedQty
+      bookedQty: this.selectedQty,
+      note: this.selectedNote
     });
 
     this.selectedInventoryItemId = null;
     this.selectedQty = 1;
+    this.selectedNote = '';
   }
 
   removeItem(index: number): void {

@@ -22,4 +22,5 @@ public class RentalOrderItemDTO {
     private Integer outstandingQty;
     private LocalDate dispatchDate;
     private LocalDate returnDate;
+    private String note;
 }

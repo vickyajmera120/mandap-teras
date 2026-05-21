@@ -137,6 +137,7 @@ public class RentalOrderService {
                                         .bookedQty(itemDto.getBookedQty())
                                         .dispatchedQty(0)
                                         .returnedQty(0)
+                                        .note(itemDto.getNote())
                                         .build();
 
                         order.addItem(orderItem);
@@ -234,6 +235,7 @@ public class RentalOrderService {
                                         }
 
                                         existingItem.setBookedQty(itemDto.getBookedQty());
+                                        existingItem.setNote(itemDto.getNote());
                                 } else {
                                         // Add new item
                                         // ATP Check
@@ -259,6 +261,7 @@ public class RentalOrderService {
                                                         .bookedQty(itemDto.getBookedQty())
                                                         .dispatchedQty(0)
                                                         .returnedQty(0)
+                                                        .note(itemDto.getNote())
                                                         .build();
                                         order.addItem(newItem);
                                 }
@@ -544,6 +547,7 @@ public class RentalOrderService {
                                 .outstandingQty(item.getOutstandingQty())
                                 .dispatchDate(item.getDispatchDate())
                                 .returnDate(item.getReturnDate())
+                                .note(item.getNote())
                                 .build();
         }
 

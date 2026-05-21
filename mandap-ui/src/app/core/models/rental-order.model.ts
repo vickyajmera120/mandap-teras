@@ -13,6 +13,7 @@ export interface RentalOrderItem {
     outstandingQty?: number;
     dispatchDate?: string;
     returnDate?: string;
+    note?: string;
 }
 
 export interface RentalOrder {

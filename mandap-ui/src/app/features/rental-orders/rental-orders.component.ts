@@ -275,9 +275,16 @@ import { LoadingSpinnerComponent, ModalComponent } from '@shared';
                         <button 
                           (click)="printOrder(order)"
                           class="w-8 h-8 rounded-lg bg-gray-500/20 text-gray-400 hover:bg-gray-500/30 transition-colors"
-                          title="Print Order"
+                          title="Print Full Order"
                         >
                           <i class="fas fa-print text-xs"></i>
+                        </button>
+                        <button 
+                          (click)="printSimpleOrder(order)"
+                          class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors"
+                          title="Simple Print (Items & Qty Only)"
+                        >
+                          <i class="fas fa-list-ol text-xs"></i>
                         </button>
                         <button 
                           (click)="deleteOrder(order)"
@@ -779,7 +786,7 @@ export class RentalOrdersComponent implements OnInit {
             ${order.items.map((item, i) => `
               <tr>
                 <td>${i + 1}</td>
-                <td style="font-weight: bold;">${item.itemNameGujarati || item.itemNameEnglish}</td>
+                <td style="font-weight: bold;">${item.itemNameGujarati || item.itemNameEnglish} ${item.note ? `(${item.note})` : ''}</td>
                 <td style="text-align: center;">${item.bookedQty}</td>
                 <td style="text-align: center; color: #555;">${item.dispatchedQty || 0}</td>
                 <td style="text-align: center; ${((item.bookedQty - (item.dispatchedQty || 0)) > 0) ? 'font-weight: bold;' : ''}">${item.bookedQty - (item.dispatchedQty || 0)}</td>
@@ -798,6 +805,70 @@ export class RentalOrdersComponent implements OnInit {
             <div class="signature-line">Authorized Signature</div>
           </div>
         </div>
+
+        <script>window.print();</script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  }
+
+  printSimpleOrder(order: RentalOrder) {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Items List - ${order.orderNumber}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          .header { text-align: center; border-bottom: 2px solid #008080; padding-bottom: 5px; margin-bottom: 10px; }
+          .header h1 { color: #008080; margin: 0; font-size: 24px; }
+          .header p, .info p { margin: 2px 0; }
+          .info { display: flex; justify-content: space-between; margin-bottom: 10px; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 14px; }
+          th { background: #008080; color: white; padding: 6px 10px; text-align: left; }
+          td { padding: 6px 10px; border-bottom: 1px solid #eee; }
+          tbody tr:nth-child(even) { background-color: #f8fcfc; }
+          @media print { body { padding: 0; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>ફાગણ સુદ ૧૩</h1>
+          <p>Mandap Contractor - Items List</p>
+        </div>
+        <div class="info">
+          <div>
+            <p><strong>Order No:</strong> ${order.orderNumber}</p>
+            <p><strong>Customer:</strong> ${order.customerName}</p>
+            ${order.customerPalNumbers && order.customerPalNumbers.length > 0 ? `<p><strong>Pal No(s):</strong> ${order.customerPalNumbers.join(', ')}</p>` : ''}
+          </div>
+          <div>
+            <p><strong>Date:</strong> ${order.orderDate ? new Date(order.orderDate).toLocaleDateString('en-IN') : '-'}</p>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 40px; text-align: left;">#</th>
+              <th style="text-align: left;">Item</th>
+              <th style="text-align: right; width: 100px;">Booked Qty</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${order.items.map((item, i) => `
+              <tr>
+                <td>${i + 1}</td>
+                <td style="font-weight: bold;">${item.itemNameGujarati || item.itemNameEnglish} ${item.note ? `(${item.note})` : ''}</td>
+                <td style="text-align: right;">${item.bookedQty}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
 
         <script>window.print();</script>
       </body>

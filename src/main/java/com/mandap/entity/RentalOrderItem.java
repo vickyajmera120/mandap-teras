@@ -55,6 +55,9 @@ public class RentalOrderItem {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "note")
+    private String note;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
