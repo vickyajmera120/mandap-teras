@@ -1,0 +1,42 @@
+---
+description: Apply when working on stock management or item tracking.
+alwaysApply: false
+---
+
+
+## Data Model
+
+### `InventoryItem.java`
+- `nameGujarati`: Primary name used for printing and checklist usage.
+- `nameEnglish`: Secondary name for search and admin reference.
+- `category`: Enum (MANDAP, FURNITURE, BEDDING, etc.).
+- `side`: Enum (LEFT, RIGHT) - Used for organizing the UI checklist.
+- `totalStock`: The absolute number of items owned.
+- `availableStock`: The items physically present in the warehouse.
+
+## Stock Logic
+
+Stock levels are updated during the **Rental Order Lifecycle**:
+
+1. **Booking**: `booked_qty` is recorded. `availableStock` is typically *decreased* only upon physical dispatch.
+2. **Dispatch**: `dispatched_qty` is updated. `availableStock` must be accurately reflected.
+3. **Return**: `returned_qty` increases. `availableStock` is *increased* back.
+
+### Validation Rules
+- **Overbooking Prevention**: The system must check if `requested_qty <= availableStock` before allowing a dispatch.
+- **Validation remains in `InventoryService.java`**.
+
+## Bilingual Handling
+
+- All inventory items MUST have a Gujarati name.
+- Input fields in the UI should support Gujarati script (stored as UTF-8 in MySQL).
+
+## Usage Tracking ("Where is my stock?")
+
+A critical feature for the user is seeing which items are currently with which customers.
+- This is calculated by joining `rental_order_items` (where `dispatched_qty > returned_qty`) with `rental_orders` and `customers`.
+- Logic resides in `InventoryService.getUsageDetails()`.
+
+## Frontend Representation
+- **Inventory Component**: Displays stock metrics with color-coded alerts for low stock.
+- **Audit View**: Tracks changes to stock levels over time (Entity Auditing).

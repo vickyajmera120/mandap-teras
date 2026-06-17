@@ -1,0 +1,62 @@
+---
+description: Apply when working on orders, payments, or bill generation
+alwaysApply: false
+---
+# Billing & Rental Lifecycle Context
+
+## The Core Lifecycle
+
+The system follows a strict linear flow for each customer:
+1. **Rental Order** (`BOOKED`)
+2. **Material Setup/Dispatch** (`DISPATCHED`)
+3. **Material Return** (`PARTIALLY_RETURNED` / `RETURNED`)
+4. **Bill Generation** (`INVOICE`)
+5. **Payment Settlement**
+
+## Rental Orders
+
+### States
+- `BOOKED`: Order created, items reserved.
+- `DISPATCHED`: Items physically moved to customer location.
+- `RETURNED`: All items received back.
+- `COMPLETED`: Associated bill is fully paid.
+
+### Pal Numbers
+- Physical crates/bags are identified by "Pal" numbers.
+- These are tracked in `customer_pal_numbers` and associated with rental orders to know which crate went where.
+
+## Billing System
+
+### One-to-One Rule
+> **IMPORTANT**: One Customer = One Active Order = One Bill.
+Multiple active bills for the same person in the same season are NOT allowed.
+
+### Bill Calculation Logic
+- Bills are generated from Rental Orders.
+- Only **dispatched items** that were **not returned** (or lost) should be billed.
+- `total_amount = sum(item.quantity * item.rate)`
+- `net_payable = total_amount - total_payments - settlement_discount`
+
+## Payments & Deposits
+
+### Initial Deposits
+- Often taken at the time of booking or billing.
+- Stored as a `Payment` record with `is_deposit = true`.
+- Linked to the `Bill`.
+
+### Payment Methods
+- `CASH`, `CHEQUE`, `ONLINE`.
+- Cheque numbers must be recorded if the method is `CHEQUE`.
+
+## Printing (Gujarati Layout)
+
+The system prints professional bills in Gujarati.
+- CSS uses specific `@media print` rules.
+- Layout resides in `billing-print.component.ts` (or similar).
+- Totals and business details must be perfectly aligned for physical printouts.
+
+## Audit Logs
+
+Since billing involves money, all changes to `Bill`, `Payment`, and `RentalOrder` are tracked via **Hibernate Envers**.
+- Audit tables: `bills_aud`, `payments_aud`, etc.
+- Viewable in the "Audit" tabs in the UI.

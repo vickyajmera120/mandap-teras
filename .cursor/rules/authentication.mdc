@@ -1,0 +1,58 @@
+---
+description: Apply when working on security, login, or RBAC.
+alwaysApply: false
+---
+
+
+## Spring Security Architecture
+
+The application uses **Spring Security 6 (Spring Boot 3.2)** with a stateless JWT-based authentication model.
+
+### Key Components
+- **`SecurityConfig.java`**: Central configuration for the filter chain, CORS, and method-level security.
+- **`JwtAuthenticationFilter.java`**: Extracts the Bearer token from the `Authorization` header and validates it.
+- **`JwtTokenProvider.java`**: Handles JWT generation, parsing, and validation using `jjwt`.
+- **`CustomUserDetailsService.java`**: Loads user data from the database for authentication.
+
+## Roles & Permissions
+
+The system uses a granular Role-Based Access Control (RBAC) system.
+
+### Roles
+- `ROLE_ADMIN`: Full system access, including user and role management.
+- `ROLE_MANAGER`: Inventory management, event settings, and report viewing.
+- `ROLE_BILLING_CLERK`: Core operations like creating bills and handling rental orders.
+- `ROLE_VIEWER`: Read-only access to most modules.
+
+### Permissions
+Permissions are strings mapped to roles in the `role_permissions` table (e.g., `BILL_CREATE`, `CUSTOMER_WRITE`).
+
+## Backend Implementation Patterns
+
+### Protecting Endpoints
+1. **URL Filtering**: Configured in `SecurityConfig.java` using `.requestMatchers()`.
+2. **Method Security**: Use `@PreAuthorize` on Service or Controller methods.
+   ```java
+   @PreAuthorize("hasAuthority('BILL_CREATE') or hasRole('ADMIN')")
+   public BillDTO createBill(BillDTO billDto) { ... }
+   ```
+
+### Accessing Current User
+Avoid static access to `SecurityContextHolder`. Ideally, pass the username from the controller layer or use a custom `@CurrentUser` annotation if implemented.
+
+## Frontend Implementation Patterns
+
+### Interceptors
+- **`auth.interceptor.ts`**: Automatically attaches the JWT token from `localStorage` to all outgoing `/api` requests.
+- **`error.interceptor.ts`**: Catches 401 (Unauthorized) errors and redirects the user to the login page.
+
+### Guards
+- **`auth.guard.ts`**: Prevents unauthenticated access to protected routes.
+- **`admin.guard.ts`**: Specifically protects admin-only routes (Users, Roles).
+
+### State Management
+Auth state is primarily managed in `auth.service.ts` using `Signals`.
+
+## Common Tasks
+- **Adding a Permission**: Add to `V2__seed_initial_data.sql` and the `Permission` enum if applicable.
+- **Modifying Token Expiry**: Update `app.jwt.expiration-ms` in `application.properties`.

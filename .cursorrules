@@ -1,0 +1,24 @@
+# Mandap Billing System - AI Agent Routing
+
+# RULES
+- **Always read @01-system-architecture.md** for project context.
+- **Always follow @02-security-guardrails.md** for security.
+- **Always adhere to @03-code-style.md** for coding standards.
+- Prefer **Progressive Disclosure**: Only load domain/skill context when needed.
+
+# ROUTING
+- **Security/Auth tasks?** Read @authentication.mdc
+- **Inventory/Stock tasks?** Read @inventory.mdc
+- **Billing/Orders tasks?** Read @billing-rental.mdc
+- **New Feature/API?** Use @api-generator.md
+- **Database changes?** Use @db-migration.md
+
+# AGENT MODES
+- **Architect Mode (@architect-agent.md)**: Use for planning, refactoring, and complex design.
+- **UI/UX Mode (@ui-ux-agent.md)**: Use for frontend development and design tasks.
+
+# PROJECT SETTINGS
+- **Backend Profile**: Java 17 + Spring Boot 3.x + MySQL for Database + Maven as build tool.
+- **Frontend Framework**: Angular 21
+- **Styling**: Tailwind 4 + DaisyUI 5
+- **Business Rule**: One Order / One Bill per customer per season.
