@@ -2,4 +2,10 @@
 builder = "RAILPACK"
 
 [deploy]
-startCommand = "java -jar target/mandap-billing-1.0.0.jar"
+# Optimized for low-memory environments (Saves ~150MB - 250MB RAM)
+# -XX:+UseSerialGC: Replaces the default multi-threaded G1 Garbage Collector. The Serial GC uses only a single thread for garbage collection, drastically slashing native JVM memory overhead at the cost of slight multi-core performance (which doesn't matter for a zero-traffic personal app).
+# -Xmx160m: Strictly caps the maximum heap size at 160MB, preventing the app from expanding over Railway's container thresholds.
+# -Xms96m: Starts the heap lower, letting it scale up gently only if needed.
+# -Xss512k: Cuts the memory allocated to each individual thread in half (from 1MB down to 512KB).
+# -XX:ReservedCodeCacheSize=64m: Reduces the memory reserved for the Just-In-Time (JIT) compiler to compile bytecode to native code (down from the default 240MB footprint).
+startCommand = "java -XX:+UseSerialGC -Xmx160m -Xms96m -Xss512k -XX:ReservedCodeCacheSize=64m -jar target/mandap-billing-1.0.0.jar"

@@ -16,6 +16,6 @@
     }
   },
   "deploy": {
-    "startCommand": "java -jar target/mandap-billing-1.0.0.jar"
+    "startCommand": "java -XX:+UseSerialGC -Xmx160m -Xms96m -Xss512k -XX:ReservedCodeCacheSize=64m -jar target/mandap-billing-1.0.0.jar"
   }
 }
